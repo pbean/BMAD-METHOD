@@ -34,11 +34,12 @@ class IdeSetup extends BaseIdeSetup {
     }
   }
 
-  async setup(ide, installDir, selectedAgent = null, spinner = null, preConfiguredSettings = null) {
+  async setup(ide, installDir, selectedAgent = null, spinner = null, preConfiguredSettings = null, config = {}) {
     const ideConfig = await configLoader.getIdeConfiguration(ide);
 
     if (!ideConfig) {
-      console.log(chalk.yellow(`\nNo configuration available for ${ide}`));
+      console.log(chalk.yellow(`
+No configuration available for ${ide}`));
       return false;
     }
 
@@ -46,7 +47,7 @@ class IdeSetup extends BaseIdeSetup {
       case "cursor":
         return this.setupCursor(installDir, selectedAgent);
       case "claude-code":
-        return this.setupClaudeCode(installDir, selectedAgent);
+        return this.setupClaudeCode(installDir, selectedAgent, config.claudeV2, config);
       case "windsurf":
         return this.setupWindsurf(installDir, selectedAgent);
       case "trae":
@@ -60,7 +61,8 @@ class IdeSetup extends BaseIdeSetup {
       case "github-copilot":
         return this.setupGitHubCopilot(installDir, selectedAgent, spinner, preConfiguredSettings);
       default:
-        console.log(chalk.yellow(`\nIDE ${ide} not yet supported`));
+        console.log(chalk.yellow(`
+IDE ${ide} not yet supported`));
         return false;
     }
   }
@@ -86,9 +88,9 @@ class IdeSetup extends BaseIdeSetup {
     return true;
   }
 
-  async setupClaudeCode(installDir, selectedAgent, useSubAgents = false) {
-    if (useSubAgents) {
-      return this.setupClaudeCodeSubAgents(installDir, selectedAgent);
+  async setupClaudeCode(installDir, selectedAgent, claudeV2 = false, config = {}) {
+    if (claudeV2) {
+      return this.setupClaudeCodeSubAgents(installDir, selectedAgent, config);
     }
 
     // Setup bmad-core commands
@@ -202,53 +204,54 @@ class IdeSetup extends BaseIdeSetup {
     console.log(chalk.dim(`  - Tasks in: ${tasksDir}`));
   }
 
-  async setupClaudeCodeSubAgents(installDir, selectedAgent) {
+  async setupClaudeCodeSubAgents(installDir, selectedAgent, config) {
     const agentsDir = path.join(installDir, ".claude", "agents");
     await fileManager.ensureDirectory(agentsDir);
 
-    const coreAgents = selectedAgent ? [selectedAgent] : await this.getCoreAgentIds(installDir);
-    for (const agentId of coreAgents) {
-      const agentPath = await this.findAgentPath(agentId, installDir);
-      if (agentPath) {
-        const agentContent = await fileManager.readFile(agentPath);
-        const yamlContent = extractYamlFromAgent(agentContent);
-        if (yamlContent) {
-          const agentConfig = yaml.load(yamlContent);
-          const subAgentContent = `---
-name: ${agentId}
-description: ${JSON.stringify(agentConfig.whenToUse || `Use for ${agentConfig.title} tasks`)}
----
-
-${agentContent}`;
-          const subAgentPath = path.join(agentsDir, `${agentId}.md`);
-          await fileManager.writeFile(subAgentPath, subAgentContent);
-          console.log(chalk.green(`✓ Created sub-agent: ${agentId}`));
+    // Only install core agents if not expansion-only
+    if (config.installType !== 'expansion-only') {
+        const coreAgents = selectedAgent ? [selectedAgent] : await this.getCoreAgentIds(installDir);
+        for (const agentId of coreAgents) {
+            const agentPath = await this.findAgentPath(agentId, installDir);
+            if (agentPath) {
+                const agentContent = await fileManager.readFile(agentPath);
+                const yamlContent = extractYamlFromAgent(agentContent);
+                if (yamlContent) {
+                    const agentConfig = yaml.load(yamlContent);
+                    const subAgentContent = `---\nname: ${agentId}\ndescription: ${JSON.stringify(agentConfig.whenToUse || `Use for ${agentConfig.title} tasks`)}\n---\n\n${agentContent}`;
+                    const subAgentPath = path.join(agentsDir, `${agentId}.md`);
+                    await fileManager.writeFile(subAgentPath, subAgentContent);
+                    console.log(chalk.green(`✓ Created sub-agent: ${agentId}`));
+                }
+            }
         }
-      }
     }
 
-    const expansionPacks = await this.getInstalledExpansionPacks(installDir);
-    for (const packInfo of expansionPacks) {
-      const packAgents = await this.getExpansionPackAgents(packInfo.path);
-      for (const agentId of packAgents) {
-        const agentPath = path.join(packInfo.path, "agents", `${agentId}.md`);
-        if (await fileManager.pathExists(agentPath)) {
-          const agentContent = await fileManager.readFile(agentPath);
-          const yamlContent = extractYamlFromAgent(agentContent);
-          if (yamlContent) {
-            const agentConfig = yaml.load(yamlContent);
-            const subAgentContent = `---
-name: ${agentId}
-description: ${JSON.stringify(agentConfig.whenToUse || `Use for ${agentConfig.title} tasks`)}
----
-
-${agentContent}`;
-            const subAgentPath = path.join(agentsDir, `${agentId}.md`);
-            await fileManager.writeFile(subAgentPath, subAgentContent);
-            console.log(chalk.green(`✓ Created sub-agent: ${agentId}`));
-          }
+    // Install expansion pack agents if they were selected
+    if (config.expansionPacks && config.expansionPacks.length > 0) {
+        const expansionPacks = await this.getInstalledExpansionPacks(installDir);
+        for (const packInfo of expansionPacks) {
+            // Only install if this pack was selected
+            if (config.expansionPacks.includes(packInfo.name)) {
+                const packSlashPrefix = await this.getExpansionPackSlashPrefix(packInfo.path);
+                const packAgents = await this.getExpansionPackAgents(packInfo.path);
+                for (const agentId of packAgents) {
+                    const agentPath = path.join(packInfo.path, "agents", `${agentId}.md`);
+                    if (await fileManager.pathExists(agentPath)) {
+                        const agentContent = await fileManager.readFile(agentPath);
+                        const yamlContent = extractYamlFromAgent(agentContent);
+                        if (yamlContent) {
+                            const agentConfig = yaml.load(yamlContent);
+                            const subAgentName = `${packSlashPrefix}/${agentId}`;
+                            const subAgentContent = `---\nname: ${subAgentName}\ndescription: ${JSON.stringify(agentConfig.whenToUse || `Use for ${agentConfig.title} tasks`)}\n---\n\n${agentContent}`;
+                            const subAgentPath = path.join(agentsDir, `${subAgentName.replace('/', '-')}.md`);
+                            await fileManager.writeFile(subAgentPath, subAgentContent);
+                            console.log(chalk.green(`✓ Created sub-agent: ${subAgentName}`));
+                        }
+                    }
+                }
+            }
         }
-      }
     }
 
     console.log(chalk.green(`\n✓ Created Claude Code sub-agents in ${agentsDir}`));

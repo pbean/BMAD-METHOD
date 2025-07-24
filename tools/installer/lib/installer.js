@@ -380,7 +380,7 @@ class Installer {
       for (const ide of ides) {
         spinner.text = `Setting up ${ide} integration...`;
         const preConfiguredSettings = ide === 'github-copilot' ? config.githubCopilotConfig : null;
-        await ideSetup.setup(ide, installDir, config.agent, spinner, preConfiguredSettings, config.claudeV2);
+        await ideSetup.setup(ide, installDir, config.agent, spinner, preConfiguredSettings, config);
       }
     }
 
@@ -689,7 +689,7 @@ class Installer {
         agent: manifest.agent,
         directory: installDir,
         ides: newConfig?.ides || manifest.ides_setup || [],
-        claudeV2: newConfig?.claudeV2 || false,
+        claudeV2: newConfig?.claudeV2 || manifest.claudeV2 || false,
       };
 
       await this.performFreshInstall(config, installDir, spinner, { isUpdate: true });
@@ -1092,7 +1092,7 @@ class Installer {
               process.exit(0);
             } else if (action === 'repair') {
               // Repair the expansion pack
-              await this.repairExpansionPack(installDir, packId, pack, packIntegrity, spinner);
+              await this.repairExpansionPack(installDir, packId, pack, packIntegrity, spinner, config);
               continue;
             }
           } else if (versionCompare < 0) {
@@ -1597,7 +1597,7 @@ class Installer {
     return expansionPacks;
   }
 
-  async repairExpansionPack(installDir, packId, pack, integrity, spinner) {
+  async repairExpansionPack(installDir, packId, pack, integrity, spinner, config = {}) {
     spinner.start(`Repairing ${pack.name}...`);
     
     try {
@@ -1645,6 +1645,16 @@ class Installer {
           spinner.text = `Restored: ${file}`;
         } else {
           console.warn(chalk.yellow(`  Warning: Source file not found: ${file}`));
+        }
+      }
+
+      // Set up IDE integration if requested
+      const ides = config.ides || (config.ide ? [config.ide] : []);
+      if (ides.length > 0) {
+        for (const ide of ides) {
+          spinner.text = `Setting up ${ide} integration...`;
+          const preConfiguredSettings = ide === 'github-copilot' ? config.githubCopilotConfig : null;
+          await ideSetup.setup(ide, installDir, config.agent, spinner, preConfiguredSettings, config.claudeV2);
         }
       }
       
