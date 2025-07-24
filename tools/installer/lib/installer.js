@@ -380,7 +380,7 @@ class Installer {
       for (const ide of ides) {
         spinner.text = `Setting up ${ide} integration...`;
         const preConfiguredSettings = ide === 'github-copilot' ? config.githubCopilotConfig : null;
-        await ideSetup.setup(ide, installDir, config.agent, spinner, preConfiguredSettings);
+        await ideSetup.setup(ide, installDir, config.agent, spinner, preConfiguredSettings, config.claudeV2);
       }
     }
 
@@ -689,6 +689,7 @@ class Installer {
         agent: manifest.agent,
         directory: installDir,
         ides: newConfig?.ides || manifest.ides_setup || [],
+        claudeV2: newConfig?.claudeV2 || false,
       };
 
       await this.performFreshInstall(config, installDir, spinner, { isUpdate: true });

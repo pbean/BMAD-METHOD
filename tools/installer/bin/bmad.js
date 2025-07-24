@@ -43,6 +43,7 @@ program
   .option('-d, --directory <path>', 'Installation directory')
   .option('-i, --ide <ide...>', 'Configure for specific IDE(s) - can specify multiple (cursor, claude-code, windsurf, trae, roo, cline, gemini, github-copilot, other)')
   .option('-e, --expansion-packs <packs...>', 'Install specific expansion packs (can specify multiple)')
+  .option('--claude-v2', 'Use the new Claude Code sub-agent installer')
   .action(async (options) => {
     try {
       if (!options.full && !options.expansionOnly) {
@@ -61,7 +62,8 @@ program
           installType,
           directory: options.directory || '.',
           ides: (options.ide || []).filter(ide => ide !== 'other'),
-          expansionPacks: options.expansionPacks || []
+          expansionPacks: options.expansionPacks || [],
+          claudeV2: options.claudeV2 || false
         };
         await installer.install(config);
         process.exit(0);
@@ -324,6 +326,18 @@ async function promptInstallation() {
     }
     
     ideSelectionComplete = true;
+  }
+
+  if (ides.includes('claude-code')) {
+    const { claudeV2 } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'claudeV2',
+        message: 'Use the new Claude Code sub-agent installer (v2)?',
+        default: true
+      }
+    ]);
+    answers.claudeV2 = claudeV2;
   }
 
   // Use selected IDEs directly
