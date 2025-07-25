@@ -204,6 +204,110 @@ IDE ${ide} not yet supported`));
     console.log(chalk.dim(`  - Tasks in: ${tasksDir}`));
   }
 
+  async getExpansionPackConfig(packPath) {
+    try {
+      const configPath = path.join(packPath, "config.yaml");
+      if (await fileManager.pathExists(configPath)) {
+        const configContent = await fileManager.readFile(configPath);
+        return yaml.load(configContent);
+      }
+    } catch (error) {
+      console.warn(`Failed to read expansion pack config from ${packPath}: ${error.message}`);
+    }
+    return null;
+  }
+
+  async createEnhancedSubAgent(agentId, agentContent, agentConfig, packConfig, installDir) {
+    // Extract key sections from agent YAML
+    const activationInstructions = agentConfig['activation-instructions'] || [];
+    const persona = agentConfig.persona || {};
+    const corePrinciples = agentConfig.core_principles || persona.core_principles || [];
+    const agent = agentConfig.agent || {};
+    
+    // Create display name and file name based on context
+    let displayName, fileName, domain = 'core';
+    
+    if (packConfig) {
+      // For expansion pack agents, use short-title for context
+      const packTitle = packConfig['short-title'] || packConfig.name || 'Unknown Pack';
+      const agentTitle = agent.title || agentId;
+      const agentIcon = agent.icon || '🤖';
+      
+      displayName = `${agentIcon} ${agentTitle} (${packTitle})`;
+      fileName = `${packConfig.name}-${agentId}`;
+      domain = packConfig.name;
+    } else {
+      // For core agents, use simpler naming
+      const agentTitle = agent.title || agentId;
+      const agentIcon = agent.icon || '🤖';
+      
+      displayName = `${agentIcon} ${agentTitle}`;
+      fileName = agentId;
+    }
+
+    // Build enhanced frontmatter with complete metadata
+    const frontmatter = {
+      name: displayName,
+      description: agent.whenToUse || `Use for ${agent.title || agentId} tasks`,
+      subagent_type: agent.id || agentId,
+      domain: domain
+    };
+
+    // Add expansion pack specific metadata
+    if (packConfig) {
+      frontmatter.expansion_pack = packConfig.name;
+      frontmatter.technology_stack = this.inferTechnologyFromPack(packConfig);
+      frontmatter.pack_version = packConfig.version;
+    }
+
+    // Add activation instructions to frontmatter if they exist
+    if (activationInstructions && activationInstructions.length > 0) {
+      frontmatter.activation_instructions = activationInstructions;
+    }
+
+    // Add persona information without modification
+    if (Object.keys(persona).length > 0) {
+      frontmatter.persona = persona;
+    }
+
+    // Add core principles without modification
+    if (corePrinciples && corePrinciples.length > 0) {
+      frontmatter.core_principles = corePrinciples;
+    }
+
+    // Build the complete sub-agent content
+    const yamlFrontmatter = yaml.dump(frontmatter, {
+      lineWidth: -1, // Disable line wrapping
+      quotingType: '"',
+      forceQuotes: false
+    });
+
+    const subAgentContent = `---\n${yamlFrontmatter}---\n\n${agentContent}`;
+
+    return {
+      content: subAgentContent,
+      displayName: displayName,
+      fileName: fileName
+    };
+  }
+
+  inferTechnologyFromPack(packConfig) {
+    const name = packConfig.name.toLowerCase();
+    const description = (packConfig.description || '').toLowerCase();
+    
+    if (name.includes('unity') || description.includes('unity')) {
+      return 'unity';
+    } else if (name.includes('phaser') || description.includes('phaser')) {
+      return 'phaser';
+    } else if (name.includes('infrastructure') || name.includes('devops')) {
+      return 'infrastructure';
+    } else if (name.includes('game')) {
+      return 'game-development';
+    }
+    
+    return 'general';
+  }
+
   async setupClaudeCodeSubAgents(installDir, selectedAgent, config) {
     const agentsDir = path.join(installDir, ".claude", "agents");
     await fileManager.ensureDirectory(agentsDir);
@@ -218,10 +322,16 @@ IDE ${ide} not yet supported`));
                 const yamlContent = extractYamlFromAgent(agentContent);
                 if (yamlContent) {
                     const agentConfig = yaml.load(yamlContent);
-                    const subAgentContent = `---\nname: ${agentId}\ndescription: ${JSON.stringify(agentConfig.whenToUse || `Use for ${agentConfig.title} tasks`)}\n---\n\n${agentContent}`;
+                    const subAgentData = await this.createEnhancedSubAgent(
+                        agentId, 
+                        agentContent, 
+                        agentConfig, 
+                        null, // no expansion pack for core agents
+                        installDir
+                    );
                     const subAgentPath = path.join(agentsDir, `${agentId}.md`);
-                    await fileManager.writeFile(subAgentPath, subAgentContent);
-                    console.log(chalk.green(`✓ Created sub-agent: ${agentId}`));
+                    await fileManager.writeFile(subAgentPath, subAgentData.content);
+                    console.log(chalk.green(`✓ Created sub-agent: ${subAgentData.displayName}`));
                 }
             }
         }
@@ -233,7 +343,7 @@ IDE ${ide} not yet supported`));
         for (const packInfo of expansionPacks) {
             // Only install if this pack was selected
             if (config.expansionPacks.includes(packInfo.name)) {
-                const packSlashPrefix = await this.getExpansionPackSlashPrefix(packInfo.path);
+                const packConfig = await this.getExpansionPackConfig(packInfo.path);
                 const packAgents = await this.getExpansionPackAgents(packInfo.path);
                 for (const agentId of packAgents) {
                     const agentPath = path.join(packInfo.path, "agents", `${agentId}.md`);
@@ -242,11 +352,16 @@ IDE ${ide} not yet supported`));
                         const yamlContent = extractYamlFromAgent(agentContent);
                         if (yamlContent) {
                             const agentConfig = yaml.load(yamlContent);
-                            const subAgentName = `${packSlashPrefix}/${agentId}`;
-                            const subAgentContent = `---\nname: ${subAgentName}\ndescription: ${JSON.stringify(agentConfig.whenToUse || `Use for ${agentConfig.title} tasks`)}\n---\n\n${agentContent}`;
-                            const subAgentPath = path.join(agentsDir, `${subAgentName.replace('/', '-')}.md`);
-                            await fileManager.writeFile(subAgentPath, subAgentContent);
-                            console.log(chalk.green(`✓ Created sub-agent: ${subAgentName}`));
+                            const subAgentData = await this.createEnhancedSubAgent(
+                                agentId, 
+                                agentContent, 
+                                agentConfig, 
+                                packConfig,
+                                installDir
+                            );
+                            const subAgentPath = path.join(agentsDir, `${subAgentData.fileName}.md`);
+                            await fileManager.writeFile(subAgentPath, subAgentData.content);
+                            console.log(chalk.green(`✓ Created sub-agent: ${subAgentData.displayName}`));
                         }
                     }
                 }
