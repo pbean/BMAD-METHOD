@@ -292,19 +292,12 @@ IDE ${ide} not yet supported`));
   }
 
   inferTechnologyFromPack(packConfig) {
-    const name = packConfig.name.toLowerCase();
-    const description = (packConfig.description || '').toLowerCase();
-    
-    if (name.includes('unity') || description.includes('unity')) {
-      return 'unity';
-    } else if (name.includes('phaser') || description.includes('phaser')) {
-      return 'phaser';
-    } else if (name.includes('infrastructure') || name.includes('devops')) {
-      return 'infrastructure';
-    } else if (name.includes('game')) {
-      return 'game-development';
+    // Check if expansion pack explicitly specifies technology_stack
+    if (packConfig.technology_stack) {
+      return packConfig.technology_stack;
     }
     
+    // Fallback to general purpose if no technology_stack specified
     return 'general';
   }
 
