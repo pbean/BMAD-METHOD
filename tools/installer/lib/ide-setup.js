@@ -218,11 +218,11 @@ IDE ${ide} not yet supported`));
   }
 
   async createEnhancedSubAgent(agentId, agentContent, agentConfig, packConfig, installDir) {
-    // Extract key sections from agent YAML
-    const activationInstructions = agentConfig['activation-instructions'] || [];
+    const agent = agentConfig.agent || {};
     const persona = agentConfig.persona || {};
     const corePrinciples = agentConfig.core_principles || persona.core_principles || [];
-    const agent = agentConfig.agent || {};
+    const dependencies = agentConfig.dependencies || {};
+    const commands = Array.isArray(agentConfig.commands) ? agentConfig.commands : [];
     
     // Create display name and file name based on context
     let displayName, fileName, domain = 'core';
@@ -245,35 +245,38 @@ IDE ${ide} not yet supported`));
       fileName = agentId;
     }
 
-    // Build enhanced frontmatter with complete metadata
+    // Build clean frontmatter with minimal metadata
     const frontmatter = {
       name: displayName,
       description: agent.whenToUse || `Use for ${agent.title || agentId} tasks`,
-      subagent_type: agent.id || agentId,
-      domain: domain
+      tools: this.getToolsForAgentType(agentId)
     };
 
-    // Add expansion pack specific metadata
-    if (packConfig) {
-      frontmatter.expansion_pack = packConfig.name;
-      frontmatter.technology_stack = this.inferTechnologyFromPack(packConfig);
-      frontmatter.pack_version = packConfig.version;
+    // Build optimized body content
+    let body = `You are ${agent.name || agentId}, ${persona.role || 'a specialized assistant'} working within the BMad-Method framework.\n\n`;
+    
+    // Core identity section
+    body += this.buildIdentitySection(persona);
+    
+    // Key principles (cleaned and limited)
+    body += this.buildPrinciplesSection(corePrinciples);
+    
+    // BMad Resources section
+    body += this.buildResourcesSection(dependencies, packConfig);
+    
+    // Commands section (if relevant)
+    body += this.buildCommandsSection(commands);
+    
+    // Resource access instructions
+    body += this.buildResourceAccessInstructions(installDir, packConfig);
+    
+    // Technology specialization for expansion packs
+    if (packConfig?.technology_stack) {
+      body += this.buildSpecializationSection(packConfig);
     }
-
-    // Add activation instructions to frontmatter if they exist
-    if (activationInstructions && activationInstructions.length > 0) {
-      frontmatter.activation_instructions = activationInstructions;
-    }
-
-    // Add persona information without modification
-    if (Object.keys(persona).length > 0) {
-      frontmatter.persona = persona;
-    }
-
-    // Add core principles without modification
-    if (corePrinciples && corePrinciples.length > 0) {
-      frontmatter.core_principles = corePrinciples;
-    }
+    
+    // Activation instruction
+    body += `\nWhen activated, greet the user briefly and await their specific request.`;
 
     // Build the complete sub-agent content
     const yamlFrontmatter = yaml.dump(frontmatter, {
@@ -282,7 +285,7 @@ IDE ${ide} not yet supported`));
       forceQuotes: false
     });
 
-    const subAgentContent = `---\n${yamlFrontmatter}---\n\n${agentContent}`;
+    const subAgentContent = `---\n${yamlFrontmatter}---\n\n${body}`;
 
     return {
       content: subAgentContent,
@@ -299,6 +302,268 @@ IDE ${ide} not yet supported`));
     
     // Fallback to general purpose if no technology_stack specified
     return 'general';
+  }
+
+
+  getToolsForAgentType(agentId) {
+    const toolMappings = {
+      'dev': ['*'],  // Full access for developers
+      'architect': ['*'],  // Full access for architects
+      'analyst': ['read_file', 'list_files', 'search'],  // Read-only for analysts
+      'po': ['read_file', 'list_files'],  // Limited read for product owners
+      'pm': ['read_file', 'list_files'],  // Limited read for project managers
+      'qa': ['read_file', 'run_command', 'search'],  // Read + test execution for QA
+      'ux': ['read_file', 'list_files', 'search'],  // Read-only for UX experts
+      'sm': ['read_file', 'write_file', 'list_files'],  // Read/write for scrum masters
+    };
+    
+    // Check if agent ID contains any key
+    for (const [key, tools] of Object.entries(toolMappings)) {
+      if (agentId.includes(key)) return tools;
+    }
+    
+    return ['*'];  // Default to full access
+  }
+
+  buildIdentitySection(persona) {
+    if (!persona || (!persona.style && !persona.identity && !persona.focus)) {
+      return '';
+    }
+    
+    let section = '## Core Identity\n';
+    if (persona.style) section += `- **Style**: ${persona.style}\n`;
+    if (persona.identity) section += `- **Identity**: ${persona.identity}\n`;
+    if (persona.focus) section += `- **Focus**: ${persona.focus}\n`;
+    section += '\n';
+    
+    return section;
+  }
+
+  buildPrinciplesSection(corePrinciples) {
+    if (!corePrinciples || corePrinciples.length === 0) {
+      return '';
+    }
+    
+    let section = '## Key Principles\n';
+    
+    // Take up to 5 most relevant principles and clean them
+    const cleanedPrinciples = corePrinciples
+      .slice(0, 5)
+      .map(principle => this.cleanPrinciple(principle))
+      .filter(principle => principle.length > 0);
+    
+    cleanedPrinciples.forEach((principle, i) => {
+      section += `${i + 1}. ${principle}\n`;
+    });
+    
+    section += '\n';
+    return section;
+  }
+
+  cleanPrinciple(principle) {
+    if (typeof principle !== 'string') return '';
+    
+    // Remove CRITICAL:, MANDATORY:, IMPORTANT: prefixes
+    let cleaned = principle.replace(/^(CRITICAL|MANDATORY|IMPORTANT):\s*/i, '');
+    
+    // Remove BMad-specific file references
+    cleaned = cleaned.replace(/\{root\}\/[^\s]+/g, '');
+    
+    // Remove overly specific BMad terminology
+    cleaned = cleaned.replace(/story file|Dev Agent Record|BMad-specific|startup commands/gi, '');
+    
+    // Clean up extra whitespace
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    
+    // Truncate overly long principles
+    if (cleaned.length > 120) {
+      cleaned = cleaned.substring(0, 117) + '...';
+    }
+    
+    return cleaned;
+  }
+
+  buildResourcesSection(dependencies, packConfig) {
+    if (!dependencies || Object.keys(dependencies).length === 0) {
+      return '';
+    }
+    
+    let section = '## BMad Resources Available\n\n';
+    section += 'When users request specific tasks or documentation, you have access to these BMad resources:\n\n';
+    
+    // Tasks
+    if (dependencies.tasks && dependencies.tasks.length > 0) {
+      section += '### Tasks\n';
+      dependencies.tasks.forEach(task => {
+        const taskDesc = this.getResourceDescription(task, 'task');
+        section += `- \`${task}\` - ${taskDesc}\n`;
+      });
+      section += '\n';
+    }
+    
+    // Templates
+    if (dependencies.templates && dependencies.templates.length > 0) {
+      section += '### Templates\n';
+      section += 'Available for document generation (use with create-doc task)\n';
+      dependencies.templates.forEach(template => {
+        const templateDesc = this.getResourceDescription(template, 'template');
+        section += `- \`${template}\` - ${templateDesc}\n`;
+      });
+      section += '\n';
+    }
+    
+    // Checklists
+    if (dependencies.checklists && dependencies.checklists.length > 0) {
+      section += '### Checklists\n';
+      dependencies.checklists.forEach(checklist => {
+        const checklistDesc = this.getResourceDescription(checklist, 'checklist');
+        section += `- \`${checklist}\` - ${checklistDesc}\n`;
+      });
+      section += '\n';
+    }
+    
+    // Data
+    if (dependencies.data && dependencies.data.length > 0) {
+      section += '### Data\n';
+      section += 'Project-specific knowledge bases and preferences\n';
+      dependencies.data.forEach(data => {
+        section += `- \`${data}\`\n`;
+      });
+      section += '\n';
+    }
+    
+    return section;
+  }
+
+  getResourceDescription(resourceName, resourceType) {
+    // Extract human-readable description from resource name
+    const baseName = resourceName.replace(/\.(md|yaml|yml)$/, '');
+    
+    const descriptions = {
+      // Common tasks
+      'execute-checklist': 'Run quality assurance checklists',
+      'create-doc': 'Create documents from templates',
+      'validate-next-story': 'Validate story readiness for development',
+      'create-deep-research-prompt': 'Generate research prompts',
+      'document-project': 'Document project structure and decisions',
+      'shard-doc': 'Split large documents for processing',
+      'create-next-story': 'Create development stories',
+      'create-game-story': 'Create game development stories',
+      'advanced-elicitation': 'Advanced requirements gathering',
+      'game-design-brainstorming': 'Brainstorm game design ideas',
+      
+      // Common templates
+      'prd-tmpl': 'Product Requirements Document',
+      'architecture-tmpl': 'Technical Architecture Document',
+      'story-tmpl': 'Development Story',
+      'front-end-architecture-tmpl': 'Frontend Architecture Document',
+      'fullstack-architecture-tmpl': 'Full-Stack Architecture Document',
+      'brownfield-architecture-tmpl': 'Brownfield Project Architecture',
+      'game-architecture-tmpl': 'Game Architecture Document',
+      'game-design-doc-tmpl': 'Game Design Document',
+      'infrastructure-architecture-tmpl': 'Infrastructure Architecture',
+      
+      // Common checklists
+      'story-dod-checklist': 'Story Definition of Done',
+      'architect-checklist': 'Architecture Review Checklist',
+      'game-story-dod-checklist': 'Game Story Definition of Done',
+      'infrastructure-checklist': 'Infrastructure Review Checklist'
+    };
+    
+    return descriptions[baseName] || this.humanizeResourceName(baseName);
+  }
+
+  humanizeResourceName(name) {
+    // Convert kebab-case to human readable
+    return name
+      .replace(/-/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase())
+      .replace(/Tmpl$/, 'Template')
+      .replace(/Dod/, 'DOD');
+  }
+
+  buildCommandsSection(commands) {
+    if (!commands || commands.length === 0) {
+      return '';
+    }
+    
+    // Filter out BMad-specific commands
+    const relevantCommands = commands.filter(cmd => {
+      const cmdString = typeof cmd === 'string' ? cmd : Object.keys(cmd)[0];
+      return !['help', 'exit', 'yolo'].includes(cmdString);
+    });
+    
+    if (relevantCommands.length === 0) {
+      return '';
+    }
+    
+    let section = '## Key Commands\n';
+    relevantCommands.slice(0, 5).forEach(cmd => {
+      if (typeof cmd === 'string') {
+        section += `- ${cmd}\n`;
+      } else {
+        const cmdName = Object.keys(cmd)[0];
+        const cmdDesc = cmd[cmdName];
+        section += `- **${cmdName}**: ${cmdDesc}\n`;
+      }
+    });
+    section += '\n';
+    
+    return section;
+  }
+
+  buildResourceAccessInstructions(installDir, packConfig) {
+    let section = '## Accessing Resources\n\n';
+    section += 'To use these resources:\n';
+    section += '1. When user requests a task, locate it in the project\'s bmad directories\n';
+    section += '2. Follow the task instructions exactly as written\n';
+    section += '3. For templates, use with the create-doc workflow\n';
+    section += '4. Reference checklists during quality validation\n\n';
+    
+    section += 'Your project\'s BMad resources are located in:\n';
+    section += '- Core: `.bmad-core/`\n';
+    
+    if (packConfig) {
+      section += `- ${packConfig['short-title'] || packConfig.name}: \`.${packConfig.name}/\`\n`;
+    }
+    
+    section += '\n';
+    return section;
+  }
+
+  buildSpecializationSection(packConfig) {
+    let section = '## Specialization\n';
+    
+    const techContexts = {
+      'phaser': `- Phaser 3 framework expertise
+- TypeScript game development
+- WebGL and Canvas rendering optimization
+- Game physics and collision systems
+- Cross-platform game deployment`,
+      
+      'unity': `- Unity 2D game development
+- C# scripting and optimization
+- Unity component architecture
+- Cross-platform deployment
+- Unity-specific patterns and practices`,
+      
+      'infrastructure': `- Infrastructure as Code
+- Cloud platform architecture
+- DevOps best practices
+- Security and compliance
+- Monitoring and observability`,
+      
+      'general': `- Full-stack development
+- Modern web technologies
+- Best practices and patterns
+- Cross-platform solutions`
+    };
+    
+    const techStack = packConfig.technology_stack || 'general';
+    section += techContexts[techStack] || techContexts.general;
+    section += '\n\n';
+    
+    return section;
   }
 
   async setupClaudeCodeSubAgents(installDir, selectedAgent, config) {
@@ -322,7 +587,7 @@ IDE ${ide} not yet supported`));
                         null, // no expansion pack for core agents
                         installDir
                     );
-                    const subAgentPath = path.join(agentsDir, `${agentId}.md`);
+                    const subAgentPath = path.join(agentsDir, `${subAgentData.fileName}.md`);
                     await fileManager.writeFile(subAgentPath, subAgentData.content);
                     console.log(chalk.green(`✓ Created sub-agent: ${subAgentData.displayName}`));
                 }
