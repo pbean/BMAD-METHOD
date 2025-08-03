@@ -70,6 +70,7 @@ dependencies:
     - game-design-doc-tmpl.yaml
     - level-design-doc-tmpl.yaml
     - level-design-doc-3d-tmpl.yaml
+    - level-design-framework-3d-tmpl.yaml
     - game-brief-tmpl.yaml
     - character-design-3d-tmpl.yaml
   checklists:
