@@ -12,9 +12,16 @@ To identify the next logical game story based on project progress and epic defin
 - If the file does not exist, HALT and inform the user: "core-config.yaml not found. This file is required for story creation. You can either: 1) Copy core-config.yaml from GITHUB bmad-core/ and configure it for your game project OR 2) Run the BMad installer against your project to upgrade and add the file automatically. Please add and configure before proceeding."
 - Extract key configurations: `devStoryLocation`, `gdd.*`, `gamearchitecture.*`, `workflow.*`
 
-### 1. Identify Next Story for Preparation
+### 1. Determine Project Dimension
 
-#### 1.1 Locate Epic Files and Review Existing Stories
+- Load the Game Design Document (`{{gdd.gddFile}}` from `core-config.yaml`).
+- Search for the **Dimension:** field in the document.
+- Set a variable `projectDimension` to "2D" or "3D" based on the value found.
+- If the dimension is not found, HALT and inform the user: "Project dimension (2D or 3D) not found in the GDD. Please update the GDD with the 'Dimension:' field."
+
+### 2. Identify Next Story for Preparation
+
+#### 2.1 Locate Epic Files and Review Existing Stories
 
 - Based on `gddSharded` from config, locate epic files (sharded location/pattern or monolithic GDD sections)
 - If `devStoryLocation` has story files, load the highest `{epicNum}.{storyNum}.story.md` file
@@ -26,7 +33,7 @@ To identify the next logical game story based on project progress and epic defin
 - **If no story files exist:** The next story is ALWAYS 1.1 (first story of first epic)
 - Announce the identified story to the user: "Identified next story for preparation: {epicNum}.{storyNum} - {Story Title}"
 
-### 2. Gather Story Requirements and Previous Story Context
+### 3. Gather Story Requirements and Previous Story Context
 
 - Extract story requirements from the identified epic file or GDD section
 - If previous story exists, review Dev Agent Record sections for:
@@ -36,35 +43,38 @@ To identify the next logical game story based on project progress and epic defin
   - Asset pipeline decisions and optimizations
 - Extract relevant insights that inform the current story's preparation
 
-### 3. Gather Architecture Context
+### 4. Gather Architecture Context
 
-#### 3.1 Determine Architecture Reading Strategy
+#### 4.1 Determine Architecture Reading Strategy
 
 - **If `gamearchitectureVersion: >= v3` and `gamearchitectureSharded: true`**: Read `{gamearchitectureShardedLocation}/index.md` then follow structured reading order below
 - **Else**: Use monolithic `gamearchitectureFile` for similar sections
 
-#### 3.2 Read Architecture Documents Based on Story Type
+#### 4.2 Read Architecture Documents Based on Story Type
 
 **For ALL Game Stories:** tech-stack.md, unity-project-structure.md, coding-standards.md, testing-resilience-architecture.md
 
-**For Gameplay/Mechanics Stories, additionally:** gameplay-systems-architecture.md, component-architecture-details.md, physics-config.md, input-system.md, state-machines.md, game-data-models.md
+**If `projectDimension` is "2D":**
+- **For Gameplay/Mechanics Stories, additionally:** gameplay-systems-architecture.md, component-architecture-details.md, physics-config.md, input-system.md, state-machines.md, game-data-models.md
+- **For Graphics/Rendering Stories, additionally:** rendering-pipeline.md, sprite-management.md, particle-systems.md, shader-guidelines.md, lighting-strategy.md, vfx-pipelines.md
 
-**For UI/UX Stories, additionally:** ui-architecture.md, ui-components.md, ui-state-management.md, scene-management.md
+**If `projectDimension` is "3D":**
+- **For Gameplay/Mechanics Stories, additionally:** gameplay-systems-architecture.md, component-architecture-details.md, physics-config-3d.md, input-system.md, state-machines.md, game-data-models.md
+- **For Graphics/Rendering Stories, additionally:** rendering-pipeline-3d.md, sprite-management.md, particle-systems.md, shader-guidelines.md, lighting-strategy.md, vfx-pipelines.md
+
+**For UI/UX Stories (both 2D/3D), additionally:** ui-architecture.md, ui-components.md, ui-state-management.md, scene-management.md
+
+**For Audio Stories (both 2D/3D), additionally:** audio-architecture.md, audio-mixing.md, sound-banks.md
 
 **For Backend/Services Stories, additionally:** game-data-models.md, data-persistence.md, save-system.md, analytics-integration.md, multiplayer-architecture.md
 
-**For Graphics/Rendering Stories, additionally:** rendering-pipeline.md, shader-guidelines.md, sprite-management.md, particle-systems.md
-
-**For Audio Stories, additionally:** audio-architecture.md, audio-mixing.md, sound-banks.md
-
-#### 3.3 Extract Story-Specific Technical Details
+#### 4.3 Extract Story-Specific Technical Details
 
 Extract ONLY information directly relevant to implementing the current story. Do NOT invent new patterns, systems, or standards not in the source documents.
 
 Extract:
-
 - Specific Unity components and MonoBehaviours the story will use
-- Unity Package Manager dependencies and their APIs (e.g., Cinemachine, Input System, URP)
+- Unity Package Manager dependencies and their APIs (e.g., Cinemachine, Input System, URP/HDRP)
 - Package-specific configurations and setup requirements
 - Prefab structures and scene organization requirements
 - Input system bindings and configurations
@@ -77,24 +87,24 @@ Extract:
 
 ALWAYS cite source documents: `[Source: gamearchitecture/{filename}.md#{section}]`
 
-### 4. Unity-Specific Technical Analysis
+### 5. Unity-Specific Technical Analysis
 
-#### 4.1 Package Dependencies Analysis
+#### 5.1 Package Dependencies Analysis
 
 - Identify Unity Package Manager packages required for the story
 - Document package versions from manifest.json
 - Note any package-specific APIs or components being used
-- List package configuration requirements (e.g., Input System settings, URP asset config)
+- List package configuration requirements (e.g., Input System settings, URP/HDRP asset config)
 - Identify any third-party Asset Store packages and their integration points
 
-#### 4.2 Scene and Prefab Planning
+#### 5.2 Scene and Prefab Planning
 
 - Identify which scenes will be modified or created
 - List prefabs that need to be created or updated
 - Document prefab variant requirements
 - Specify scene loading/unloading requirements
 
-#### 4.3 Component Architecture
+#### 5.3 Component Architecture
 
 - Define MonoBehaviour scripts needed
 - Specify ScriptableObject assets required
@@ -102,21 +112,29 @@ ALWAYS cite source documents: `[Source: gamearchitecture/{filename}.md#{section}
 - Identify required Unity Events and UnityActions
 - Note any package-specific components (e.g., Cinemachine VirtualCamera, InputActionAsset)
 
-#### 4.4 Asset Requirements
+#### 5.4 Asset Requirements
 
-- List sprite/texture requirements with resolution specs
-- Define animation clips and animator controllers needed
-- Specify audio clips and their import settings
-- Document any shader or material requirements
-- Note any package-specific assets (e.g., URP materials, Input Action maps)
+- **If `projectDimension` is "2D":**
+  - List sprite/texture requirements with resolution specs.
+  - Define animation clips and animator controllers needed.
+- **If `projectDimension` is "3D":**
+  - List 3D model requirements (poly count, format).
+  - List texture requirements (resolution, PBR maps).
+  - Define rigging and animation requirements.
+  - **If asset is a sprite**
+    - List sprite/texture requirements with resolution specs.
+    - Define animation clips and animator controllers needed.
+- Specify audio clips and their import settings.
+- Document any shader or material requirements.
+- Note any package-specific assets (e.g., URP/HDRP materials, Input Action maps)
 
-### 5. Populate Story Template with Full Context
+### 6. Populate Story Template with Full Context
 
 - Create new story file: `{devStoryLocation}/{epicNum}.{storyNum}.story.md` using Game Story Template
 - Fill in basic story information: Title, Status (Draft), Story statement, Acceptance Criteria from Epic/GDD
 - **`Dev Notes` section (CRITICAL):**
   - CRITICAL: This section MUST contain ONLY information extracted from gamearchitecture documents and GDD. NEVER invent or assume technical details.
-  - Include ALL relevant technical details from Steps 2-4, organized by category:
+  - Include ALL relevant technical details from Steps 3-5, organized by category:
     - **Previous Story Insights**: Key learnings from previous story implementation
     - **Package Dependencies**: Unity packages required, versions, configurations [with source references]
     - **Unity Components**: Specific MonoBehaviours, ScriptableObjects, systems [with source references]
@@ -142,9 +160,9 @@ ALWAYS cite source documents: `[Source: gamearchitecture/{filename}.md#{section}
   - Each task must reference relevant gamearchitecture documentation
   - Include PlayMode testing as explicit subtasks
   - Link tasks to ACs where applicable (e.g., `Task 1 (AC: 1, 3)`)
-- Add notes on Unity project structure alignment or discrepancies found in Step 4
+- Add notes on Unity project structure alignment or discrepancies found in Step 5
 
-### 6. Story Draft Completion and Review
+### 7. Story Draft Completion and Review
 
 - Review all sections for completeness and accuracy
 - Verify all source references are included for technical details
@@ -154,7 +172,8 @@ ALWAYS cite source documents: `[Source: gamearchitecture/{filename}.md#{section}
   - Asset requirements specified
   - Performance targets defined
 - Update status to "Draft" and save the story file
-- Execute `{root}/tasks/execute-checklist` `{root}/checklists/game-story-dod-checklist`
+- If `projectDimension` is "2D", execute `{root}/tasks/execute-checklist` `{root}/checklists/game-story-dod-checklist-2d.md`.
+- If `projectDimension` is "3D", execute `{root}/tasks/execute-checklist` `{root}/checklists/game-story-dod-checklist-3d.md`.
 - Provide summary to user including:
   - Story created: `{devStoryLocation}/{epicNum}.{storyNum}.story.md`
   - Status: Draft
@@ -165,10 +184,9 @@ ALWAYS cite source documents: `[Source: gamearchitecture/{filename}.md#{section}
   - Checklist Results
   - Next steps: For complex Unity features, suggest the user review the story draft and optionally test critical assumptions in Unity Editor
 
-### 7. Unity-Specific Validation
+### 8. Unity-Specific Validation
 
 Before finalizing, ensure:
-
 - [ ] All required Unity packages are documented with versions
 - [ ] Package-specific APIs and configurations are included
 - [ ] All MonoBehaviour lifecycle methods are considered
@@ -179,6 +197,6 @@ Before finalizing, ensure:
 - [ ] Performance profiling points are identified
 - [ ] Asset import settings are documented
 - [ ] Platform-specific code paths are noted
-- [ ] Package compatibility is verified (e.g., URP vs Built-in pipeline)
+- [ ] Package compatibility is verified (e.g., URP/HDRP vs Built-in pipeline)
 
-This task ensures game development stories are immediately actionable and enable efficient AI-driven development of Unity 2D game features.
+This task ensures game development stories are immediately actionable and enable efficient AI-driven development of Unity 2D and 3D game features.

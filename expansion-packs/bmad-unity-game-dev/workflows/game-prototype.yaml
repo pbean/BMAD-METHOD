@@ -24,7 +24,7 @@ workflow:
       optional_steps:
         - quick_brainstorming
         - reference_research
-      notes: Create minimal but complete design specification. Focus on core mechanics, basic controls, and success/failure conditions.
+      notes: Create minimal but complete design specification. Focus on core mechanics, basic controls, and success/failure conditions. This is where the project dimension (2D/3D) is set.
     - step: technical_planning
       agent: game-developer
       duration: 15-30 minutes

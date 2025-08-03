@@ -65,6 +65,14 @@ sections:
     title: Technical Specifications
     instruction: Provide specific technical details that guide implementation. Include class names, file locations, and integration points based on the game architecture.
     sections:
+      - id: affected-assets
+        title: Affected Assets
+        instruction: List all assets that are created, modified, or used by this story.
+        template: |
+          **New Assets:**
+          - `{{asset_path_1}}` - {{purpose}}
+          **Modified Assets:**
+          - `{{existing_asset_1}}` - {{changes_needed}}
       - id: files-to-modify
         title: Files to Create/Modify
         template: |

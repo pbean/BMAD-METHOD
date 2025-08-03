@@ -59,6 +59,11 @@ sections:
     title: Game Fundamentals
     instruction: Define the core gameplay elements. Each subsection should be specific enough to guide detailed design work.
     sections:
+      - id: project-dimension
+        title: Project Dimension
+        instruction: Specify whether the game is 2D or 3D. This will influence many subsequent decisions.
+        template: |
+          **Dimension:** {{2D|3D}}
       - id: core-gameplay-pillars
         title: Core Gameplay Pillars
         instruction: 3-5 fundamental principles that guide all design decisions

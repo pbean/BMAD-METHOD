@@ -19,7 +19,7 @@ sections:
     sections:
       - id: intro-content
         content: |
-          This document outlines the complete technical architecture for {{project_name}}, a 2D game built with Unity and C#. It serves as the technical foundation for AI-driven game development, ensuring consistency and scalability across all game systems.
+          This document outlines the complete technical architecture for {{project_name}}, a {{ProjectDimension}} game built with Unity and C#. It serves as the technical foundation for AI-driven game development, ensuring consistency and scalability across all game systems.
 
           This architecture is designed to support the gameplay mechanics defined in the Game Design Document while maintaining stable performance and cross-platform compatibility.
       - id: starter-template
@@ -158,7 +158,7 @@ sections:
         columns: [Category, Technology, Version, Purpose, Rationale]
         instruction: Populate the technology stack table with all relevant Unity technologies
         examples:
-          - "| **Game Engine** | Unity | 2022.3.21f1 | Core game development platform | Latest LTS version, stable 2D tooling, comprehensive package ecosystem |"
+          - "| **Game Engine** | Unity | 2022.3.21f1 | Core game development platform | Latest LTS version, comprehensive package ecosystem |"
           - "| **Language** | C# | 10.0 | Primary scripting language | Unity's native language, strong typing, excellent tooling |"
           - "| **Render Pipeline** | Universal Render Pipeline (URP) | 14.0.10 | 2D/3D rendering | Optimized for mobile, excellent 2D features, future-proof |"
           - "| **Input System** | Unity Input System | 1.7.0 | Cross-platform input handling | Modern input system, supports multiple devices, rebindable controls |"
@@ -296,13 +296,13 @@ sections:
   - id: physics-config
     title: Physics Configuration
     instruction: |
-      Define Unity 2D physics setup and configuration for the game.
+      Define Unity {{ProjectDimension}} physics setup and configuration for the game.
     elicit: true
     sections:
       - id: physics-settings
         title: Physics Settings
         template: |
-          **Physics 2D Settings:** {{physics_2d_configuration}}
+          **Physics {{ProjectDimension}} Settings:** {{physics_configuration}}
 
           **Collision Layers:** {{collision_layer_matrix}}
 
@@ -778,7 +778,7 @@ sections:
     instruction: |
       Create a Unity project folder structure that reflects:
 
-      1. Unity best practices for 2D game organization
+      1. Unity best practices for {{ProjectDimension}} game organization
       2. The selected render pipeline and packages
       3. Component organization from above systems
       4. Clear separation of concerns for game assets
@@ -807,6 +807,7 @@ sections:
         │       │   └── UI/                 # UI prefabs
         │       ├── Art/                    # Visual assets
         │       │   ├── Sprites/            # 2D sprites
+        │       │   ├── Models/             # 3D Models
         │       │   ├── Materials/          # Unity materials
         │       │   └── Shaders/            # Custom shaders
         │       ├── Audio/                  # Audio assets

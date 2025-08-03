@@ -1,0 +1,22 @@
+# 3D Game Story DoD Checklist
+
+- [ ] **Asset Implementation:**
+  - [ ] 3D models are imported correctly with proper scale and rotation.
+  - [ ] Materials and shaders are applied correctly.
+  - [ ] Textures are high-quality and compressed appropriately.
+  - [ ] Animations are implemented and trigger correctly.
+- [ ] **Gameplay:**
+  - [ ] 3D collisions and physics interactions work as expected.
+  - [ ] Gameplay mechanics function correctly in the 3D environment.
+  - [ ] Player controls are responsive and intuitive in 3D space.
+- [ ] **Performance:**
+  - [ ] Frame rate meets targets in the implemented scene.
+  - [ ] Draw calls and poly count are within budget.
+  - [ ] No performance spikes or memory leaks are introduced.
+- [ ] **Visuals & Audio:**
+  - [ ] Lighting is implemented as designed.
+  - [ ] Visual effects are present and working correctly.
+  - [ ] Audio cues are triggered correctly in 3D space.
+- [ ] **Code:**
+  - [ ] Code is clean, well-commented, and follows C# best practices.
+  - [ ] All new code is covered by unit or integration tests.

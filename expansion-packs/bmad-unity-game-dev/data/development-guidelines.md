@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document establishes coding standards, architectural patterns, and development practices for 2D game development using Unity and C#. These guidelines ensure consistency, performance, and maintainability across all game development stories.
+This document establishes coding standards, architectural patterns, and development practices for 2D and 3D game development using Unity and C#. These guidelines ensure consistency, performance, and maintainability across all game development stories.
 
 ## C# Standards
 
@@ -235,7 +235,8 @@ public class EnemyData : ScriptableObject
     public int maxHealth;
     public float moveSpeed;
     public int damage;
-    public Sprite sprite;
+    public Sprite sprite; // For 2D
+    public GameObject modelPrefab; // For 3D
 }
 
 // Enemy.cs - A MonoBehaviour that uses the EnemyData.
@@ -247,7 +248,14 @@ public class Enemy : MonoBehaviour
     private void Start()
     {
         _currentHealth = _enemyData.maxHealth;
-        GetComponent<SpriteRenderer>().sprite = _enemyData.sprite;
+        if (_enemyData.sprite != null)
+        {
+            GetComponent<SpriteRenderer>().sprite = _enemyData.sprite;
+        }
+        if (_enemyData.modelPrefab != null)
+        {
+            Instantiate(_enemyData.modelPrefab, transform);
+        }
     }
 
     // ... other enemy logic
@@ -343,8 +351,16 @@ public class ObjectPool : MonoBehaviour
 
 **Physics Optimization:**
 
-- Adjust the "Physics 2D Settings" in Project Settings, especially the "Layer Collision Matrix", to prevent unnecessary collision checks.
-- Use `Rigidbody2D.Sleep()` for objects that are not moving to save CPU cycles.
+- Adjust the "Physics 2D Settings" and "Physics Settings" in Project Settings, especially the "Layer Collision Matrix", to prevent unnecessary collision checks.
+- Use `Rigidbody.Sleep()` and `Rigidbody2D.Sleep()` for objects that are not moving to save CPU cycles.
+
+### 3D Performance Optimization
+
+- **Level of Detail (LOD):** Use LOD components on complex models to reduce polygon count at a distance.
+- **Static Batching:** Enable static batching for non-moving objects to reduce draw calls.
+- **GPU Instancing:** Use GPU instancing for materials to draw many identical objects at once.
+- **Occlusion Culling:** Set up occlusion culling to prevent rendering objects that are hidden from view.
+- **Light Baking:** Bake lighting into lightmaps for static objects to avoid expensive real-time lighting calculations.
 
 ## Input Handling
 
@@ -409,12 +425,12 @@ if (playerSprite == null)
 
 ```csharp
 // Example of using an assertion to ensure a component exists.
-private Rigidbody2D _rb;
+private Rigidbody _rb;
 
 void Awake()
 {
-    _rb = GetComponent<Rigidbody2D>();
-    Debug.Assert(_rb != null, "Rigidbody2D component not found on player!");
+    _rb = GetComponent<Rigidbody>();
+    Debug.Assert(_rb != null, "Rigidbody component not found on player!");
 }
 ```
 
@@ -481,7 +497,7 @@ public class PlayerJumpTest
         yield return new WaitForSeconds(0.5f);
 
         // Assert
-        Assert.Greater(player.transform.position.y, initialY);
+        Assert.Greater(player.transform..position.y, initialY);
     }
 }
 ```
@@ -512,6 +528,7 @@ Assets/
 │       └── Slime.prefab
 ├── Art/
 │   ├── Sprites/
+│   ├── Models/
 │   └── Animations/
 ├── Audio/
 │   ├── Music/

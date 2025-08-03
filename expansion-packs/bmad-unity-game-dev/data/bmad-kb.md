@@ -1,21 +1,21 @@
-# BMad Knowledge Base - 2D Unity Game Development
+# BMad Knowledge Base - Unity Game Development
 
 ## Overview
 
-This is the game development expansion of BMad-Method (Breakthrough Method of Agile AI-driven Development), specializing in creating 2D games using Unity and C#. The v4 system introduces a modular architecture with improved dependency management, bundle optimization, and support for both web and IDE environments, specifically optimized for game development workflows.
+This is the game development expansion of BMad-Method (Breakthrough Method of Agile AI-driven Development), specializing in creating games using Unity and C#. The v4 system introduces a modular architecture with improved dependency management, bundle optimization, and support for both web and IDE environments, specifically optimized for game development workflows.
 
 ### Key Features for Game Development
 
 - **Game-Specialized Agent System**: AI agents for each game development role (Designer, Developer, Scrum Master)
 - **Unity-Optimized Build System**: Automated dependency resolution for game assets and scripts
 - **Dual Environment Support**: Optimized for both web UIs and game development IDEs
-- **Game Development Resources**: Specialized templates, tasks, and checklists for 2D Unity games
+- **Game Development Resources**: Specialized templates, tasks, and checklists for Unity games
 - **Performance-First Approach**: Built-in optimization patterns for cross-platform game deployment
 
 ### Game Development Focus
 
 - **Target Engine**: Unity 2022 LTS or newer with C# 10+
-- **Platform Strategy**: Cross-platform (PC, Console, Mobile) with a focus on 2D
+- **Platform Strategy**: Cross-platform (PC, Console, Mobile) with a focus on 2D or 3D
 - **Development Approach**: Agile story-driven development with game-specific workflows
 - **Performance Target**: Stable frame rate on target devices
 - **Architecture**: Component-based architecture using Unity's best practices
@@ -36,7 +36,7 @@ BMad transforms you into a "Player Experience CEO" - directing a team of special
 
 1. **You Direct, AI Executes**: You provide game vision and creative decisions; agents handle implementation details
 2. **Specialized Game Agents**: Each agent masters one game development role (Designer, Developer, Scrum Master)
-3. **Game-Focused Workflows**: Proven patterns guide you from game concept to deployed 2D Unity game
+3. **Game-Focused Workflows**: Proven patterns guide you from game concept to deployed Unity game
 4. **Clean Handoffs**: Fresh context windows ensure agents stay focused and effective for game development
 
 ### The Two-Phase Game Development Approach
@@ -100,7 +100,7 @@ You are developing games as a "Player Experience CEO" - thinking like a game dir
 **Best for**: Game designers who want to start with comprehensive planning
 
 1. Navigate to `dist/teams/` (after building)
-2. Copy `unity-2d-game-team.txt` content
+2. Copy `unity-game-team.txt` content
 3. Create new Gemini Gem or CustomGPT
 4. Upload file with instructions: "Your critical operating instructions are attached, do not break character as directed"
 5. Type `/help` to see available game development commands
@@ -112,13 +112,13 @@ You are developing games as a "Player Experience CEO" - thinking like a game dir
 ```bash
 # Interactive installation (recommended)
 npx bmad-method install
-# Select the bmad-2d-unity-game-dev expansion pack when prompted
+# Select the bmad-unity-game-dev expansion pack when prompted
 ```
 
 **Installation Steps for Game Development**:
 
 - Choose "Install expansion pack" when prompted
-- Select "bmad-2d-unity-game-dev" from the list
+- Select "bmad-unity-game-dev" from the list
 - Select your IDE from supported options:
   - **Cursor**: Native AI integration with Unity support
   - **Claude Code**: Anthropic's official IDE
@@ -131,9 +131,9 @@ npx bmad-method install
 **Verify Game Development Installation**:
 
 - `.bmad-core/` folder created with all core agents
-- `.bmad-2d-unity-game-dev/` folder with game development agents
+- `.bmad-unity-game-dev/` folder with game development agents
 - IDE-specific integration files created
-- Game development agents available with `/bmad2du` prefix (per config.yaml)
+- Game development agents available with `/bmadu` prefix (per config.yaml)
 
 ### Environment Selection Guide for Game Development
 
@@ -180,11 +180,11 @@ npx bmad-method install
 
 ## Core Configuration for Game Development (core-config.yaml)
 
-**New in V4**: The `expansion-packs/bmad-2d-unity-game-dev/core-config.yaml` file enables BMad to work seamlessly with any Unity project structure, providing maximum flexibility for game development.
+**New in V4**: The `expansion-packs/bmad-unity-game-dev/core-config.yaml` file enables BMad to work seamlessly with any Unity project structure, providing maximum flexibility for game development.
 
 ### Game Development Configuration
 
-The expansion pack follows the standard BMad configuration patterns. Copy your core-config.yaml file to expansion-packs/bmad-2d-unity-game-dev/ and add Game-specific configurations to your project's `core-config.yaml`:
+The expansion pack follows the standard BMad configuration patterns. Copy your core-config.yaml file to expansion-packs/bmad-unity-game-dev/ and add Game-specific configurations to your project's `core-config.yaml`:
 
 ```yaml
 markdownExploder: true
@@ -218,7 +218,7 @@ unityEditorLocation: /home/USER/Unity/Hub/Editor/VERSION/Editor/Unity
 customTechnicalDocuments: null
 devDebugLog: .ai/debug-log.md
 devStoryLocation: docs/stories
-slashPrefix: bmad2du
+slashPrefix: bmadu
 #replace old devLoadAlwaysFiles with this once you have sharded your gamearchitecture document
 devLoadAlwaysFiles:
   - docs/game-architecture/9-coding-standards.md
@@ -234,11 +234,11 @@ devLoadAlwaysFiles:
 
 **For All Game Projects**:
 
-1. **Game Concept Brainstorming**: `/bmad2du/game-designer` - Use `*game-design-brainstorming` task
+1. **Game Concept Brainstorming**: `/bmadu/game-designer` - Use `*game-design-brainstorming` task
 2. **Game Brief**: Create foundation game document using `game-brief-tmpl`
-3. **Game Design Document Creation**: `/bmad2du/game-designer` - Use `game-design-doc-tmpl` for comprehensive game requirements
-4. **Game Architecture Design**: `/bmad2du/game-architect` - Use `game-architecture-tmpl` for Unity technical foundation
-5. **Level Design Framework**: `/bmad2du/game-designer` - Use `level-design-doc-tmpl` for level structure planning
+3. **Game Design Document Creation**: `/bmadu/game-designer` - Use `game-design-doc-tmpl` for comprehensive game requirements
+4. **Game Architecture Design**: `/bmadu/game-architect` - Use `game-architecture-tmpl` for Unity technical foundation
+5. **Level Design Framework**: `/bmadu/game-designer` - Use `level-design-doc-tmpl` for level structure planning
 6. **Document Preparation**: Copy final documents to Unity project as `docs/game-design-doc.md`, `docs/game-brief.md`, `docs/level-design.md` and `docs/game-architecture.md`
 
 #### Example Game Planning Prompts
@@ -246,7 +246,7 @@ devLoadAlwaysFiles:
 **For Game Design Document Creation**:
 
 ```text
-"I want to build a [genre] 2D game that [core gameplay].
+"I want to build a [genre] [2D|3D] game that [core gameplay].
 Help me brainstorm mechanics and create a comprehensive Game Design Document."
 ```
 
@@ -300,14 +300,14 @@ Resulting Unity Project Folder Structure:
 
    **Step 1 - Game Story Creation**:
 
-   - **NEW CLEAN CHAT** → Select powerful model → `/bmad2du/game-sm` → `*draft`
+   - **NEW CLEAN CHAT** → Select powerful model → `/bmadu/game-sm` → `*draft`
    - Game SM executes create-game-story task using `game-story-tmpl`
    - Review generated story in `docs/game-stories/`
    - Update status from "Draft" to "Approved"
 
    **Step 2 - Unity Game Story Implementation**:
 
-   - **NEW CLEAN CHAT** → `/bmad2du/game-developer`
+   - **NEW CLEAN CHAT** → `/bmadu/game-developer`
    - Agent asks which game story to implement
    - Include story file content to save game dev agent lookup time
    - Game Dev follows tasks/subtasks, marking completion
@@ -354,7 +354,7 @@ Each status change requires user verification and approval before proceeding.
 Since this expansion pack doesn't include specific brownfield templates, you'll adapt the existing templates:
 
 1. **Upload Unity project to Web UI** (GitHub URL, files, or zip)
-2. **Create adapted Game Design Document**: `/bmad2du/game-designer` - Modify `game-design-doc-tmpl` to include:
+2. **Create adapted Game Design Document**: `/bmadu/game-designer` - Modify `game-design-doc-tmpl` to include:
 
    - Analysis of existing game systems
    - Integration points for new features
@@ -363,12 +363,12 @@ Since this expansion pack doesn't include specific brownfield templates, you'll 
 
 3. **Game Architecture Planning**:
 
-   - Use `/bmad2du/game-architect` with `game-architecture-tmpl`
+   - Use `/bmadu/game-architect` with `game-architecture-tmpl`
    - Focus on how new features integrate with existing Unity systems
    - Plan for gradual rollout and testing
 
 4. **Story Creation for Enhancements**:
-   - Use `/bmad2du/game-sm` with `*create-game-story`
+   - Use `/bmadu/game-sm` with `*create-game-story`
    - Stories should explicitly reference existing code to modify
    - Include integration testing requirements
 
@@ -461,11 +461,11 @@ Use the `shard-doc` task or `@kayvan/markdown-tree-parser` tool for automatic ga
 
 **Game Agent Loading by IDE**:
 
-- **Claude Code**: `/bmad2du/game-designer`, `/bmad2du/game-developer`, `/bmad2du/game-sm`, `/bmad2du/game-architect`
-- **Cursor**: `@bmad2du/game-designer`, `@bmad2du/game-developer`, `@bmad2du/game-sm`, `@bmad2du/game-architect`
-- **Windsurf**: `@bmad2du/game-designer`, `@bmad2du/game-developer`, `@bmad2du/game-sm`, `@bmad2du/game-architect`
-- **Trae**: `@bmad2du/game-designer`, `@bmad2du/game-developer`, `@bmad2du/game-sm`, `@bmad2du/game-architect`
-- **Roo Code**: Select mode from mode selector with bmad2du prefix
+- **Claude Code**: `/bmadu/game-designer`, `/bmadu/game-developer`, `/bmadu/game-sm`, `/bmadu/game-architect`
+- **Cursor**: `@bmadu/game-designer`, `@bmadu/game-developer`, `@bmadu/game-sm`, `@bmadu/game-architect`
+- **Windsurf**: `@bmadu/game-designer`, `@bmadu/game-developer`, `@bmadu/game-sm`, `@bmadu/game-architect`
+- **Trae**: `@bmadu/game-designer`, `@bmadu/game-developer`, `@bmadu/game-sm`, `@bmadu/game-architect`
+- **Roo Code**: Select mode from mode selector with bmadu prefix
 - **GitHub Copilot**: Open the Chat view (`⌃⌘I` on Mac, `Ctrl+Alt+I` on Windows/Linux) and select the appropriate game agent.
 
 **Common Game Development Task Commands**:
@@ -479,13 +479,13 @@ Use the `shard-doc` task or `@kayvan/markdown-tree-parser` tool for automatic ga
 - `*correct-course-game` - Course correction for game development issues
 - `*advanced-elicitation` - Deep dive into game requirements
 
-**In Web UI (after building with unity-2d-game-team)**:
+**In Web UI (after building with unity-game-team)**:
 
 ```text
-/bmad2du/game-designer - Access game designer agent
-/bmad2du/game-architect - Access game architect agent
-/bmad2du/game-developer - Access game developer agent
-/bmad2du/game-sm - Access game scrum master agent
+/bmadu/game-designer - Access game designer agent
+/bmadu/game-architect - Access game architect agent
+/bmadu/game-developer - Access game developer agent
+/bmadu/game-sm - Access game scrum master agent
 /help - Show available game development commands
 /switch agent-name - Change active agent (if orchestrator available)
 ```
@@ -734,7 +734,7 @@ For full details, see `CONTRIBUTING.md`. Key points for game development:
 
 ### This Game Development Expansion Pack
 
-This 2D Unity Game Development expansion pack extends BMad-Method beyond traditional software development into professional game development. It provides specialized game agent teams, Unity templates, and game workflows while keeping the core framework lean and focused on general development.
+This Unity Game Development expansion pack extends BMad-Method beyond traditional software development into professional game development. It provides specialized game agent teams, Unity templates, and game workflows while keeping the core framework lean and focused on general development.
 
 ### Why Use This Game Development Expansion Pack?
 
@@ -773,4 +773,4 @@ Use the **expansion-creator** pack to build your own game development extensions
 - **Game Community**: Discord and GitHub resources available for game development support
 - **Game Contributing**: See `CONTRIBUTING.md` for full game development guidelines
 
-This knowledge base provides the foundation for effective game development using the BMad-Method framework with specialized focus on 2D game creation using Unity and C#.
+This knowledge base provides the foundation for effective game development using the BMad-Method framework with specialized focus on game creation using Unity and C#.

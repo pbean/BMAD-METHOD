@@ -1,7 +1,7 @@
 workflow:
   id: unity-game-dev-greenfield
   name: Game Development - Greenfield Project (Unity)
-  description: Specialized workflow for creating 2D games from concept to implementation using Unity and C#. Guides teams through game concept development, design documentation, technical architecture, and story-driven development for professional game development.
+  description: Specialized workflow for creating games from concept to implementation using Unity and C#. Guides teams through game concept development, design documentation, technical architecture, and story-driven development for professional game development.
   type: greenfield
   project_types:
     - indie-game
@@ -24,7 +24,7 @@ workflow:
       optional_steps:
         - competitive_analysis
         - technical_research
-      notes: 'Create detailed Game Design Document using game-design-doc-tmpl. Defines all gameplay mechanics, progression, and technical requirements. SAVE OUTPUT: Copy final game-design-doc.md to your project''s docs/design/ folder.'
+      notes: 'Create detailed Game Design Document using game-design-doc-tmpl. Defines all gameplay mechanics, progression, and technical requirements. This is where the project dimension (2D/3D) is set. SAVE OUTPUT: Copy final game-design-doc.md to your project''s docs/design/ folder.'
     - agent: game-designer
       creates: level-design-doc.md
       requires: game-design-doc.md
@@ -45,8 +45,8 @@ workflow:
     - agent: game-designer
       validates: design_consistency
       requires: all_design_documents
-      uses: game-design-checklist
-      notes: Validate all design documents for consistency, completeness, and implementability. May require updates to any design document.
+      uses: game-design-checklist-2d or game-design-checklist-3d
+      notes: Validate all design documents for consistency, completeness, and implementability using the appropriate checklist based on the project dimension. May require updates to any design document.
     - agent: various
       updates: flagged_design_documents
       condition: design_validation_issues
@@ -138,12 +138,12 @@ workflow:
     prototype_complete: Prototype defined. Begin rapid implementation focusing on core mechanics and immediate playability.
   story_development_guidance:
     epic_breakdown:
-      - Core Game Systems" - Fundamental gameplay mechanics and player controls
-      - Level Content" - Individual levels, progression, and content implementation
-      - User Interface" - Menus, HUD, settings, and player feedback systems
-      - Audio Integration" - Music, sound effects, and audio systems
-      - Performance Optimization" - Platform optimization and technical polish
-      - Game Polish" - Visual effects, animations, and final user experience
+      - Core Game Systems - Fundamental gameplay mechanics and player controls
+      - Level Content - Individual levels, progression, and content implementation
+      - User Interface - Menus, HUD, settings, and player feedback systems
+      - Audio Integration - Music, sound effects, and audio systems
+      - Performance Optimization - Platform optimization and technical polish
+      - Game Polish - Visual effects, animations, and final user experience
     story_creation_process:
       - Use Game Scrum Master to create detailed implementation stories
       - Each story should reference specific GDD sections

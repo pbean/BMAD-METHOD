@@ -59,6 +59,7 @@ sections:
         title: Platform & Technical Requirements
         instruction: Based on the technical preferences or user input, define the target platforms and Unity-specific requirements
         template: |
+          **Dimension:** {{2D|3D}}
           **Primary Platform:** {{platform}}
           **Engine:** Unity {{unity_version}} & C#
           **Performance Target:** Stable {{fps_target}} FPS on {{minimum_device}}
@@ -140,7 +141,7 @@ sections:
               **Unity Implementation Notes:**
               
               - **Components Needed:** {{component_list}}
-              - **Physics Requirements:** {{physics_2d_setup}}
+              - **Physics Requirements:** {{physics_setup}}
               - **Animation States:** {{animator_states}}
               - **Performance Considerations:** {{optimization_notes}}
               
@@ -367,6 +368,28 @@ sections:
           - Icon Sizes: {{icon_specifications}}
         examples:
           - "Sprites: 32x32 to 256x256 at 16 PPU, Format: RGBA32 for quality/RGBA16 for performance"
+
+      - id: asset-requirements-3d
+        title: 3D Asset Requirements
+        condition: dimension == "3D"
+        instruction: Define 3D asset specifications for Unity pipeline optimization
+        template: |
+          **3D Models:**
+          - **Poly Count:** {{low_poly_range}} for characters, {{prop_poly_range}} for props
+          - **Format:** {{model_format}} (e.g., .fbx, .obj)
+          - **Rigging:** {{rigging_requirements}} for animated models
+          - **LODs:** {{lod_strategy}}
+          **Textures:**
+          - **Resolution:** {{texture_resolution_range}} (e.g., 1024x1024, 2048x2048)
+          - **Maps:** {{pbr_maps_required}} (Albedo, Normal, Metallic, Roughness, AO)
+          - **Format:** {{texture_compression_3d}}
+          **Shaders:**
+          - **Shader Type:** {{shader_graph_or_hlsl}}
+          - **Complexity:** {{shader_complexity}}
+          **Lighting:**
+          - **Lighting Strategy:** {{baked_or_realtime}}
+          - **Light Types:** {{directional_point_spot}}
+          - **Post-Processing:** {{post_processing_effects}}
 
   - id: technical-architecture-requirements
     title: Technical Architecture Requirements

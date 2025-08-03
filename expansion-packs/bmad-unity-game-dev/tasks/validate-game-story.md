@@ -2,7 +2,7 @@
 
 ## Purpose
 
-To comprehensively validate a Unity 2D game development story draft before implementation begins, ensuring it contains all necessary Unity-specific technical context, game development requirements, and implementation details. This specialized validation prevents hallucinations, ensures Unity development readiness, and validates game-specific acceptance criteria and testing approaches.
+To comprehensively validate a Unity game development story draft before implementation begins, ensuring it contains all necessary Unity-specific technical context, game development requirements, and implementation details. This specialized validation prevents hallucinations, ensures Unity development readiness, and validates game-specific acceptance criteria and testing approaches.
 
 ## SEQUENTIAL Task Execution (Do not proceed until current Task is complete)
 
@@ -15,11 +15,18 @@ To comprehensively validate a Unity 2D game development story draft before imple
   - **Story file**: The drafted game story to validate (provided by user or discovered in `devStoryLocation`)
   - **Parent epic**: The epic containing this story's requirements from GDD
   - **Architecture documents**: Based on configuration (sharded or monolithic)
-  - **Game story template**: `expansion-packs/bmad-2d-unity-game-dev/templates/game-story-tmpl.yaml` for completeness validation
+  - **Game story template**: `expansion-packs/bmad-unity-game-dev/templates/game-story-tmpl.yaml` for completeness validation
 
-### 1. Game Story Template Completeness Validation
+### 1. Determine Project Dimension
 
-- Load `expansion-packs/bmad-2d-unity-game-dev/templates/game-story-tmpl.yaml` and extract all required sections
+- Load the Game Design Document (`{{gdd.gddFile}}` from `core-config.yaml`).
+- Search for the **Dimension:** field in the document.
+- Set a variable `projectDimension` to "2D" or "3D" based on the value found.
+- If the dimension is not found, HALT and inform the user: "Project dimension (2D or 3D) not found in the GDD. Please update the GDD with the 'Dimension:' field."
+
+### 2. Game Story Template Completeness Validation
+
+- Load `expansion-packs/bmad-unity-game-dev/templates/game-story-tmpl.yaml` and extract all required sections
 - **Missing sections check**: Compare story sections against game story template sections to verify all Unity-specific sections are present:
   - Unity Technical Context
   - Component Architecture
@@ -33,7 +40,7 @@ To comprehensively validate a Unity 2D game development story draft before imple
 - **Game-specific sections**: Verify presence of Unity development specific sections
 - **Structure compliance**: Verify story follows game story template structure and formatting
 
-### 2. Unity Project Structure and Asset Validation
+### 3. Unity Project Structure and Asset Validation
 
 - **Unity file paths clarity**: Are Unity-specific paths clearly specified (Assets/, Scripts/, Prefabs/, Scenes/, etc.)?
 - **Package dependencies**: Are required Unity packages identified and version-locked?
@@ -44,7 +51,7 @@ To comprehensively validate a Unity 2D game development story draft before imple
 - **ScriptableObject requirements**: Are data containers and configuration objects identified?
 - **Namespace compliance**: Are C# namespaces following project conventions?
 
-### 3. Unity Component Architecture Validation
+### 4. Unity Component Architecture Validation
 
 - **MonoBehaviour specifications**: Are Unity component classes sufficiently detailed for implementation?
 - **Component dependencies**: Are Unity component interdependencies clearly mapped?
@@ -54,7 +61,7 @@ To comprehensively validate a Unity 2D game development story draft before imple
 - **Component interfaces**: Are required interfaces and abstract base classes defined?
 - **Performance considerations**: Are component update patterns optimized (Update vs FixedUpdate vs coroutines)?
 
-### 4. Game Mechanics and Systems Validation
+### 5. Game Mechanics and Systems Validation
 
 - **Core loop integration**: Does the story properly integrate with established game core loop?
 - **Player input handling**: Are input mappings and input system requirements specified?
@@ -62,9 +69,10 @@ To comprehensively validate a Unity 2D game development story draft before imple
 - **UI/UX integration**: Are Canvas setup, UI components, and player feedback systems defined?
 - **Audio integration**: Are AudioSource, AudioMixer, and sound effect requirements specified?
 - **Animation systems**: Are Animator Controllers, Animation Clips, and transition requirements clear?
-- **Physics integration**: Are Rigidbody2D, Collider2D, and physics material requirements specified?
+- If `projectDimension` is "2D", **Physics integration**: Are Rigidbody2D, Collider2D, and physics material requirements specified?
+- If `projectDimension` is "3D", **Physics integration**: Are Rigidbody, Collider, and physics material requirements specified?
 
-### 5. Unity-Specific Acceptance Criteria Assessment
+### 6. Unity-Specific Acceptance Criteria Assessment
 
 - **Functional testing**: Can all acceptance criteria be tested within Unity's Play Mode?
 - **Visual validation**: Are visual/aesthetic acceptance criteria measurable and testable?
@@ -74,7 +82,7 @@ To comprehensively validate a Unity 2D game development story draft before imple
 - **Audio criteria**: Are audio mixing levels, sound trigger timing, and audio quality specified?
 - **Animation validation**: Are animation smoothness, timing, and visual polish criteria defined?
 
-### 6. Unity Testing and Validation Instructions Review
+### 7. Unity Testing and Validation Instructions Review
 
 - **Unity Test Framework**: Are EditMode and PlayMode test approaches clearly specified?
 - **Performance profiling**: Are Unity Profiler usage and performance benchmarking steps defined?
@@ -84,7 +92,7 @@ To comprehensively validate a Unity 2D game development story draft before imple
 - **Platform testing**: Are device-specific testing requirements (mobile performance, input methods) specified?
 - **Memory leak testing**: Are Unity memory profiling and leak detection steps included?
 
-### 7. Unity Performance and Optimization Validation
+### 8. Unity Performance and Optimization Validation
 
 - **Frame rate targets**: Are target FPS requirements clearly specified for different platforms?
 - **Memory budgets**: Are texture memory, audio memory, and runtime memory limits defined?
@@ -94,7 +102,7 @@ To comprehensively validate a Unity 2D game development story draft before imple
 - **Garbage collection**: Are GC-friendly coding patterns and object pooling requirements specified?
 - **Loading time targets**: Are scene loading and asset streaming performance requirements defined?
 
-### 8. Unity Security and Platform Considerations (if applicable)
+### 9. Unity Security and Platform Considerations (if applicable)
 
 - **Platform store requirements**: Are app store guidelines and submission requirements addressed?
 - **Data privacy**: Are player data storage and analytics integration requirements specified?
@@ -103,7 +111,7 @@ To comprehensively validate a Unity 2D game development story draft before imple
 - **Anti-cheat considerations**: Are client-side validation and server communication security measures specified?
 - **Build security**: Are code obfuscation and asset protection requirements defined?
 
-### 9. Unity Development Task Sequence Validation
+### 10. Unity Development Task Sequence Validation
 
 - **Unity workflow order**: Do tasks follow proper Unity development sequence (prefabs before scenes, scripts before UI)?
 - **Asset creation dependencies**: Are asset creation tasks properly ordered (sprites before animations, audio before mixers)?
@@ -112,7 +120,7 @@ To comprehensively validate a Unity 2D game development story draft before imple
 - **Build integration**: Are build process tasks appropriately placed in development sequence?
 - **Platform deployment**: Are platform-specific build and deployment tasks properly sequenced?
 
-### 10. Unity Anti-Hallucination Verification
+### 11. Unity Anti-Hallucination Verification
 
 - **Unity API accuracy**: Every Unity API reference must be verified against current Unity documentation
 - **Package version verification**: All Unity package references must specify valid versions
@@ -121,7 +129,7 @@ To comprehensively validate a Unity 2D game development story draft before imple
 - **Asset pipeline accuracy**: All asset import settings and pipeline configurations must be valid
 - **Platform capability verification**: All platform-specific features must be verified as available on target platforms
 
-### 11. Unity Development Agent Implementation Readiness
+### 12. Unity Development Agent Implementation Readiness
 
 - **Unity context completeness**: Can the story be implemented without consulting external Unity documentation?
 - **Technical specification clarity**: Are all Unity-specific implementation details unambiguous?
@@ -130,7 +138,7 @@ To comprehensively validate a Unity 2D game development story draft before imple
 - **Testing approach completeness**: Are Unity-specific testing approaches fully specified and actionable?
 - **Performance validation readiness**: Are all performance testing and optimization approaches clearly defined?
 
-### 12. Generate Unity Game Story Validation Report
+### 13. Generate Unity Game Story Validation Report
 
 Provide a structured validation report including:
 

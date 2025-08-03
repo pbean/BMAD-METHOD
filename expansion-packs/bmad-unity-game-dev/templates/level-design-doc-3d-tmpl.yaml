@@ -1,0 +1,124 @@
+template:
+  id: level-design-doc-3d-template-v1
+  name: 3D Level Design Document
+  version: 1.0
+  output:
+    format: markdown
+    filename: docs/levels/{{level_name}}-3d-ldd.md
+    title: "{{level_name}} - 3D Level Design"
+
+workflow:
+  mode: interactive
+
+sections:
+  - id: level-overview
+    title: Level Overview
+    instruction: Provide a high-level summary of the 3D level.
+    sections:
+      - id: level-name
+        title: Level Name
+        instruction: A unique and descriptive name for the level.
+      - id: summary
+        title: Summary
+        instruction: A brief description of the level, its theme, and its role in the game.
+      - id: objectives
+        title: Objectives
+        instruction: What the player needs to accomplish in this level.
+
+  - id: level-layout
+    title: Level Layout
+    instruction: |
+      Using the data gathered in the subsections of level-creation-guidelines organize the information into a clear structure and identify:
+        - Nodes (Each distinct area, room, or significant landmark is a node)
+        - Edges (Each connection or path between areas is an edge. Note the nature of the connection (e.g., "Locked Door", "Hallway", "Teleporter"))
+        - Key Items/Events (Note where crucial items (like keys) are found and which doors or events they affect.)
+      Translate the structured data into a Mermaid flowchart using the graph TD (Top to Down) format.
+        - Nodes: Define each area with a unique ID and descriptive text. Use different shapes for different elements:
+          - A[Square Brackets for Areas]
+          - B{Rhombus for Puzzles/Choices}
+          - C((Circle for Items/Events))
+          - Start_Node((Start)) and End_Node((End))
+        - Edges: Connect nodes using arrows.
+          - --> for a standard connection.
+          - -- "Link Text" --> to describe the path.
+          - -.-> for a dotted line, often useful for showing an item unlocking something elsewhere.
+        - Subgraphs: If the level has distinct zones (e.g., "Upstairs," "Basement," "Courtyard"), group the relevant nodes using a subgraph
+    examples: |
+      ```graph TD
+        subgraph "Castle Level"
+            A((Start: Outside Gates)) --> B[Great Hall]
+
+            B --> C{Barracks};
+            C -- "Defeat Mini-Boss" --> D((Red Key));
+
+            B -- "Red Key Door" --> E[Royal Chambers];
+            D -. "Unlocks" .-> E;
+
+            E -- "Defeat Final Boss" --> F((End of Level));
+        end
+      ```
+    sections:
+      - id: map-theme
+        title: Theme or setting of level
+        instruction: Description of the theme and setting of the level
+      - id: key-areas
+        title: Key Areas
+        instruction: Detailed descriptions of key areas and rooms within the level.
+        repeatable: true
+        template: |
+          **Area Name:** {{area_name}}
+          **Description:** {{description}}
+          **Gameplay:** {{gameplay_details}}
+      - id: start-end-points
+        title: Start and end points of map
+        instruction: Where does the player start the level, and what is the final goal or exit?
+      - id: connections-flows
+        title: Connections and flows
+        instruction: Description of how these areas connected. Are there hallways, doors, one-way paths, or secret passages.
+        repeatable: true
+        template: |
+          **From Area:** {{area_name}}
+          **To Area:** {{destination_area_name}}
+          **ConnectionType:** {{how_they_connect}}
+      - id: branching-paths
+        title: Branching paths
+        instruction: Determine if the level is linear, or are there branching paths. Determine if any paths loop back to previous areas
+
+  - id: gameplay-elements
+    title: Gameplay Elements
+    instruction: Detail the gameplay mechanics and objects in the level.
+    sections:
+      - id: enemies
+        title: Enemies
+        instruction: List the types and placements of enemies in the level.
+      - id: puzzles
+        title: Puzzles
+        instruction: Describe any puzzles the player will encounter.
+      - id: items
+        title: Items
+        instruction: List the items that can be found in the level.
+
+  - id: visual-design
+    title: Visual Design
+    instruction: Describe the visual and aesthetic aspects of the level.
+    sections:
+      - id: art-style
+        title: Art Style
+        instruction: The overall visual style and mood of the level.
+      - id: lighting
+        title: Lighting
+        instruction: The lighting setup for the level (e.g., daytime, nighttime, atmospheric effects).
+      - id: post-processing
+        title: Post-Processing
+        instruction: Post-processing effects to be used (e.g., bloom, color grading).
+
+  - id: technical-details
+    title: Technical Details
+    instruction: Technical specifications for the level.
+    sections:
+      - id: scene-setup
+        title: Scene Setup
+        instruction: How the Unity scene should be organized.
+      - id: performance-budgets
+        title: Performance Budgets
+        instruction: Performance targets for the level (e.g., poly count, draw calls).

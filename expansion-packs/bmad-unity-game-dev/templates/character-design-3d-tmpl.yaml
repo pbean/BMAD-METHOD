@@ -1,0 +1,65 @@
+template:
+  id: character-design-3d-template-v1
+  name: 3D Character Design Document
+  version: 1.0
+  output:
+    format: markdown
+    filename: docs/characters/{{character_name}}-3d-cdd.md
+    title: "{{character_name}} - 3D Character Design"
+
+workflow:
+  mode: interactive
+
+sections:
+  - id: character-overview
+    title: Character Overview
+    instruction: Provide a high-level summary of the 3D character.
+    sections:
+      - id: character-name
+        title: Character Name
+        instruction: The name of the character.
+      - id: summary
+        title: Summary
+        instruction: A brief description of the character, their role, and personality.
+
+  - id: visual-design
+    title: Visual Design
+    instruction: Describe the visual appearance of the character.
+    sections:
+      - id: concept-art
+        title: Concept Art
+        instruction: Links to or embedded concept art and reference images.
+      - id: model-details
+        title: Model Details
+        instruction: Specific details for the 3D model.
+        template: |
+          **Poly Count:** {{poly_count_target}}
+          **Texture Resolution:** {{texture_resolution}}
+          **Material Setup:** {{material_details}}
+
+  - id: animation
+    title: Animation
+    instruction: Detail the character's animations.
+    sections:
+      - id: animation-list
+        title: Animation List
+        instruction: A list of all required animations.
+        repeatable: true
+        template: |
+          **Animation Name:** {{animation_name}}
+          **Description:** {{animation_description}}
+          **Priority:** {{high|medium|low}}
+      - id: rigging
+        title: Rigging
+        instruction: Requirements for the character's rig.
+
+  - id: gameplay-integration
+    title: Gameplay Integration
+    instruction: How the character integrates into the game.
+    sections:
+      - id: abilities
+        title: Abilities
+        instruction: The character's abilities and skills.
+      - id: stats
+        title: Base Stats
+        instruction: The character's base stats (e.g., health, speed).
