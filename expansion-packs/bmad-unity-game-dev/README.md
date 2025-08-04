@@ -122,8 +122,8 @@ graph TD
 
 If you want to do the planning in the Web with Claude (Sonnet 4 or Opus), Gemini Gem (2.5 Pro), or Custom GPT's:
 
-1. Navigate to `dist/expansion-packs/`
-2. Copy `team-fullstack.txt` content
+1. Navigate to `dist/expansion-packs/bmad-unity-game-dev/teams`
+2. Copy `unity-game-dev.txt` content
 3. Create new Gemini Gem or CustomGPT
 4. Upload file with instructions: "Your critical operating instructions are attached, do not break character as directed"
 5. Type `/help` to see available commands
@@ -179,13 +179,13 @@ dependencies:
 
 ```bash
 # Some Ide's, like Cursor or Windsurf for example, utilize manual rules so interaction is done with the '@' symbol
-@pm Create a PRD for a task management app
-@architect Design the system architecture
-@dev Implement the user authentication
+@game-designer Create a GDD for a task management app
+@game-architect Design the game architecture
+@game-developer Implement the user authentication
 
 # Some, like Claude Code use slash commands instead
-/pm Create user stories
-/dev Fix the login bug
+/game-sm Create user stories
+/game-developer Fix the login bug
 ```
 
 #### Interactive Modes
@@ -212,7 +212,9 @@ When creating custom web bundles or uploading to AI platforms, include your `tec
 
 ## Core Configuration
 
-The `bmad-core/core-config.yaml` file is a critical config that enables BMad to work seamlessly with differing project structures, more options will be made available in the future. Currently the most important is the devLoadAlwaysFiles list section in the yaml.
+The `bmad-core/core-config.yaml` and for this expansion-pack the `bmad-unity-game-dev/core-config.yaml` files are a critical config that enables BMad to work seamlessly with differing project structures, more options will be made available in the future. Currently the most important is the devLoadAlwaysFiles list section in the yaml.
+
+For the expansion pack ensure you either copy the core-config.yaml.example from the expansion pack directory to replace your .bmad-core/core-config.yaml and copy it to the .bmad-unit-game-dev/ expansion pack as core-config.yaml and at the very least update the gameDimension variable to the dimension your game will be in.
 
 ### Developer Context Files
 
@@ -220,12 +222,12 @@ Define which files the dev agent should always load:
 
 ```yaml
 devLoadAlwaysFiles:
-  - docs/architecture/coding-standards.md
-  - docs/architecture/tech-stack.md
-  - docs/architecture/project-structure.md
+  - docs/architecture/##-coding-standards.md
+  - docs/architecture/##-tech-stack.md
+  - docs/architecture/##-unity-project-structure.md
 ```
 
-You will want to verify from sharding your architecture that these documents exist, that they are as lean as possible, and contain exactly the information you want your dev agent to ALWAYS load into it's context. These are the rules the agent will follow.
+You will want to verify from sharding your architecture that these documents exist (replace ## with the prefix generated in sharding), that they are as lean as possible, and contain exactly the information you want your dev agent to ALWAYS load into it's context. These are the rules the agent will follow.
 
 As your project grows and the code starts to build consistent patterns, coding standards should be reduced to just the items that the agent makes mistakes at still - must with the better models, they will look at surrounding code in files and not need a rule from that file to guide them.
 
