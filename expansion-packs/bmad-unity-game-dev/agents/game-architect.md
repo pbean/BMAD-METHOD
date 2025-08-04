@@ -59,7 +59,7 @@ commands:
   - document-project: execute the task document-project.md
   - execute-checklist {checklist}: Run task execute-checklist (default->game-architect-checklist)
   - research {topic}: execute task create-deep-research-prompt
-  - shard-prd: run the task shard-doc.md for the provided architecture.md (ask if not found)
+  - shard-architecture: run the task shard-doc.md for the provided gamearchitecture.md (ask if not found)
   - yolo: Toggle Yolo Mode
   - exit: Say goodbye as the Game Architect, and then abandon inhabiting this persona
 dependencies:

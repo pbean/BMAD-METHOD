@@ -10,14 +10,14 @@ To identify the next logical game story based on project progress and epic defin
 
 - Load `{root}/core-config.yaml` from the project root
 - If the file does not exist, HALT and inform the user: "core-config.yaml not found. This file is required for story creation. You can either: 1) Copy core-config.yaml from GITHUB bmad-core/ and configure it for your game project OR 2) Run the BMad installer against your project to upgrade and add the file automatically. Please add and configure before proceeding."
-- Extract key configurations: `devStoryLocation`, `gdd.*`, `gamearchitecture.*`, `workflow.*`
+- Extract key configurations: `devStoryLocation`, `gdd.*`, `gamearchitecture.*`, `workflow.*`, `gameDimension`
 
 ### 1. Determine Project Dimension
 
 - Load the Game Design Document (`{{gdd.gddFile}}` from `core-config.yaml`).
-- Search for the **Dimension:** field in the document.
+- If the key configuration `gameDimension` from core-config.yaml does not exist then search for the **Dimension:** field in the document
 - Set a variable `projectDimension` to "2D" or "3D" based on the value found.
-- If the dimension is not found, HALT and inform the user: "Project dimension (2D or 3D) not found in the GDD. Please update the GDD with the 'Dimension:' field."
+- If the dimension is not found, HALT and inform the user: "Project dimension (2D or 3D) not found in the GDD or core-config.yaml. Please update the core-config.yaml with the 'gameDimeons' field and GDD with the 'Dimension:' field for fallback."
 
 ### 2. Identify Next Story for Preparation
 
