@@ -23,11 +23,8 @@ graph TD
     G -->|Yes| E["Game-Designer: Create GDD from Brief (Fast Track)"]
     G -->|No| E2["Game-Designer: Interactive GDD Creation (More Questions)"]
     E --> F["GDD Created with FRs, NFRs, Epics & Stories"]
-    E2 --> F["Game-Architect: Create GameArchitecture from GDD"]
-    F3 --> F4["UX Expert: Generate UI Prompt for Lovable/V0 (Optional)"]
-    F4 --> H2["Architect: Create Architecture from PRD + UX Spec"]
-    H --> I["PO: Run Master Checklist"]
-    H2 --> I
+    E2 --> F
+    F["Game-Architect: Create GameArchitecture from GDD"] --> I["PO: Run game-po-validation-checklist"]
     I --> J{"Documents Aligned?"}
     J -->|Yes| K["Planning Complete"]
     J -->|No| L["Game-Designer: Update Epics & Stories"]
@@ -66,9 +63,9 @@ graph TD
 
 **Critical Transition Point**: Once the PO confirms document alignment, you must switch from web UI to IDE to begin the development workflow:
 
-1. **Copy Documents to Project**: Ensure `docs/prd.md` and `docs/architecture.md` are in your project's docs folder (or a custom location you can specify during installation)
+1. **Copy Documents to Project**: Ensure `docs/gdd.md` and `docs/gamearchitecture.md` are in your project's docs folder (or a custom location you can specify during installation)
 2. **Switch to IDE**: Open your project in your preferred Agentic IDE
-3. **Document Sharding**: Use the PO agent to shard the PRD and then the Architecture
+3. **Document Sharding**: Use the Game-Designer to shard the GDD and then the game-architecht to shard the gamearchitecture
 4. **Begin Development**: Start the Core Development Cycle that follows
 
 ### The Core Development Cycle (IDE)
@@ -77,17 +74,17 @@ Once planning is complete and documents are sharded, BMad follows a structured d
 
 ```mermaid
 graph TD
-    A["Development Phase Start"] --> B["SM: Reviews Previous Story Dev/QA Notes"]
-    B --> B2["SM: Drafts Next Story from Sharded Epic + Architecture"]
+    A["Development Phase Start"] --> B["Game-SM: Reviews Previous Story Dev/QA Notes"]
+    B --> B2["Game-SM: Drafts Next Story from Sharded Epic + Architecture"]
     B2 --> B3{"QA: Review Story Draft (Optional)"}
     B3 -->|Review Requested| B4["QA: Review Story Against Artifacts"]
     B3 -->|Skip Review| C{"User Approval"}
     B4 --> C
     C -->|Approved| D["Dev: Sequential Task Execution"]
     C -->|Needs Changes| B2
-    D --> E["Dev: Implement Tasks + Tests"]
-    E --> F["Dev: Run All Validations"]
-    F --> G["Dev: Mark Ready for Review + Add Notes"]
+    D --> E["Game-Dev: Implement Tasks + Tests"]
+    E --> F["Game-Dev: Run All Validations"]
+    F --> G["Game-Dev: Mark Ready for Review + Add Notes"]
     G --> H{"User Verification"}
     H -->|Request QA Review| I["QA: Senior Dev Review + Active Refactoring"]
     H -->|Approve Without QA| M["IMPORTANT: Verify All Regression Tests and Linting are Passing"]
@@ -125,7 +122,7 @@ graph TD
 
 If you want to do the planning in the Web with Claude (Sonnet 4 or Opus), Gemini Gem (2.5 Pro), or Custom GPT's:
 
-1. Navigate to `dist/teams/`
+1. Navigate to `dist/expansion-packs/`
 2. Copy `team-fullstack.txt` content
 3. Create new Gemini Gem or CustomGPT
 4. Upload file with instructions: "Your critical operating instructions are attached, do not break character as directed"
