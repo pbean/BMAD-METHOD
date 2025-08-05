@@ -3,7 +3,6 @@ bundle:
   icon: 🎮
   description: Game Development team specialized in games using Unity and C#.
 agents:
-  - analyst
   - bmad-orchestrator
   - game-designer
   - game-architect

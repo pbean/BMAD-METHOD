@@ -210,26 +210,63 @@ BMad includes a personalization system through the `technical-preferences.md` fi
 
 When creating custom web bundles or uploading to AI platforms, include your `technical-preferences.md` content to ensure agents have your preferences from the start of any conversation.
 
-## Core Configuration
+## Configuration Setup
 
-The `bmad-core/core-config.yaml` and for this expansion-pack the `bmad-unity-game-dev/core-config.yaml` files are a critical config that enables BMad to work seamlessly with differing project structures, more options will be made available in the future. Currently the most important is the devLoadAlwaysFiles list section in the yaml.
+The Unity expansion pack uses a single, comprehensive configuration file (`config.yaml`) that contains all necessary settings for Unity game development. This streamlined approach eliminates configuration confusion and ensures reliable setup.
 
-For the expansion pack ensure you either copy the core-config.yaml.example from the expansion pack directory to replace your .bmad-core/core-config.yaml and copy it to the .bmad-unit-game-dev/ expansion pack as core-config.yaml and at the very least update the gameDimension variable to the dimension your game will be in.
+### Quick Setup Guide
 
-### Developer Context Files
+1. **Install the expansion pack** using the interactive installer:
+   ```bash
+   npx bmad-method install
+   ```
 
-Define which files the dev agent should always load:
+2. **Configure your project**: The `config.yaml` file in the expansion pack directory contains all necessary settings with clear documentation. Key settings you may want to adjust:
+   - `gameDimension`: Set to "2D" or "3D" based on your project type
+   - `devLoadAlwaysFiles`: Essential Unity files that provide context to all agents
+
+3. **Verify setup**: Run the configuration validator to ensure everything is properly configured:
+   ```bash
+   cd expansion-packs/bmad-unity-game-dev
+   node validate-config.js
+   ```
+   
+   The validator will check:
+   - Configuration file structure and required fields
+   - Agent team references and dependencies
+   - Unity-specific settings validity
+   - Directory structure completeness
+
+### Configuration File Structure
+
+The `config.yaml` file is fully documented with comments explaining each section:
+- **Basic metadata**: Name, version, description
+- **Document management**: PRD, architecture, and GDD settings
+- **Unity-specific settings**: Game dimension, Unity Editor path
+- **Development tools**: Debug logs, story locations
+- **Always-loaded files**: Project files that provide context to agents
+
+### Self-Contained Design
+
+**Important**: The Unity expansion pack is completely self-contained. All agents, tasks, and templates reference only the expansion pack's `config.yaml` file. There are no dependencies on project-level configuration files or external setups.
+
+### Developer Context Files (In Your Project)
+
+The `devLoadAlwaysFiles` setting in `config.yaml` defines which files from your game project the development agent should always load for context:
 
 ```yaml
 devLoadAlwaysFiles:
-  - docs/architecture/##-coding-standards.md
-  - docs/architecture/##-tech-stack.md
-  - docs/architecture/##-unity-project-structure.md
+  - docs/game-architecture/9-coding-standards.md
+  - docs/game-architecture/3-tech-stack.md
+  - docs/game-architecture/8-unity-project-structure.md
 ```
 
-You will want to verify from sharding your architecture that these documents exist (replace ## with the prefix generated in sharding), that they are as lean as possible, and contain exactly the information you want your dev agent to ALWAYS load into it's context. These are the rules the agent will follow.
-
-As your project grows and the code starts to build consistent patterns, coding standards should be reduced to just the items that the agent makes mistakes at still - must with the better models, they will look at surrounding code in files and not need a rule from that file to guide them.
+**Important Notes**:
+- These files are in **your game project**, not the expansion pack
+- They are created when you shard your game architecture document
+- Replace the numbers with actual prefixes generated during sharding
+- Keep these files lean and focused on the essential rules agents need
+- As your project matures, reduce coding standards to only areas where agents still make mistakes
 
 ## Getting Help
 

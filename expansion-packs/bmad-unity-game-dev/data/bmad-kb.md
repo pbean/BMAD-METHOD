@@ -131,7 +131,7 @@ npx bmad-method install
 **Verify Game Development Installation**:
 
 - `.bmad-core/` folder created with all core agents
-- `.bmad-unity-game-dev/` folder with game development agents
+- Unity expansion pack with game development agents and configuration
 - IDE-specific integration files created
 - Game development agents available with `/bmadu` prefix (per config.yaml)
 
@@ -178,13 +178,13 @@ npx bmad-method install
 - **Why this matters**: Game SM and Game Dev agents are specifically optimized for Unity workflows
 - **No exceptions**: Even if using bmad-master for design, switch to Game SM → Game Dev for implementation
 
-## Core Configuration for Game Development (core-config.yaml)
+## Configuration for Game Development
 
-**New in V4**: The `expansion-packs/bmad-unity-game-dev/core-config.yaml` file enables BMad to work seamlessly with any Unity project structure, providing maximum flexibility for game development.
+**New in V4**: The Unity expansion pack uses a unified `config.yaml` file that contains all necessary settings for Unity game development. This streamlined approach eliminates configuration confusion and ensures reliable setup.
 
 ### Game Development Configuration
 
-The expansion pack follows the standard BMad configuration patterns. Copy your core-config.yaml file to expansion-packs/bmad-unity-game-dev/ and add Game-specific configurations to your project's `core-config.yaml`:
+The expansion pack provides a comprehensive configuration file with Unity-specific settings. The configuration includes game-specific parameters like `gameDimension` and development context files:
 
 ```yaml
 markdownExploder: true

@@ -1,6 +1,75 @@
+# BMad Unity Game Development Expansion Pack Configuration
+# This configuration file defines all settings for the Unity game development expansion pack
+
+# Basic Expansion Pack Metadata
 name: bmad-unity-game-dev
 version: 1.5.0
 short-title: Unity C# Game Dev Pack
-description: Game Development expansion pack for BMad Method - Unity & C# focused (2D and 3D)
+description: >-
+  Game Development expansion pack for BMad Method - Unity & C# focused (2D and 3D).
+  Provides specialized agents, workflows, and templates for Unity game development
+  with comprehensive coverage of modern Unity features and best practices.
 author: pbean (PinkyD)
 slashPrefix: BMadU
+
+# Core Configuration Settings
+# These settings control how the expansion pack integrates with the BMad framework
+
+# Markdown Processing
+markdownExploder: true
+
+# Product Requirements Document (PRD) Configuration
+prd:
+  prdFile: docs/prd.md
+  prdVersion: v4
+  prdSharded: true
+  prdShardedLocation: docs/prd
+  epicFilePattern: epic-{n}*.md
+
+# Architecture Documentation Configuration
+architecture:
+  architectureFile: docs/architecture.md
+  architectureVersion: v4
+  architectureSharded: true
+  architectureShardedLocation: docs/architecture
+
+# Game-Specific Document Configuration
+gdd:
+  gddVersion: v4
+  gddSharded: true
+  gddLocation: docs/game-design-doc.md
+  gddShardedLocation: docs/gdd
+  epicFilePattern: epic-{n}*.md
+
+gamearchitecture:
+  gamearchitectureFile: docs/architecture.md
+  gamearchitectureVersion: v3
+  gamearchitectureLocation: docs/game-architecture.md
+  gamearchitectureSharded: true
+  gamearchitectureShardedLocation: docs/game-architecture
+
+# Game Development Document Locations
+gamebriefdocLocation: docs/game-brief.md
+levelDesignLocation: docs/level-design.md
+
+# Unity-Specific Configuration
+# Default game dimension - can be overridden per project
+gameDimension: 2D
+
+# Development Tools Configuration
+devDebugLog: .ai/debug-log.md
+devStoryLocation: docs/stories
+
+# Always-loaded files for development context
+# These files provide essential Unity context for all agents
+devLoadAlwaysFiles:
+  - docs/game-architecture/9-coding-standards.md
+  - docs/game-architecture/3-tech-stack.md
+  - docs/game-architecture/8-unity-project-structure.md
+
+# Custom technical documents (null = use defaults)
+customTechnicalDocuments: null
+
+# Unity Editor Configuration
+# Path to Unity Editor executable (optional - system PATH will be used if not specified)
+unityEditorLocation: null

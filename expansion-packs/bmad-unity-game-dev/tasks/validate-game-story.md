@@ -8,8 +8,8 @@ To comprehensively validate a Unity game development story draft before implemen
 
 ### 0. Load Core Configuration and Inputs
 
-- Load `{root}/core-config.yaml` from the project root
-- If the file does not exist, HALT and inform the user: "core-config.yaml not found. This file is required for story validation."
+- Load `{root}/config.yaml` from the expansion pack directory
+- If the file does not exist, HALT and inform the user: "config.yaml not found in expansion pack. This file is required for story validation."
 - Extract key configurations: `devStoryLocation`, `gdd.*`, `gamearchitecture.*`, `workflow.*`
 - Identify and load the following inputs:
   - **Story file**: The drafted game story to validate (provided by user or discovered in `devStoryLocation`)
@@ -19,10 +19,10 @@ To comprehensively validate a Unity game development story draft before implemen
 
 ### 1. Determine Project Dimension
 
-- Load the Game Design Document (`{{gdd.gddFile}}` from `core-config.yaml`).
-- If the key configuration `gameDimension` from core-config.yaml does not exist then search for the **Dimension:** field in the document
+- Load the Game Design Document (`{{gdd.gddFile}}` from `config.yaml`).
+- If the key configuration `gameDimension` from config.yaml does not exist then search for the **Dimension:** field in the document
 - Set a variable `projectDimension` to "2D" or "3D" based on the value found.
-- If the dimension is not found, HALT and inform the user: "Project dimension (2D or 3D) not found in the GDD or core-config.yaml. Please update the core-config.yaml with the 'gameDimeons' field and GDD with the 'Dimension:' field for fallback."
+- If the dimension is not found, HALT and inform the user: "Project dimension (2D or 3D) not found in the GDD or config.yaml. Please update the config.yaml with the 'gameDimension' field and GDD with the 'Dimension:' field for fallback."
 
 ### 2. Game Story Template Completeness Validation
 
