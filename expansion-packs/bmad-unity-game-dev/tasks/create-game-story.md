@@ -55,10 +55,12 @@ To identify the next logical game story based on project progress and epic defin
 **For ALL Game Stories:** tech-stack.md, unity-project-structure.md, coding-standards.md, testing-resilience-architecture.md
 
 **If `projectDimension` is "2D":**
+
 - **For Gameplay/Mechanics Stories, additionally:** gameplay-systems-architecture.md, component-architecture-details.md, physics-config.md, input-system.md, state-machines.md, game-data-models.md
 - **For Graphics/Rendering Stories, additionally:** rendering-pipeline.md, sprite-management.md, particle-systems.md, shader-guidelines.md, lighting-strategy.md, vfx-pipelines.md
 
 **If `projectDimension` is "3D":**
+
 - **For Gameplay/Mechanics Stories, additionally:** gameplay-systems-architecture.md, component-architecture-details.md, physics-config-3d.md, input-system.md, state-machines.md, game-data-models.md
 - **For Graphics/Rendering Stories, additionally:** rendering-pipeline-3d.md, sprite-management.md, particle-systems.md, shader-guidelines.md, lighting-strategy.md, vfx-pipelines.md
 
@@ -73,6 +75,7 @@ To identify the next logical game story based on project progress and epic defin
 Extract ONLY information directly relevant to implementing the current story. Do NOT invent new patterns, systems, or standards not in the source documents.
 
 Extract:
+
 - Specific Unity components and MonoBehaviours the story will use
 - Unity Package Manager dependencies and their APIs (e.g., Cinemachine, Input System, URP/HDRP)
 - Package-specific configurations and setup requirements
@@ -187,6 +190,7 @@ ALWAYS cite source documents: `[Source: gamearchitecture/{filename}.md#{section}
 ### 8. Unity-Specific Validation
 
 Before finalizing, ensure:
+
 - [ ] All required Unity packages are documented with versions
 - [ ] Package-specific APIs and configurations are included
 - [ ] All MonoBehaviour lifecycle methods are considered

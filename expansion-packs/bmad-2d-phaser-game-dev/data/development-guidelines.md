@@ -380,7 +380,9 @@ class InputManager {
   }
 
   private setupKeyboard(): void {
-    this.keys = this.scene.input.keyboard.addKeys("W,A,S,D,SPACE,ESC,UP,DOWN,LEFT,RIGHT");
+    this.keys = this.scene.input.keyboard.addKeys(
+      "W,A,S,D,SPACE,ESC,UP,DOWN,LEFT,RIGHT",
+    );
   }
 
   private setupTouch(): void {

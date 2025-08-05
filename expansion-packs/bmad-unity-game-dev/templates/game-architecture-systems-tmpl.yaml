@@ -1,0 +1,380 @@
+template:
+  id: game-architecture-systems-template-v1
+  name: Game Architecture Systems Document
+  version: 1.0
+  output:
+    format: markdown
+    filename: docs/game-architecture-systems.md
+    title: "{{project_name}} Game Systems Architecture"
+
+workflow:
+  mode: interactive
+  elicitation: advanced-elicitation
+
+sections:
+  - id: introduction
+    title: Game Systems Architecture Overview
+    content: |
+      This document defines the core game systems architecture for {{project_name}}. This is Part 2 of the multi-phase architecture design, focusing on gameplay systems, data models, and component interactions.
+
+      This document builds upon the Foundation Architecture and should be used in conjunction with it. All technology choices and project structure decisions from the Foundation document are considered definitive.
+
+  - id: data-models
+    title: Game Data Models
+    instruction: |
+      Define the core game data models/entities using Unity's ScriptableObject system:
+
+      1. Review GDD requirements and identify key game entities
+      2. For each model, explain its purpose and relationships
+      3. Include key attributes and data types appropriate for Unity/C#
+      4. Show relationships between models using ScriptableObject references
+      5. Discuss design decisions with user
+
+      Create a clear conceptual model before moving to specific implementations.
+    elicit: true
+    repeatable: true
+    sections:
+      - id: model
+        title: "{{model_name}}"
+        template: |
+          **Purpose:** {{model_purpose}}
+
+          **Key Attributes:**
+          - {{attribute_1}}: {{type_1}} - {{description_1}}
+          - {{attribute_2}}: {{type_2}} - {{description_2}}
+
+          **Relationships:**
+          - {{relationship_1}}
+          - {{relationship_2}}
+
+          **ScriptableObject Implementation:**
+          - Create as `[CreateAssetMenu]` ScriptableObject
+          - Store in `Assets/_Project/Data/{{ModelName}}/`
+
+  - id: components
+    title: Core Component Architecture
+    instruction: |
+      Design the core Unity components (MonoBehaviours) that will drive the gameplay:
+
+      1. Based on the GDD mechanics, identify key component types needed
+      2. Define component responsibilities and interfaces
+      3. Plan component composition and relationships
+      4. Consider component reusability and inheritance patterns
+      5. Address component communication and event handling
+
+      Focus on creating a modular, testable component architecture.
+    elicit: true
+    repeatable: true
+    sections:
+      - id: component
+        title: "{{component_name}}"
+        template: |
+          **Purpose:** {{component_purpose}}
+
+          **Key Responsibilities:**
+          - {{responsibility_1}}
+          - {{responsibility_2}}
+          - {{responsibility_3}}
+
+          **Public Interface:**
+          ```csharp
+          {{interface_definition}}
+          ```
+
+          **Dependencies:**
+          - {{dependency_1}}
+          - {{dependency_2}}
+
+          **Events/Communication:**
+          - {{event_1}}: {{event_description_1}}
+          - {{event_2}}: {{event_description_2}}
+
+  - id: gameplay-systems
+    title: Gameplay Systems
+    instruction: |
+      Define the major gameplay systems that orchestrate the game experience:
+
+      1. Review GDD mechanics and identify core systems (movement, combat, progression, etc.)
+      2. For each system, define its purpose, components, and data flow
+      3. Show how systems interact and communicate
+      4. Consider system initialization, update patterns, and lifecycle
+      5. Plan for system scalability and performance
+
+      These systems should coordinate the components and data models defined above.
+    elicit: true
+    repeatable: true
+    sections:
+      - id: system
+        title: "{{system_name}} System"
+        template: |
+          **Purpose:** {{system_purpose}}
+
+          **Core Components:**
+          - {{component_1}}: {{component_role_1}}
+          - {{component_2}}: {{component_role_2}}
+
+          **Data Dependencies:**
+          - {{data_dependency_1}}
+          - {{data_dependency_2}}
+
+          **System Flow:**
+          1. {{flow_step_1}}
+          2. {{flow_step_2}}
+          3. {{flow_step_3}}
+
+          **External Interactions:**
+          - {{interaction_1}}
+          - {{interaction_2}}
+
+          **Performance Considerations:**
+          - {{performance_note_1}}
+          - {{performance_note_2}}
+
+  - id: component-architecture
+    title: Component Communication Architecture
+    instruction: |
+      Design how components communicate and coordinate within the Unity architecture:
+
+      1. Define component discovery and reference patterns
+      2. Plan event-driven communication vs direct references
+      3. Consider Unity Events vs C# Events usage
+      4. Design message passing and system coordination
+      5. Plan for component lifecycle and cleanup
+
+      Focus on loose coupling and testability while maintaining Unity patterns.
+    elicit: true
+    sections:
+      - id: communication-patterns
+        title: Communication Patterns
+        template: |
+          **Component References:**
+          - {{reference_pattern_1}}
+          - {{reference_pattern_2}}
+
+          **Event Communication:**
+          - {{event_pattern_1}}
+          - {{event_pattern_2}}
+
+          **Message Passing:**
+          - {{message_pattern_1}}
+          - {{message_pattern_2}}
+
+          **System Coordination:**
+          - {{coordination_pattern_1}}
+          - {{coordination_pattern_2}}
+
+  - id: state-machines
+    title: State Management Architecture
+    instruction: |
+      Design state management systems for game entities and overall game flow:
+
+      1. Identify entities that need state management (player, enemies, game flow, UI)
+      2. Choose appropriate state machine patterns (enum-based, class-based, Unity Animator)
+      3. Define state transitions and triggers
+      4. Plan state persistence and serialization
+      5. Consider debugging and visualization of state changes
+
+      Align state management with Unity's preferred patterns and tools.
+    elicit: true
+    sections:
+      - id: state-architecture
+        title: State Management Architecture
+        template: |
+          **State Machine Pattern:** {{state_pattern_choice}}
+          
+          **Rationale:** {{pattern_rationale}}
+
+          **Key State Machines:**
+          - {{state_machine_1}}: {{states_1}}
+          - {{state_machine_2}}: {{states_2}}
+
+          **State Persistence:**
+          - {{persistence_approach_1}}
+          - {{persistence_approach_2}}
+
+          **Debugging Tools:**
+          - {{debug_tool_1}}
+          - {{debug_tool_2}}
+
+  - id: physics-config
+    title: Physics Configuration
+    instruction: |
+      Configure Unity's physics system for the game's requirements:
+
+      1. Review GDD mechanics for physics requirements
+      2. Configure physics layers and collision matrix
+      3. Define physics materials and properties
+      4. Plan physics-based gameplay interactions
+      5. Consider performance optimization for physics
+
+      Align physics configuration with gameplay mechanics and performance needs.
+    elicit: true
+    sections:
+      - id: physics-layers
+        title: Physics Layers Configuration
+        type: table
+        columns: [Layer Name, Layer ID, Purpose, Collision Matrix]
+        instruction: Define all physics layers needed for the game
+        examples:
+          - "| Player | 8 | Player character collision | Collides with: Ground, Enemies, Pickups |"
+          - "| Enemy | 9 | Enemy collision detection | Collides with: Player, Ground, Projectiles |"
+          - "| Ground | 10 | Static environment collision | Collides with: Player, Enemies, Projectiles |"
+      - id: physics-materials
+        title: Physics Materials
+        template: |
+          **Material Definitions:**
+          - {{material_1}}: {{material_properties_1}}
+          - {{material_2}}: {{material_properties_2}}
+
+          **Gameplay Applications:**
+          - {{application_1}}
+          - {{application_2}}
+
+  - id: input-system
+    title: Input System Architecture
+    instruction: |
+      Design the input handling system using Unity's Input System:
+
+      1. Review GDD for input requirements (controls, platforms, accessibility)
+      2. Define input actions and control schemes
+      3. Plan input handling across different game states
+      4. Design input buffering and responsiveness systems
+      5. Consider platform-specific input requirements
+
+      Use Unity's modern Input System for flexible, rebindable controls.
+    elicit: true
+    sections:
+      - id: input-actions
+        title: Input Actions Configuration
+        template: |
+          **Control Schemes:**
+          - {{control_scheme_1}}: {{devices_1}}
+          - {{control_scheme_2}}: {{devices_2}}
+
+          **Input Actions:**
+          - {{action_1}}: {{action_description_1}}
+          - {{action_2}}: {{action_description_2}}
+
+          **Input Processing:**
+          - {{processing_rule_1}}
+          - {{processing_rule_2}}
+      - id: input-handling
+        title: Input Handling Architecture
+        template: |
+          **Input Managers:**
+          - {{manager_1}}: {{manager_responsibility_1}}
+          - {{manager_2}}: {{manager_responsibility_2}}
+
+          **State-Based Input:**
+          - {{state_input_1}}
+          - {{state_input_2}}
+
+          **Input Buffering:**
+          - {{buffer_system_1}}
+          - {{buffer_system_2}}
+
+  - id: scene-management
+    title: Scene Management Architecture
+    instruction: |
+      Design the scene loading and management system:
+
+      1. Plan scene organization and loading strategy
+      2. Define scene transition patterns and loading screens
+      3. Design persistent data handling across scenes
+      4. Plan additive scene loading for complex levels
+      5. Consider memory management and performance
+
+      Align scene management with game flow and technical requirements.
+    elicit: true
+    sections:
+      - id: scene-organization
+        title: Scene Organization
+        template: |
+          **Scene Categories:**
+          - {{scene_category_1}}: {{category_purpose_1}}
+          - {{scene_category_2}}: {{category_purpose_2}}
+
+          **Loading Strategy:**
+          - {{loading_strategy_1}}
+          - {{loading_strategy_2}}
+
+          **Transition Patterns:**
+          - {{transition_1}}: {{transition_description_1}}
+          - {{transition_2}}: {{transition_description_2}}
+      - id: persistent-data
+        title: Cross-Scene Data Management
+        template: |
+          **Persistent Managers:**
+          - {{manager_1}}: {{persistence_scope_1}}
+          - {{manager_2}}: {{persistence_scope_2}}
+
+          **Data Preservation:**
+          - {{preservation_method_1}}
+          - {{preservation_method_2}}
+
+          **Scene Initialization:**
+          - {{init_pattern_1}}
+          - {{init_pattern_2}}
+
+  - id: data-persistence
+    title: Data Persistence Architecture
+    instruction: |
+      Design the save/load system and data persistence strategy:
+
+      1. Identify what game data needs to be persisted
+      2. Choose serialization format and storage location
+      3. Design save file structure and versioning
+      4. Plan auto-save and checkpoint systems
+      5. Consider cloud save integration if needed
+
+      Focus on reliable, maintainable save systems that handle edge cases.
+    elicit: true
+    sections:
+      - id: save-data-structure
+        title: Save Data Structure
+        template: |
+          **Save File Format:** {{save_format}}
+
+          **Data Categories:**
+          - {{data_category_1}}: {{category_content_1}}
+          - {{data_category_2}}: {{category_content_2}}
+
+          **Versioning Strategy:**
+          - {{versioning_approach}}
+          - {{migration_strategy}}
+
+          **Storage Location:**
+          - {{storage_location_1}}: {{location_purpose_1}}
+          - {{storage_location_2}}: {{location_purpose_2}}
+      - id: save-load-flow
+        title: Save/Load Flow
+        template: |
+          **Save Triggers:**
+          - {{save_trigger_1}}: {{trigger_description_1}}
+          - {{save_trigger_2}}: {{trigger_description_2}}
+
+          **Load Process:**
+          1. {{load_step_1}}
+          2. {{load_step_2}}
+          3. {{load_step_3}}
+
+          **Error Handling:**
+          - {{error_case_1}}: {{error_handling_1}}
+          - {{error_case_2}}: {{error_handling_2}}
+
+  - id: next-steps
+    title: Next Steps
+    content: |
+      This systems architecture document defines the core gameplay systems and data models. The next phases of architecture design will build upon these systems:
+
+      **Phase 3: Platform Architecture**
+      - Platform-specific optimizations and configurations
+      - Performance profiling and optimization strategies
+      - Cross-platform compatibility and testing
+
+      **Phase 4: Advanced Architecture**
+      - Advanced Unity features and integrations
+      - Scalability considerations and technical debt management
+      - Production deployment and maintenance strategies
+
+      The systems defined in this document should be implemented alongside the Foundation Architecture before proceeding to platform-specific optimizations.

@@ -5,7 +5,7 @@ This guide will help you understand and effectively use the BMad Method Unity Ex
 ## The BMad Plan and Execute Workflow
 
 **We will be following the user-guide in most cases, and modifications will be made for expansion pack specific usage**
-First, here is the full standard Greenfield Planning + Execution Workflow. 
+First, here is the full standard Greenfield Planning + Execution Workflow.
 
 ### The Planning Workflow (Web UI or Powerful IDE Agents)
 
@@ -217,21 +217,25 @@ The Unity expansion pack uses a single, comprehensive configuration file (`confi
 ### Quick Setup Guide
 
 1. **Install the expansion pack** using the interactive installer:
+
    ```bash
    npx bmad-method install
    ```
 
 2. **Configure your project**: The `config.yaml` file in the expansion pack directory contains all necessary settings with clear documentation. Key settings you may want to adjust:
+
    - `gameDimension`: Set to "2D" or "3D" based on your project type
    - `devLoadAlwaysFiles`: Essential Unity files that provide context to all agents
 
 3. **Verify setup**: Run the configuration validator to ensure everything is properly configured:
+
    ```bash
    cd expansion-packs/bmad-unity-game-dev
    node validate-config.js
    ```
-   
+
    The validator will check:
+
    - Configuration file structure and required fields
    - Agent team references and dependencies
    - Unity-specific settings validity
@@ -240,6 +244,7 @@ The Unity expansion pack uses a single, comprehensive configuration file (`confi
 ### Configuration File Structure
 
 The `config.yaml` file is fully documented with comments explaining each section:
+
 - **Basic metadata**: Name, version, description
 - **Document management**: PRD, architecture, and GDD settings
 - **Unity-specific settings**: Game dimension, Unity Editor path
@@ -262,6 +267,7 @@ devLoadAlwaysFiles:
 ```
 
 **Important Notes**:
+
 - These files are in **your game project**, not the expansion pack
 - They are created when you shard your game architecture document
 - Replace the numbers with actual prefixes generated during sharding

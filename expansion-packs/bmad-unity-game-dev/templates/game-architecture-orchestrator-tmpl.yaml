@@ -1,0 +1,353 @@
+template:
+  id: game-architecture-orchestrator-template-v1
+  name: Game Architecture Orchestrator
+  version: 1.0
+  output:
+    format: markdown
+    filename: docs/game-architecture-complete.md
+    title: "{{project_name}} Complete Game Architecture"
+
+workflow:
+  mode: multi-phase
+  phases:
+    - foundation
+    - systems
+    - platform
+    - advanced
+
+sections:
+  - id: orchestrator-introduction
+    title: Multi-Phase Architecture Generation
+    content: |
+      This orchestrator template coordinates the generation of a complete game architecture document through a multi-phase process. Each phase builds upon the previous phases to create a comprehensive, maintainable architecture that stays within AI context window limits.
+
+      **Architecture Phases:**
+      1. **Foundation Phase**: Unity setup, tech stack, project structure, and development conventions
+      2. **Systems Phase**: Game data models, core components, gameplay systems, and system interactions
+      3. **Platform Phase**: Platform-specific configurations, UI architecture, performance optimization, and deployment
+      4. **Advanced Phase**: Advanced Unity features, scalability patterns, production operations, and future considerations
+
+      **Process Overview:**
+      - Each phase generates a focused document covering specific architectural concerns
+      - Phases are processed sequentially with context preservation between phases
+      - The final output combines all phases into a complete architecture document
+      - Each sub-template stays under 300 lines to prevent context window overflow
+
+  - id: phase-coordination
+    title: Phase Coordination Instructions
+    instruction: |
+      As the game-architect agent, you will process each architecture phase in sequence. Follow these coordination instructions:
+
+      **Phase Processing Protocol:**
+      1. Begin with Phase 1 (Foundation) using game-architecture-foundation-tmpl.yaml
+      2. Generate the foundation architecture document completely before proceeding
+      3. Preserve key architectural decisions from Phase 1 for use in subsequent phases
+      4. Process Phase 2 (Systems) using game-architecture-systems-tmpl.yaml, referencing foundation decisions
+      5. Continue sequentially through Platform and Advanced phases
+      6. Combine all phases into this complete architecture document
+
+      **Context Preservation Between Phases:**
+      - Document key technology choices (Unity version, render pipeline, target platforms)
+      - Preserve architectural patterns and design decisions
+      - Maintain consistency in naming conventions and organizational patterns
+      - Reference previous phase outputs when making related decisions
+
+      **Quality Assurance:**
+      - Validate that each phase aligns with GDD requirements
+      - Ensure architectural consistency across all phases
+      - Confirm that advanced phases build logically on foundation phases
+      - Verify that the complete architecture addresses all project requirements
+
+      **Phase Templates:**
+      - Foundation: {root}/templates/game-architecture-foundation-tmpl.yaml
+      - Systems: {root}/templates/game-architecture-systems-tmpl.yaml
+      - Platform: {root}/templates/game-architecture-platform-tmpl.yaml
+      - Advanced: {root}/templates/game-architecture-advanced-tmpl.yaml
+
+  - id: foundation-summary
+    title: Foundation Architecture Summary
+    instruction: |
+      After completing the Foundation phase, summarize the key architectural decisions here:
+      
+      1. Document the selected Unity version and render pipeline
+      2. List the primary target platforms and technical constraints
+      3. Summarize the chosen architectural patterns and conventions
+      4. Highlight any critical technology choices that impact subsequent phases
+      
+      This summary will guide decision-making in later phases.
+    elicit: true
+    template: |
+      **Technology Foundation:**
+      - Unity Version: {{unity_version}}
+      - Render Pipeline: {{render_pipeline}}
+      - Primary Language: {{primary_language}}
+      - Target Platforms: {{target_platforms}}
+
+      **Architectural Patterns:**
+      - {{pattern_1}}: {{pattern_description_1}}
+      - {{pattern_2}}: {{pattern_description_2}}
+
+      **Project Structure:**
+      - {{structure_decision_1}}
+      - {{structure_decision_2}}
+
+      **Development Conventions:**
+      - {{convention_1}}
+      - {{convention_2}}
+
+  - id: systems-summary
+    title: Systems Architecture Summary
+    instruction: |
+      After completing the Systems phase, summarize the core game systems architecture:
+      
+      1. List the primary game data models and their relationships
+      2. Document key gameplay systems and their interactions
+      3. Summarize component architecture and communication patterns
+      4. Highlight any system decisions that impact platform or advanced phases
+      
+      This summary ensures platform implementations align with systems design.
+    elicit: true
+    template: |
+      **Core Data Models:**
+      - {{model_1}}: {{model_purpose_1}}
+      - {{model_2}}: {{model_purpose_2}}
+
+      **Gameplay Systems:**
+      - {{system_1}}: {{system_scope_1}}
+      - {{system_2}}: {{system_scope_2}}
+
+      **Component Architecture:**
+      - {{component_pattern_1}}
+      - {{component_pattern_2}}
+
+      **System Integration:**
+      - {{integration_approach_1}}
+      - {{integration_approach_2}}
+
+  - id: platform-summary
+    title: Platform Architecture Summary
+    instruction: |
+      After completing the Platform phase, summarize the platform-specific architecture:
+      
+      1. Document platform-specific optimizations and configurations
+      2. Summarize UI architecture and cross-platform considerations
+      3. List performance targets and optimization strategies
+      4. Highlight any platform decisions that impact advanced features
+      
+      This summary guides advanced feature integration and production planning.
+    elicit: true
+    template: |
+      **Platform Optimizations:**
+      - {{optimization_1}}: {{optimization_scope_1}}
+      - {{optimization_2}}: {{optimization_scope_2}}
+
+      **UI Architecture:**
+      - {{ui_framework}}: {{ui_rationale}}
+      - {{ui_pattern_1}}: {{pattern_application_1}}
+
+      **Performance Targets:**
+      - {{platform_1}}: {{performance_target_1}}
+      - {{platform_2}}: {{performance_target_2}}
+
+      **Cross-Platform Strategy:**
+      - {{strategy_1}}
+      - {{strategy_2}}
+
+  - id: advanced-summary
+    title: Advanced Architecture Summary
+    instruction: |
+      After completing the Advanced phase, summarize the advanced architectural considerations:
+      
+      1. Document advanced Unity features and integration approaches
+      2. Summarize scalability and maintainability strategies
+      3. List production operations and monitoring plans
+      4. Highlight future evolution and migration considerations
+      
+      This summary completes the comprehensive architecture overview.
+    elicit: true
+    template: |
+      **Advanced Unity Integration:**
+      - {{advanced_feature_1}}: {{integration_approach_1}}
+      - {{advanced_feature_2}}: {{integration_approach_2}}
+
+      **Scalability Strategy:**
+      - {{scalability_pattern_1}}
+      - {{scalability_pattern_2}}
+
+      **Production Operations:**
+      - {{operations_1}}: {{operations_scope_1}}
+      - {{operations_2}}: {{operations_scope_2}}
+
+      **Future Considerations:**
+      - {{future_consideration_1}}
+      - {{future_consideration_2}}
+
+  - id: complete-architecture-overview
+    title: Complete Architecture Overview
+    instruction: |
+      Provide a comprehensive overview that ties together all four architecture phases:
+      
+      1. Synthesize the architecture into a coherent whole
+      2. Highlight key architectural decisions and their rationale
+      3. Show how the phases work together to support project goals
+      4. Identify any remaining architectural considerations or open questions
+      
+      This overview should demonstrate that the architecture comprehensively addresses project requirements.
+    elicit: true
+    sections:
+      - id: architectural-coherence
+        title: Architectural Coherence
+        template: |
+          **Unified Vision:**
+          {{architectural_vision}}
+
+          **Key Design Principles:**
+          - {{principle_1}}: {{principle_application_1}}
+          - {{principle_2}}: {{principle_application_2}}
+          - {{principle_3}}: {{principle_application_3}}
+
+          **Phase Integration:**
+          - Foundation → Systems: {{integration_1}}
+          - Systems → Platform: {{integration_2}}
+          - Platform → Advanced: {{integration_3}}
+
+      - id: requirements-validation
+        title: Requirements Validation
+        template: |
+          **GDD Requirements Coverage:**
+          - {{requirement_1}}: {{coverage_approach_1}}
+          - {{requirement_2}}: {{coverage_approach_2}}
+          - {{requirement_3}}: {{coverage_approach_3}}
+
+          **Technical Constraints Addressed:**
+          - {{constraint_1}}: {{constraint_solution_1}}
+          - {{constraint_2}}: {{constraint_solution_2}}
+
+          **Success Metrics:**
+          - {{metric_1}}: {{measurement_approach_1}}
+          - {{metric_2}}: {{measurement_approach_2}}
+
+  - id: implementation-strategy
+    title: Implementation Strategy
+    instruction: |
+      Define the strategy for implementing this multi-phase architecture:
+      
+      1. Plan the implementation sequence and dependencies
+      2. Identify critical path items and potential risks
+      3. Define milestone deliverables and validation checkpoints
+      4. Plan for iterative refinement and architecture evolution
+      
+      This strategy should provide clear guidance for development teams.
+    elicit: true
+    sections:
+      - id: implementation-phases
+        title: Implementation Phases
+        template: |
+          **Phase 1: Foundation Implementation (Weeks 1-2)**
+          - {{foundation_milestone_1}}
+          - {{foundation_milestone_2}}
+          - Validation: {{foundation_validation}}
+
+          **Phase 2: Systems Implementation (Weeks 3-6)**
+          - {{systems_milestone_1}}
+          - {{systems_milestone_2}}
+          - Validation: {{systems_validation}}
+
+          **Phase 3: Platform Implementation (Weeks 7-10)**
+          - {{platform_milestone_1}}
+          - {{platform_milestone_2}}
+          - Validation: {{platform_validation}}
+
+          **Phase 4: Advanced Implementation (Weeks 11-14)**
+          - {{advanced_milestone_1}}
+          - {{advanced_milestone_2}}
+          - Validation: {{advanced_validation}}
+
+      - id: risk-mitigation
+        title: Risk Mitigation Strategy
+        template: |
+          **Technical Risks:**
+          - {{technical_risk_1}}: {{mitigation_1}}
+          - {{technical_risk_2}}: {{mitigation_2}}
+
+          **Integration Risks:**
+          - {{integration_risk_1}}: {{mitigation_3}}
+          - {{integration_risk_2}}: {{mitigation_4}}
+
+          **Timeline Risks:**
+          - {{timeline_risk_1}}: {{mitigation_5}}
+          - {{timeline_risk_2}}: {{mitigation_6}}
+
+  - id: architecture-governance
+    title: Architecture Governance
+    instruction: |
+      Define how the architecture will be maintained and evolved:
+      
+      1. Establish architecture review and update processes
+      2. Define roles and responsibilities for architecture decisions
+      3. Plan for architecture documentation maintenance
+      4. Create processes for evaluating architectural changes
+      
+      This governance ensures the architecture remains relevant and effective.
+    elicit: true
+    template: |
+      **Review Schedule:**
+      - {{review_frequency_1}}: {{review_scope_1}}
+      - {{review_frequency_2}}: {{review_scope_2}}
+
+      **Decision Authority:**
+      - {{decision_type_1}}: {{authority_1}}
+      - {{decision_type_2}}: {{authority_2}}
+
+      **Documentation Maintenance:**
+      - {{maintenance_process_1}}
+      - {{maintenance_process_2}}
+
+      **Change Management:**
+      - {{change_process_1}}
+      - {{change_process_2}}
+
+  - id: document-consolidation
+    title: Architecture Document Consolidation
+    instruction: |
+      Now that all architecture phases are complete, consolidate all individual phase documents into a single comprehensive architecture document for team reference and markdowntree-parser processing:
+
+      1. Execute the consolidation task: {root}/tasks/consolidate-architecture-documents.md
+      2. This will combine all phase documents into docs/game-architecture-complete.md
+      3. The consolidated document will preserve all architectural content while providing:
+         - Comprehensive table of contents and navigation
+         - Cross-references between phases
+         - Integrated architecture summary
+         - Complete implementation roadmap
+         - Sharding-friendly structure for AI processing
+
+      The consolidated document serves as the definitive architecture reference that can be efficiently processed by markdowntree-parser for future AI-assisted development work.
+    elicit: true
+
+  - id: conclusion
+    title: Architecture Conclusion
+    content: |
+      This multi-phase game architecture provides a comprehensive, maintainable foundation for {{project_name}}. By breaking the architecture design into focused phases, we've created detailed guidance while staying within AI processing constraints, then consolidated everything into a complete reference document.
+
+      **Architecture Benefits:**
+      - **Comprehensive Coverage**: All aspects of Unity game development are addressed
+      - **Maintainable Scale**: Each phase is manageable and focused
+      - **Implementation Ready**: Clear guidance for development teams
+      - **Future Flexible**: Architecture supports evolution and scaling
+      - **AI-Friendly**: Consolidated document ready for markdowntree-parser sharding
+
+      **Deliverables Created:**
+      - `docs/game-architecture-foundation.md` - Phase 1 foundation architecture
+      - `docs/game-architecture-systems.md` - Phase 2 systems architecture  
+      - `docs/game-architecture-platform.md` - Phase 3 platform architecture
+      - `docs/game-architecture-advanced.md` - Phase 4 advanced architecture
+      - `docs/game-architecture-complete.md` - Consolidated comprehensive architecture
+
+      **Next Steps:**
+      1. Review and approve the consolidated architecture document with stakeholders
+      2. Process the consolidated document with markdowntree-parser for sharding
+      3. Begin implementation following the defined phase sequence
+      4. Establish architecture governance and review processes
+      5. Monitor implementation progress against architectural guidelines
+
+      This architecture serves as the definitive technical foundation for successful game development, combining Unity best practices with project-specific requirements and modern development approaches, all while remaining compatible with AI-assisted development workflows.

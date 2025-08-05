@@ -1,0 +1,393 @@
+template:
+  id: game-architecture-platform-template-v1
+  name: Game Architecture Platform Document
+  version: 1.0
+  output:
+    format: markdown
+    filename: docs/game-architecture-platform.md
+    title: "{{project_name}} Platform Architecture"
+
+workflow:
+  mode: interactive
+  elicitation: advanced-elicitation
+
+sections:
+  - id: introduction
+    title: Platform Architecture Overview
+    content: |
+      This document defines the platform-specific architecture and optimizations for {{project_name}}. This is Part 3 of the multi-phase architecture design, focusing on target platform configurations, performance optimization, and cross-platform compatibility.
+
+      This document builds upon both the Foundation Architecture and Systems Architecture documents. All previous architectural decisions are considered definitive and should inform the platform-specific implementations defined here.
+
+  - id: ui-architecture
+    title: UI Architecture
+    instruction: |
+      Design the user interface architecture using Unity's UI system:
+
+      1. Choose UI framework (Unity UI/uGUI, UI Toolkit, or hybrid approach)
+      2. Plan UI layout and responsive design for target platforms
+      3. Design UI navigation and state management
+      4. Plan UI data binding and updates
+      5. Consider accessibility and localization requirements
+
+      Focus on scalable UI patterns that work across all target platforms.
+    elicit: true
+    sections:
+      - id: ui-framework
+        title: UI Framework Selection
+        template: |
+          **Primary UI Framework:** {{ui_framework_choice}}
+          
+          **Rationale:** {{framework_rationale}}
+
+          **Framework Usage:**
+          - {{usage_case_1}}: Use {{framework_1}} for {{purpose_1}}
+          - {{usage_case_2}}: Use {{framework_2}} for {{purpose_2}}
+
+          **Cross-Platform Considerations:**
+          - {{platform_consideration_1}}
+          - {{platform_consideration_2}}
+      - id: ui-components
+        title: UI Component Architecture
+        template: |
+          **Base UI Components:**
+          - {{base_component_1}}: {{component_description_1}}
+          - {{base_component_2}}: {{component_description_2}}
+
+          **Composite UI Systems:**
+          - {{composite_system_1}}: {{system_description_1}}
+          - {{composite_system_2}}: {{system_description_2}}
+
+          **UI Data Flow:**
+          - {{data_flow_pattern_1}}
+          - {{data_flow_pattern_2}}
+      - id: ui-state-management
+        title: UI State Management
+        template: |
+          **UI State Patterns:**
+          - {{state_pattern_1}}: {{pattern_application_1}}
+          - {{state_pattern_2}}: {{pattern_application_2}}
+
+          **Screen Management:**
+          - {{screen_management_1}}
+          - {{screen_management_2}}
+
+          **Modal and Popup Handling:**
+          - {{modal_pattern_1}}
+          - {{modal_pattern_2}}
+
+  - id: rendering-pipeline
+    title: Rendering Pipeline Configuration
+    instruction: |
+      Configure Unity's rendering pipeline for target platforms and performance requirements:
+
+      1. Optimize render pipeline settings for target platforms
+      2. Configure quality settings and LOD systems
+      3. Plan shader and material optimization strategies
+      4. Design lighting and post-processing setups
+      5. Consider platform-specific rendering limitations
+
+      Balance visual quality with performance across all target platforms.
+    elicit: true
+    sections:
+      - id: render-pipeline-config
+        title: Render Pipeline Configuration
+        template: |
+          **Pipeline Configuration:**
+          - **Render Pipeline:** {{render_pipeline}}
+          - **Target Platforms:** {{target_platforms}}
+          - **Quality Tiers:** {{quality_tiers}}
+
+          **Platform-Specific Settings:**
+          - {{platform_1}}: {{platform_1_settings}}
+          - {{platform_2}}: {{platform_2_settings}}
+
+          **Performance Targets:**
+          - {{performance_target_1}}
+          - {{performance_target_2}}
+      - id: shader-guidelines
+        title: Shader and Material Guidelines
+        template: |
+          **Shader Standards:**
+          - {{shader_standard_1}}
+          - {{shader_standard_2}}
+
+          **Material Organization:**
+          - {{material_org_1}}
+          - {{material_org_2}}
+
+          **Platform Variants:**
+          - {{variant_1}}: {{variant_purpose_1}}
+          - {{variant_2}}: {{variant_purpose_2}}
+      - id: sprite-management
+        title: Sprite and Texture Management
+        template: |
+          **Texture Import Settings:**
+          - {{texture_setting_1}}: {{setting_purpose_1}}
+          - {{texture_setting_2}}: {{setting_purpose_2}}
+
+          **Atlas Configuration:**
+          - {{atlas_1}}: {{atlas_contents_1}}
+          - {{atlas_2}}: {{atlas_contents_2}}
+
+          **Platform Overrides:**
+          - {{override_1}}: {{override_rationale_1}}
+          - {{override_2}}: {{override_rationale_2}}
+
+  - id: particle-systems
+    title: Particle Systems and VFX
+    instruction: |
+      Design particle effects and visual effects systems for target platforms:
+
+      1. Choose VFX framework (Unity Particle System, VFX Graph, or hybrid)
+      2. Plan particle effect performance budgets
+      3. Design scalable VFX for different quality settings
+      4. Consider mobile-specific VFX optimizations
+      5. Plan VFX asset organization and reusability
+
+      Focus on visually appealing effects that maintain performance across platforms.
+    elicit: true
+    sections:
+      - id: vfx-framework
+        title: VFX Framework Selection
+        template: |
+          **Primary VFX Tools:**
+          - {{vfx_tool_1}}: {{tool_usage_1}}
+          - {{vfx_tool_2}}: {{tool_usage_2}}
+
+          **Performance Budgets:**
+          - {{platform_1}}: {{particle_budget_1}}
+          - {{platform_2}}: {{particle_budget_2}}
+
+          **Quality Scaling:**
+          - {{quality_level_1}}: {{scaling_approach_1}}
+          - {{quality_level_2}}: {{scaling_approach_2}}
+
+  - id: audio-architecture
+    title: Audio Architecture
+    instruction: |
+      Design the audio system architecture for target platforms:
+
+      1. Configure Unity Audio system for target platforms
+      2. Plan audio asset organization and compression
+      3. Design audio mixing and dynamic range management
+      4. Consider platform-specific audio limitations
+      5. Plan for localization and accessibility audio features
+
+      Optimize audio for platform capabilities while maintaining quality.
+    elicit: true
+    sections:
+      - id: audio-mixing
+        title: Audio Mixing Strategy
+        template: |
+          **Mixer Groups:**
+          - {{mixer_group_1}}: {{group_purpose_1}}
+          - {{mixer_group_2}}: {{group_purpose_2}}
+
+          **Platform Audio Settings:**
+          - {{platform_1}}: {{audio_settings_1}}
+          - {{platform_2}}: {{audio_settings_2}}
+
+          **Dynamic Range Management:**
+          - {{range_strategy_1}}
+          - {{range_strategy_2}}
+      - id: sound-banks
+        title: Audio Asset Management
+        template: |
+          **Sound Bank Organization:**
+          - {{sound_bank_1}}: {{bank_contents_1}}
+          - {{sound_bank_2}}: {{bank_contents_2}}
+
+          **Compression Settings:**
+          - {{compression_1}}: {{compression_rationale_1}}
+          - {{compression_2}}: {{compression_rationale_2}}
+
+          **Loading Strategy:**
+          - {{loading_pattern_1}}
+          - {{loading_pattern_2}}
+
+  - id: performance-optimization
+    title: Performance Optimization Strategy
+    instruction: |
+      Define performance optimization approaches for each target platform:
+
+      1. Identify performance bottlenecks for target platforms
+      2. Plan profiling and measurement strategies
+      3. Define optimization techniques for CPU, GPU, and memory
+      4. Create performance budgets and monitoring systems
+      5. Plan for performance regression testing
+
+      Focus on measurable, platform-specific optimizations that maintain gameplay quality.
+    elicit: true
+    sections:
+      - id: performance-targets
+        title: Performance Targets
+        type: table
+        columns: [Platform, Target FPS, Memory Budget, Load Time Target, Battery Life Target]
+        instruction: Define specific performance targets for each platform
+        examples:
+          - "| Mobile (Android/iOS) | 60 FPS | 2GB RAM | <3s scene load | 2+ hours gameplay |"
+          - "| PC (Windows) | 60+ FPS | 4GB RAM | <2s scene load | N/A |"
+          - "| Console | 60 FPS | Platform specific | <2s scene load | N/A |"
+      - id: optimization-strategies
+        title: Platform-Specific Optimizations
+        template: |
+          **CPU Optimizations:**
+          - {{cpu_optimization_1}}
+          - {{cpu_optimization_2}}
+
+          **GPU Optimizations:**
+          - {{gpu_optimization_1}}
+          - {{gpu_optimization_2}}
+
+          **Memory Optimizations:**
+          - {{memory_optimization_1}}
+          - {{memory_optimization_2}}
+
+          **Platform-Specific Techniques:**
+          - {{platform_technique_1}}
+          - {{platform_technique_2}}
+
+  - id: platform-integrations
+    title: Platform Services Integration
+    instruction: |
+      Design integrations with platform-specific services and APIs:
+
+      1. Identify required platform services (achievements, leaderboards, cloud saves)
+      2. Plan authentication and user account management
+      3. Design analytics and telemetry integration
+      4. Consider platform store requirements and certification
+      5. Plan for platform-specific features (haptics, notifications)
+
+      Create abstraction layers that work consistently across platforms.
+    elicit: true
+    sections:
+      - id: external-integrations
+        title: External Service Integrations
+        template: |
+          **Platform Services:**
+          - {{service_1}}: {{service_purpose_1}}
+          - {{service_2}}: {{service_purpose_2}}
+
+          **Third-Party Services:**
+          - {{third_party_1}}: {{integration_approach_1}}
+          - {{third_party_2}}: {{integration_approach_2}}
+
+          **API Abstraction:**
+          - {{abstraction_layer_1}}
+          - {{abstraction_layer_2}}
+      - id: analytics-integration
+        title: Analytics and Telemetry
+        template: |
+          **Analytics Framework:** {{analytics_framework}}
+
+          **Key Metrics:**
+          - {{metric_1}}: {{metric_purpose_1}}
+          - {{metric_2}}: {{metric_purpose_2}}
+
+          **Data Collection:**
+          - {{collection_method_1}}
+          - {{collection_method_2}}
+
+          **Privacy Compliance:**
+          - {{privacy_measure_1}}
+          - {{privacy_measure_2}}
+
+  - id: cross-platform-compatibility
+    title: Cross-Platform Compatibility
+    instruction: |
+      Plan for consistent experience across all target platforms:
+
+      1. Define shared vs platform-specific features
+      2. Plan input method adaptations for different platforms
+      3. Design responsive UI layouts for different screen sizes
+      4. Address platform-specific technical limitations
+      5. Plan testing and validation across platforms
+
+      Ensure core gameplay remains consistent while leveraging platform strengths.
+    elicit: true
+    sections:
+      - id: platform-differences
+        title: Platform-Specific Considerations
+        template: |
+          **Input Differences:**
+          - {{input_difference_1}}: {{adaptation_strategy_1}}
+          - {{input_difference_2}}: {{adaptation_strategy_2}}
+
+          **Display Differences:**
+          - {{display_difference_1}}: {{ui_adaptation_1}}
+          - {{display_difference_2}}: {{ui_adaptation_2}}
+
+          **Feature Availability:**
+          - {{feature_1}}: {{platform_availability_1}}
+          - {{feature_2}}: {{platform_availability_2}}
+      - id: testing-strategy
+        title: Cross-Platform Testing Strategy
+        template: |
+          **Testing Scope:**
+          - {{testing_scope_1}}
+          - {{testing_scope_2}}
+
+          **Platform-Specific Tests:**
+          - {{platform_test_1}}: {{test_approach_1}}
+          - {{platform_test_2}}: {{test_approach_2}}
+
+          **Compatibility Matrix:**
+          - {{compatibility_check_1}}
+          - {{compatibility_check_2}}
+
+  - id: deployment-strategy
+    title: Platform Deployment Strategy
+    instruction: |
+      Plan the build and deployment process for each target platform:
+
+      1. Configure platform-specific build settings
+      2. Plan app store submission and certification processes
+      3. Design update and patch deployment strategies
+      4. Consider platform-specific distribution requirements
+      5. Plan for platform-specific testing and quality assurance
+
+      Streamline deployment while meeting each platform's specific requirements.
+    elicit: true
+    sections:
+      - id: build-configurations
+        title: Platform Build Configurations
+        template: |
+          **Build Settings:**
+          - {{platform_1}}: {{build_config_1}}
+          - {{platform_2}}: {{build_config_2}}
+
+          **Certification Requirements:**
+          - {{cert_requirement_1}}
+          - {{cert_requirement_2}}
+
+          **Distribution Channels:**
+          - {{distribution_1}}: {{channel_strategy_1}}
+          - {{distribution_2}}: {{channel_strategy_2}}
+      - id: update-strategy
+        title: Update and Patching Strategy
+        template: |
+          **Update Mechanisms:**
+          - {{update_method_1}}: {{method_details_1}}
+          - {{update_method_2}}: {{method_details_2}}
+
+          **Versioning Strategy:**
+          - {{versioning_approach}}
+          - {{backward_compatibility}}
+
+          **Rollback Procedures:**
+          - {{rollback_scenario_1}}: {{rollback_procedure_1}}
+          - {{rollback_scenario_2}}: {{rollback_procedure_2}}
+
+  - id: next-steps
+    title: Next Steps
+    content: |
+      This platform architecture document defines the platform-specific configurations and optimizations. The final phase of architecture design will address advanced features and long-term considerations:
+
+      **Phase 4: Advanced Architecture**
+      - Advanced Unity features and cutting-edge techniques
+      - Scalability architecture for future growth
+      - Technical debt management and code maintenance strategies
+      - Production monitoring and live operations support
+
+      The platform configurations defined in this document should be implemented and tested before proceeding to advanced architectural considerations. Each platform should be validated against the performance targets and compatibility requirements outlined here.

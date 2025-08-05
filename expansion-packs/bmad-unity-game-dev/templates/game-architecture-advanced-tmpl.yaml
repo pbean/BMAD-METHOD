@@ -1,0 +1,472 @@
+template:
+  id: game-architecture-advanced-template-v1
+  name: Game Architecture Advanced Document
+  version: 1.0
+  output:
+    format: markdown
+    filename: docs/game-architecture-advanced.md
+    title: "{{project_name}} Advanced Architecture"
+
+workflow:
+  mode: interactive
+  elicitation: advanced-elicitation
+
+sections:
+  - id: introduction
+    title: Advanced Architecture Overview
+    content: |
+      This document defines the advanced architectural considerations and production-ready features for {{project_name}}. This is Part 4 of the multi-phase architecture design, focusing on advanced Unity features, scalability, maintainability, and production operations.
+
+      This document builds upon Foundation, Systems, and Platform Architecture documents. All previous architectural decisions inform the advanced techniques and patterns defined here.
+
+  - id: advanced-unity-features
+    title: Advanced Unity Features Integration
+    instruction: |
+      Plan integration of advanced Unity features and modern Unity ecosystem tools:
+
+      1. Evaluate advanced Unity packages and features relevant to the project
+      2. Plan integration of modern Unity tools (Timeline, Cinemachine, Visual Scripting)
+      3. Consider Unity Gaming Services integration
+      4. Plan for advanced rendering and graphics features
+      5. Design integration approach that maintains architectural consistency
+
+      Focus on features that provide significant value while maintaining code quality.
+    elicit: true
+    sections:
+      - id: modern-unity-tools
+        title: Modern Unity Tools Integration
+        template: |
+          **Timeline System Integration:**
+          - {{timeline_usage_1}}: {{timeline_purpose_1}}
+          - {{timeline_usage_2}}: {{timeline_purpose_2}}
+
+          **Cinemachine Integration:**
+          - {{cinemachine_usage_1}}: {{cinemachine_purpose_1}}
+          - {{cinemachine_usage_2}}: {{cinemachine_purpose_2}}
+
+          **Visual Scripting Integration:**
+          - {{visual_scripting_usage_1}}: {{vs_purpose_1}}
+          - {{visual_scripting_usage_2}}: {{vs_purpose_2}}
+
+          **Integration Architecture:**
+          - {{integration_pattern_1}}
+          - {{integration_pattern_2}}
+      - id: unity-gaming-services
+        title: Unity Gaming Services Integration
+        template: |
+          **Selected Services:**
+          - {{service_1}}: {{service_implementation_1}}
+          - {{service_2}}: {{service_implementation_2}}
+
+          **Service Architecture:**
+          - {{architecture_pattern_1}}
+          - {{architecture_pattern_2}}
+
+          **Data Flow:**
+          - {{data_flow_1}}
+          - {{data_flow_2}}
+
+          **Offline/Online Handling:**
+          - {{offline_strategy_1}}
+          - {{offline_strategy_2}}
+      - id: advanced-rendering
+        title: Advanced Rendering Features
+        template: |
+          **Rendering Techniques:**
+          - {{rendering_technique_1}}: {{technique_purpose_1}}
+          - {{rendering_technique_2}}: {{technique_purpose_2}}
+
+          **Shader Graph Integration:**
+          - {{shader_graph_usage_1}}
+          - {{shader_graph_usage_2}}
+
+          **VFX Graph Integration:**
+          - {{vfx_graph_usage_1}}
+          - {{vfx_graph_usage_2}}
+
+          **Performance Considerations:**
+          - {{performance_consideration_1}}
+          - {{performance_consideration_2}}
+
+  - id: scalability-architecture
+    title: Scalability and Growth Architecture  
+    instruction: |
+      Design architecture that can scale with project growth and team expansion:
+
+      1. Plan modular architecture that supports feature additions
+      2. Design extensible systems that accommodate new requirements
+      3. Plan for team scaling and code ownership patterns
+      4. Consider technical debt management and refactoring strategies
+      5. Design architecture that supports A/B testing and feature flags
+
+      Focus on sustainable growth patterns that maintain code quality over time.
+    elicit: true
+    sections:
+      - id: modular-architecture
+        title: Modular Architecture Design
+        template: |
+          **Module Boundaries:**
+          - {{module_1}}: {{module_scope_1}}
+          - {{module_2}}: {{module_scope_2}}
+
+          **Inter-Module Communication:**
+          - {{communication_pattern_1}}
+          - {{communication_pattern_2}}
+
+          **Module Dependencies:**
+          - {{dependency_rule_1}}
+          - {{dependency_rule_2}}
+
+          **Extension Points:**
+          - {{extension_point_1}}: {{extension_purpose_1}}
+          - {{extension_point_2}}: {{extension_purpose_2}}
+      - id: feature-flag-architecture
+        title: Feature Flag and A/B Testing Architecture
+        template: |
+          **Feature Flag Framework:** {{feature_flag_framework}}
+
+          **Flag Categories:**
+          - {{flag_category_1}}: {{category_purpose_1}}
+          - {{flag_category_2}}: {{category_purpose_2}}
+
+          **Testing Integration:**
+          - {{testing_integration_1}}
+          - {{testing_integration_2}}
+
+          **Rollout Strategy:**
+          - {{rollout_pattern_1}}
+          - {{rollout_pattern_2}}
+
+  - id: maintainability-patterns
+    title: Code Maintainability and Technical Debt Management
+    instruction: |
+      Establish patterns and practices for long-term code maintainability:
+
+      1. Define code organization and architectural patterns
+      2. Plan refactoring strategies and technical debt management
+      3. Design documentation and knowledge sharing systems  
+      4. Plan for code review and quality assurance processes
+      5. Consider automated quality checks and code analysis
+
+      Focus on sustainable development practices that scale with team growth.
+    elicit: true
+    sections:
+      - id: coding-standards
+        title: Advanced Coding Standards
+        template: |
+          **Architectural Patterns:**
+          - {{pattern_1}}: {{pattern_application_1}}
+          - {{pattern_2}}: {{pattern_application_2}}
+
+          **Code Organization:**
+          - {{organization_rule_1}}
+          - {{organization_rule_2}}
+
+          **Dependency Management:**
+          - {{dependency_rule_1}}
+          - {{dependency_rule_2}}
+
+          **Quality Gates:**
+          - {{quality_gate_1}}: {{gate_criteria_1}}
+          - {{quality_gate_2}}: {{gate_criteria_2}}
+      - id: technical-debt-management
+        title: Technical Debt Management Strategy
+        template: |
+          **Debt Identification:**
+          - {{identification_method_1}}
+          - {{identification_method_2}}
+
+          **Debt Prioritization:**
+          - {{prioritization_criteria_1}}
+          - {{prioritization_criteria_2}}
+
+          **Refactoring Strategy:**
+          - {{refactoring_approach_1}}
+          - {{refactoring_approach_2}}
+
+          **Prevention Measures:**
+          - {{prevention_measure_1}}
+          - {{prevention_measure_2}}
+
+  - id: testing-architecture
+    title: Advanced Testing Architecture
+    instruction: |
+      Design comprehensive testing strategy for production readiness:
+
+      1. Plan unit testing, integration testing, and end-to-end testing
+      2. Design automated testing pipeline and continuous integration
+      3. Plan performance testing and load testing strategies
+      4. Consider UI testing and accessibility testing
+      5. Design testing for Unity-specific features and platforms
+
+      Focus on test coverage that ensures production reliability and quality.
+    elicit: true
+    sections:
+      - id: test-strategy
+        title: Comprehensive Test Strategy
+        template: |
+          **Testing Pyramid:**
+          - {{test_layer_1}}: {{layer_coverage_1}} ({{test_percentage_1}}%)
+          - {{test_layer_2}}: {{layer_coverage_2}} ({{test_percentage_2}}%)
+          - {{test_layer_3}}: {{layer_coverage_3}} ({{test_percentage_3}}%)
+
+          **Unity-Specific Testing:**
+          - {{unity_test_1}}: {{test_approach_1}}
+          - {{unity_test_2}}: {{test_approach_2}}
+
+          **Platform Testing:**
+          - {{platform_test_1}}: {{test_strategy_1}}
+          - {{platform_test_2}}: {{test_strategy_2}}
+      - id: automated-testing
+        title: Automated Testing Pipeline
+        template: |
+          **CI/CD Integration:**
+          - {{ci_stage_1}}: {{stage_tests_1}}
+          - {{ci_stage_2}}: {{stage_tests_2}}
+
+          **Test Automation:**
+          - {{automation_1}}: {{automation_scope_1}}
+          - {{automation_2}}: {{automation_scope_2}}
+
+          **Performance Testing:**
+          - {{performance_test_1}}: {{test_metrics_1}}
+          - {{performance_test_2}}: {{test_metrics_2}}
+
+  - id: security-architecture
+    title: Security Architecture
+    instruction: |
+      Design security considerations for production deployment:
+
+      1. Plan data security and encryption strategies
+      2. Design secure communication with external services
+      3. Consider platform-specific security requirements
+      4. Plan for secure storage of sensitive data
+      5. Design security monitoring and incident response
+
+      Focus on defense-in-depth security that protects user data and game integrity.
+    elicit: true
+    sections:
+      - id: data-security
+        title: Data Security Strategy
+        template: |
+          **Data Classification:**
+          - {{data_class_1}}: {{security_level_1}}
+          - {{data_class_2}}: {{security_level_2}}
+
+          **Encryption Strategy:**
+          - {{encryption_1}}: {{encryption_purpose_1}}
+          - {{encryption_2}}: {{encryption_purpose_2}}
+
+          **Secure Storage:**
+          - {{storage_1}}: {{storage_security_1}}
+          - {{storage_2}}: {{storage_security_2}}
+      - id: communication-security
+        title: Secure Communication
+        template: |
+          **API Security:**
+          - {{api_security_1}}
+          - {{api_security_2}}
+
+          **Authentication:**
+          - {{auth_method_1}}: {{auth_purpose_1}}
+          - {{auth_method_2}}: {{auth_purpose_2}}
+
+          **Data Transmission:**
+          - {{transmission_security_1}}
+          - {{transmission_security_2}}
+
+  - id: monitoring-operations
+    title: Production Monitoring and Operations
+    instruction: |
+      Design monitoring and operational support for production deployment:
+
+      1. Plan application monitoring and alerting systems
+      2. Design logging and diagnostics collection
+      3. Plan crash reporting and error tracking
+      4. Consider user analytics and behavior tracking
+      5. Design support tools and debugging capabilities
+
+      Focus on observability that enables rapid issue resolution and user support.
+    elicit: true
+    sections:
+      - id: monitoring-strategy
+        title: Production Monitoring Strategy
+        template: |
+          **Key Metrics:**
+          - {{metric_1}}: {{metric_threshold_1}}
+          - {{metric_2}}: {{metric_threshold_2}}
+
+          **Alerting Rules:**
+          - {{alert_1}}: {{alert_condition_1}}
+          - {{alert_2}}: {{alert_condition_2}}
+
+          **Monitoring Tools:**
+          - {{tool_1}}: {{tool_purpose_1}}
+          - {{tool_2}}: {{tool_purpose_2}}
+      - id: diagnostics-logging
+        title: Diagnostics and Logging
+        template: |
+          **Logging Levels:**
+          - {{log_level_1}}: {{level_purpose_1}}
+          - {{log_level_2}}: {{level_purpose_2}}
+
+          **Log Collection:**
+          - {{collection_method_1}}
+          - {{collection_method_2}}
+
+          **Crash Reporting:**
+          - {{crash_reporting_1}}
+          - {{crash_reporting_2}}
+
+          **Performance Profiling:**
+          - {{profiling_1}}: {{profiling_scope_1}}
+          - {{profiling_2}}: {{profiling_scope_2}}
+
+  - id: live-operations
+    title: Live Operations and Content Management
+    instruction: |
+      Design systems for live game operations and content updates:
+
+      1. Plan content delivery and update mechanisms
+      2. Design live configuration and feature toggles
+      3. Plan event and seasonal content systems
+      4. Consider user-generated content management
+      5. Design customer support and community management tools
+
+      Focus on flexible systems that enable ongoing game evolution and community engagement.
+    elicit: true
+    sections:
+      - id: content-delivery
+        title: Live Content Delivery
+        template: |
+          **Content Delivery Network:** {{cdn_strategy}}
+
+          **Update Mechanisms:**
+          - {{update_mechanism_1}}: {{mechanism_scope_1}}
+          - {{update_mechanism_2}}: {{mechanism_scope_2}}
+
+          **Content Versioning:**
+          - {{versioning_strategy_1}}
+          - {{versioning_strategy_2}}
+
+          **Rollback Capabilities:**
+          - {{rollback_1}}: {{rollback_scope_1}}
+          - {{rollback_2}}: {{rollback_scope_2}}
+      - id: live-configuration
+        title: Live Configuration Management
+        template: |
+          **Configuration Categories:**
+          - {{config_category_1}}: {{category_scope_1}}
+          - {{config_category_2}}: {{category_scope_2}}
+
+          **Update Frequency:**
+          - {{update_freq_1}}: {{frequency_rationale_1}}
+          - {{update_freq_2}}: {{frequency_rationale_2}}
+
+          **Validation Systems:**
+          - {{validation_1}}: {{validation_purpose_1}}
+          - {{validation_2}}: {{validation_purpose_2}}
+
+  - id: future-considerations
+    title: Future Architecture Considerations
+    instruction: |
+      Plan for future architectural evolution and technology adoption:
+
+      1. Consider emerging Unity features and ecosystem changes
+      2. Plan for potential platform expansion
+      3. Design architecture flexibility for requirement changes
+      4. Consider team growth and organizational scaling
+      5. Plan for technology migration and modernization
+
+      Focus on architectural decisions that provide long-term flexibility and adaptation capabilities.
+    elicit: true
+    sections:
+      - id: technology-roadmap
+        title: Technology Evolution Roadmap
+        template: |
+          **Emerging Technologies:**
+          - {{tech_1}}: {{adoption_timeline_1}}
+          - {{tech_2}}: {{adoption_timeline_2}}
+
+          **Platform Expansion:**
+          - {{platform_expansion_1}}: {{expansion_considerations_1}}
+          - {{platform_expansion_2}}: {{expansion_considerations_2}}
+
+          **Architecture Evolution:**
+          - {{evolution_1}}: {{evolution_rationale_1}}
+          - {{evolution_2}}: {{evolution_rationale_2}}
+      - id: migration-strategy
+        title: Technology Migration Strategy
+        template: |
+          **Migration Priorities:**
+          - {{migration_1}}: {{priority_rationale_1}}
+          - {{migration_2}}: {{priority_rationale_2}}
+
+          **Risk Mitigation:**
+          - {{risk_1}}: {{mitigation_strategy_1}}
+          - {{risk_2}}: {{mitigation_strategy_2}}
+
+          **Timeline Considerations:**
+          - {{timeline_factor_1}}
+          - {{timeline_factor_2}}
+
+  - id: architecture-validation
+    title: Architecture Validation and Sign-off
+    instruction: |
+      Validate the complete architecture against project requirements and get stakeholder approval:
+
+      1. Review all architecture phases for consistency and completeness  
+      2. Validate against original GDD requirements and technical constraints
+      3. Confirm resource requirements and implementation feasibility
+      4. Get stakeholder approval for architecture decisions
+      5. Plan architecture review and update cycles
+
+      Ensure the complete architecture provides a solid foundation for development.
+    elicit: true
+    sections:
+      - id: checklist-results
+        title: Architecture Validation Checklist
+        template: |
+          **Foundation Architecture:** {{foundation_validation}}
+          **Systems Architecture:** {{systems_validation}}
+          **Platform Architecture:** {{platform_validation}}
+          **Advanced Architecture:** {{advanced_validation}}
+
+          **Consistency Check:**
+          - {{consistency_check_1}}: {{check_result_1}}
+          - {{consistency_check_2}}: {{check_result_2}}
+
+          **Requirements Validation:**
+          - {{requirement_1}}: {{validation_result_1}}
+          - {{requirement_2}}: {{validation_result_2}}
+
+          **Stakeholder Approval:**
+          - {{stakeholder_1}}: {{approval_status_1}}
+          - {{stakeholder_2}}: {{approval_status_2}}
+
+  - id: implementation-roadmap
+    title: Implementation Roadmap
+    content: |
+      This advanced architecture document completes the comprehensive game architecture design. The implementation should proceed in the following phases:
+
+      **Phase 1: Foundation Implementation**
+      - Implement Unity project structure and core infrastructure
+      - Set up development tools and CI/CD pipeline
+      - Establish coding standards and quality gates
+
+      **Phase 2: Core Systems Implementation**
+      - Implement game data models and core components  
+      - Build gameplay systems and state management
+      - Integrate input and scene management systems
+
+      **Phase 3: Platform Integration**
+      - Implement platform-specific optimizations
+      - Integrate UI and audio systems
+      - Complete cross-platform compatibility testing
+
+      **Phase 4: Advanced Features and Production**
+      - Integrate advanced Unity features and tools
+      - Implement monitoring and operational support
+      - Complete security and live operations systems
+
+      Each phase should include appropriate testing, documentation, and stakeholder review before proceeding to the next phase. This architecture provides the complete technical foundation for successful game development and long-term maintenance.
