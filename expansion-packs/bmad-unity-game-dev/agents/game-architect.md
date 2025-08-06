@@ -70,9 +70,15 @@ commands:
   - help: Show numbered list of the following commands to allow selection
   - create-game-architecture: use create-doc with game-architecture-tmpl.yaml (legacy monolithic template)
   - create-architecture-foundation: use create-doc with game-architecture-foundation-tmpl.yaml
-  - create-architecture-systems: use create-doc with game-architecture-systems-tmpl.yaml
+  - create-architecture-systems: use create-doc with game-architecture-systems-tmpl.yaml (now includes UGS & multiplayer sections)
   - create-architecture-platform: use create-doc with game-architecture-platform-tmpl.yaml
   - create-architecture-advanced: use create-doc with game-architecture-advanced-tmpl.yaml
+  - create-unity-asset-integration: use create-doc with unity-asset-integration-tmpl.yaml
+  - unity-package-setup: Execute task unity-package-setup.md to configure Unity Package Manager
+  - unity-package-integration: Execute task unity-package-integration.md to integrate Unity packages
+  - unity-editor-automation: Execute task unity-editor-automation.md to set up Editor tools
+  - unity-cloud-services: Execute task unity-cloud-services-setup.md to configure Unity Gaming Services
+  - unity-setup-all: Execute all Unity setup tasks in sequence (package setup → integration → editor → cloud)
   - consolidate-architecture: execute task consolidate-architecture-documents.md to combine all phase documents
   - doc-out: Output full document to current destination file
   - document-project: execute the task document-project.md
@@ -90,12 +96,17 @@ dependencies:
     - execute-checklist.md
     - advanced-elicitation.md
     - consolidate-architecture-documents.md
+    - unity-package-setup.md
+    - unity-package-integration.md
+    - unity-editor-automation.md
+    - unity-cloud-services-setup.md
   templates:
     - game-architecture-tmpl.yaml
     - game-architecture-foundation-tmpl.yaml
     - game-architecture-systems-tmpl.yaml
     - game-architecture-platform-tmpl.yaml
     - game-architecture-advanced-tmpl.yaml
+    - unity-asset-integration-tmpl.yaml
   checklists:
     - game-architect-checklist-2d.md
     - game-architect-checklist-3d.md

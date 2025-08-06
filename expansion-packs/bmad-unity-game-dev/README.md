@@ -24,7 +24,8 @@ graph TD
     G -->|No| E2["Game-Designer: Interactive GDD Creation (More Questions)"]
     E --> F["GDD Created with FRs, NFRs, Epics & Stories"]
     E2 --> F
-    F["Game-Architect: Create GameArchitecture from GDD"] --> F2["Game-Architect: Consolidate Architecture Documents"]
+    F --> F1["Game-Architect: Create GameArchitecture from GDD"]
+    F1 --> F2["Game-Architect: Consolidate Architecture Documents"]
     F2 --> I["PO: Run game-po-validation-checklist"]
     I --> J{"Documents Aligned?"}
     J -->|Yes| K["Planning Complete"]
@@ -44,12 +45,9 @@ graph TD
     style E fill:#fff3e0,color:#000
     style E2 fill:#fff3e0,color:#000
     style F fill:#fff3e0,color:#000
+    style F1 fill:#e3f2fd,color:#000
     style F2 fill:#e3f2fd,color:#000
-    style F3 fill:#e1f5fe,color:#000
-    style F4 fill:#e1f5fe,color:#000
     style G fill:#e3f2fd,color:#000
-    style H fill:#f3e5f5,color:#000
-    style H2 fill:#f3e5f5,color:#000
     style I fill:#f9ab00,color:#fff
     style J fill:#e3f2fd,color:#000
     style K fill:#34a853,color:#fff
@@ -70,14 +68,22 @@ The Unity expansion pack uses a multi-phase architecture approach that leverages
 
 1. **Individual Phase Creation:**
    - `*create-architecture-foundation` - Unity setup, tech stack, project structure
-   - `*create-architecture-systems` - Game mechanics, data models, component design
+   - `*create-architecture-systems` - Game mechanics, data models, component design (now includes Unity Gaming Services & multiplayer)
    - `*create-architecture-platform` - Platform optimization, UI, performance
    - `*create-architecture-advanced` - Production features, scalability, operations
+   - `*create-unity-asset-integration` - Unity Asset Store integration strategy and compliance
 
-2. **Document Consolidation:**
+2. **Unity Technical Setup (New in v4.32.0+):**
+   - `*unity-package-setup` - Configure Unity Package Manager dependencies
+   - `*unity-package-integration` - Integrate Unity packages into project architecture
+   - `*unity-editor-automation` - Set up Unity Editor automation tools
+   - `*unity-cloud-services` - Configure Unity Gaming Services (Authentication, Analytics, Cloud Save, Remote Config)
+   - `*unity-setup-all` - Execute all Unity setup tasks in sequence
+
+3. **Document Consolidation:**
    - `*consolidate-architecture` - Combines all phase documents into `docs/gamearchitecture.md`
 
-3. **Document Processing:**
+4. **Document Processing:**
    - `*shard-architecture` - Shards the consolidated document for AI consumption
 
 #### Standard BMAD Template Processing
@@ -113,12 +119,16 @@ The Unity expansion pack uses a multi-phase architecture approach that leverages
 
 #### Web UI to IDE Transition
 
-**Critical Transition Point**: Once the PO confirms document alignment, you must switch from web UI to IDE to begin the development workflow:
+**Critical Transition Point**: Once the PO confirms document alignment, switch from web UI to IDE:
 
 1. **Copy Documents to Project**: Ensure `docs/gdd.md` and `docs/gamearchitecture.md` are in your project's docs folder (or a custom location you can specify during installation)
 2. **Switch to IDE**: Open your project in your preferred Agentic IDE
 3. **Document Sharding**: Use the Game-Designer to shard the GDD (`*shard-doc`) and the Game-Architect to shard the gamearchitecture (`*shard-architecture`)
-4. **Begin Development**: Start the Core Development Cycle that follows
+4. **Unity Project Setup (New in v4.32.0+)**: Game-Architect can now configure your Unity project:
+   - Run `*unity-setup-all` to execute all Unity setup tasks in sequence
+   - Or run individual setup commands as needed (package setup, editor automation, cloud services)
+   - This creates actual Unity project configuration files based on the architecture documents
+5. **Begin Development**: Start the Core Development Cycle that follows
 
 ### The Core Development Cycle (IDE)
 
@@ -225,18 +235,40 @@ dependencies:
 - Dependencies are automatically resolved during bundling
 - Resources are shared across agents to maintain consistency
 
+#### Agent Roles and Responsibilities
+
+**Game-Designer**:
+
+- Creates game design documents (GDD, level design, game brief)
+- Focuses on game mechanics, player experience, and creative vision
+- Validates design consistency across all game design documents
+- Does NOT handle technical setup or configuration
+
+**Game-Architect**:
+
+- Creates technical architecture documents (foundation, systems, platform, advanced)
+- Handles ALL Unity technical setup (packages, editor automation, cloud services)
+- Creates Unity Asset Store integration strategies
+- Manages technical infrastructure and system design
+
+**Game-Developer**:
+
+- Implements code from user stories and tasks
+- Focuses on story-driven development and feature implementation
+- Handles testing and validation of implemented features
+
 #### Agent Interaction
 
 **In IDE:**
 
 ```bash
 # Some Ide's, like Cursor or Windsurf for example, utilize manual rules so interaction is done with the '@' symbol
-@game-designer Create a GDD for a task management app
-@game-architect Design the game architecture
-@game-developer Implement the user authentication
+@game-designer Create a GDD for a puzzle game
+@game-architect Set up Unity Gaming Services for this project
+@game-developer Implement the user authentication story
 
 # Some, like Claude Code use slash commands instead
-/game-sm Create user stories
+/game-sm Create user stories from the GDD
 /game-developer Fix the login bug
 ```
 
@@ -254,9 +286,19 @@ dependencies:
 - **Iterative Development**: Work in small, focused tasks
 - **File Organization**: Maintain clean project structure
 
-## Recent Changes (v4.31.0+)
+## Recent Changes
 
-### Simplified Architecture Workflow
+### v4.32.0+ - Unity Ecosystem Integration
+
+**Major Update**: Complete Unity ecosystem integration with proper role separation:
+
+- **Unity Technical Setup Tasks**: Added comprehensive Unity Package Manager, Editor automation, and Gaming Services setup
+- **Enhanced Architecture Templates**: Game systems architecture now includes Unity Gaming Services and multiplayer sections
+- **Asset Store Integration**: New template for Unity Asset Store package strategy and compliance
+- **Proper Role Assignment**: Game-Architect handles ALL Unity technical setup (maintaining BMAD role boundaries)
+- **Updated Greenfield Workflow**: Unity setup phase integrated between design validation and project structure setup
+
+### v4.31.0+ - Simplified Architecture Workflow
 
 The Unity expansion pack has been updated to use the standard BMAD template processing workflow:
 
