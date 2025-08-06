@@ -24,7 +24,8 @@ graph TD
     G -->|No| E2["Game-Designer: Interactive GDD Creation (More Questions)"]
     E --> F["GDD Created with FRs, NFRs, Epics & Stories"]
     E2 --> F
-    F["Game-Architect: Create GameArchitecture from GDD"] --> I["PO: Run game-po-validation-checklist"]
+    F["Game-Architect: Create GameArchitecture from GDD"] --> F2["Game-Architect: Consolidate Architecture Documents"]
+    F2 --> I["PO: Run game-po-validation-checklist"]
     I --> J{"Documents Aligned?"}
     J -->|Yes| K["Planning Complete"]
     J -->|No| L["Game-Designer: Update Epics & Stories"]
@@ -59,13 +60,64 @@ graph TD
     style P fill:#34a853,color:#fff
 ```
 
+### Game Architecture Creation Workflow
+
+The Unity expansion pack uses a multi-phase architecture approach that leverages the standard BMAD `create-doc.md` workflow:
+
+#### Phase-Based Architecture Creation
+
+**Game-Architect Commands (use `*help` to see all options):**
+
+1. **Individual Phase Creation:**
+   - `*create-architecture-foundation` - Unity setup, tech stack, project structure
+   - `*create-architecture-systems` - Game mechanics, data models, component design
+   - `*create-architecture-platform` - Platform optimization, UI, performance
+   - `*create-architecture-advanced` - Production features, scalability, operations
+
+2. **Document Consolidation:**
+   - `*consolidate-architecture` - Combines all phase documents into `docs/gamearchitecture.md`
+
+3. **Document Processing:**
+   - `*shard-architecture` - Shards the consolidated document for AI consumption
+
+#### Standard BMAD Template Processing
+
+**Important**: All Unity templates now use the standard BMAD `create-doc.md` workflow, which means:
+
+- **Interactive Processing**: Templates with `elicit: true` sections require user input
+- **1-9 Selection Format**: When prompted, select from numbered options (1-9)
+- **Step-by-Step Creation**: Each template section is processed sequentially with user feedback
+- **Quality Assurance**: Built-in validation and review steps
+
+**Example Workflow:**
+
+```bash
+# 1. Create foundation architecture (interactive)
+*create-architecture-foundation
+
+# 2. Create systems architecture (interactive)
+*create-architecture-systems
+
+# 3. Create platform architecture (interactive)
+*create-architecture-platform
+
+# 4. Create advanced architecture (interactive)
+*create-architecture-advanced
+
+# 5. Consolidate all phases into single document
+*consolidate-architecture
+
+# 6. Shard for AI consumption
+*shard-architecture
+```
+
 #### Web UI to IDE Transition
 
 **Critical Transition Point**: Once the PO confirms document alignment, you must switch from web UI to IDE to begin the development workflow:
 
 1. **Copy Documents to Project**: Ensure `docs/gdd.md` and `docs/gamearchitecture.md` are in your project's docs folder (or a custom location you can specify during installation)
 2. **Switch to IDE**: Open your project in your preferred Agentic IDE
-3. **Document Sharding**: Use the Game-Designer to shard the GDD and then the game-architecht to shard the gamearchitecture
+3. **Document Sharding**: Use the Game-Designer to shard the GDD (`*shard-doc`) and the Game-Architect to shard the gamearchitecture (`*shard-architecture`)
 4. **Begin Development**: Start the Core Development Cycle that follows
 
 ### The Core Development Cycle (IDE)
@@ -201,6 +253,19 @@ dependencies:
 - **Agent Selection**: Use appropriate agent for task
 - **Iterative Development**: Work in small, focused tasks
 - **File Organization**: Maintain clean project structure
+
+## Recent Changes (v4.31.0+)
+
+### Simplified Architecture Workflow
+
+The Unity expansion pack has been updated to use the standard BMAD template processing workflow:
+
+- **Removed Custom Tasks**: Eliminated custom architecture processing tasks that duplicated core BMAD functionality
+- **Standard Template Processing**: All Unity templates now use the standard `create-doc.md` workflow with proper user interaction
+- **Consolidation Task**: Added `*consolidate-architecture` command to combine all phase documents into a single `gamearchitecture.md` file
+- **Better Integration**: Improved alignment with core BMAD framework patterns and maintenance
+
+**Migration**: If you were using previous versions, the new workflow provides the same functionality with better user interaction and standard BMAD compliance.
 
 ## Technical Preferences System
 

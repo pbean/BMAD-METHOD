@@ -73,12 +73,7 @@ commands:
   - create-architecture-systems: use create-doc with game-architecture-systems-tmpl.yaml
   - create-architecture-platform: use create-doc with game-architecture-platform-tmpl.yaml
   - create-architecture-advanced: use create-doc with game-architecture-advanced-tmpl.yaml
-  - orchestrate-architecture: execute task orchestrate-architecture-phases.md for complete multi-phase architecture
-  - process-foundation: execute task process-architecture-foundation.md
-  - process-systems: execute task process-architecture-systems.md
-  - process-platform: execute task process-architecture-platform.md
-  - process-advanced: execute task process-architecture-advanced.md
-  - consolidate-architecture: execute task consolidate-architecture-documents.md
+  - consolidate-architecture: execute task consolidate-architecture-documents.md to combine all phase documents
   - doc-out: Output full document to current destination file
   - document-project: execute the task document-project.md
   - execute-checklist {checklist}: Run task execute-checklist (default->game-architect-checklist)
@@ -94,11 +89,6 @@ dependencies:
     - document-project.md
     - execute-checklist.md
     - advanced-elicitation.md
-    - orchestrate-architecture-phases.md
-    - process-architecture-foundation.md
-    - process-architecture-systems.md
-    - process-architecture-platform.md
-    - process-architecture-advanced.md
     - consolidate-architecture-documents.md
   templates:
     - game-architecture-tmpl.yaml
@@ -106,7 +96,6 @@ dependencies:
     - game-architecture-systems-tmpl.yaml
     - game-architecture-platform-tmpl.yaml
     - game-architecture-advanced-tmpl.yaml
-    - game-architecture-orchestrator-tmpl.yaml
   checklists:
     - game-architect-checklist-2d.md
     - game-architect-checklist-3d.md
