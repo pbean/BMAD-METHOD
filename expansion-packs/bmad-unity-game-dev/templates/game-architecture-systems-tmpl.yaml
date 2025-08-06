@@ -362,6 +362,165 @@ sections:
           - {{error_case_1}}: {{error_handling_1}}
           - {{error_case_2}}: {{error_handling_2}}
 
+  - id: unity-gaming-services
+    title: Unity Gaming Services Integration
+    instruction: |
+      Design the integration with Unity Gaming Services (UGS) for cloud-based features:
+
+      1. Review multiplayer and online requirements from GDD
+      2. Identify required UGS services (Authentication, Cloud Save, Analytics, etc.)
+      3. Plan service initialization and configuration
+      4. Design error handling and offline fallbacks
+      5. Consider GDPR compliance and data privacy requirements
+
+      Focus on robust service integration with proper fallback mechanisms.
+    elicit: true
+    sections:
+      - id: ugs-authentication
+        title: Authentication Services
+        template: |
+          **Authentication Provider:** {{auth_provider}}
+          
+          **Sign-in Methods:**
+          - {{signin_method_1}}: {{method_description_1}}
+          - {{signin_method_2}}: {{method_description_2}}
+
+          **Player Profile Management:**
+          - {{profile_data_1}}
+          - {{profile_data_2}}
+
+          **Session Management:**
+          - {{session_policy_1}}
+          - {{session_policy_2}}
+
+          **Offline Mode:**
+          - {{offline_capability_1}}
+          - {{offline_capability_2}}
+      - id: ugs-cloud-save
+        title: Cloud Save Integration
+        template: |
+          **Cloud Save Strategy:**
+          - {{cloud_save_approach}}
+          - {{sync_frequency}}
+
+          **Data Synchronization:**
+          - {{sync_data_1}}: {{sync_priority_1}}
+          - {{sync_data_2}}: {{sync_priority_2}}
+
+          **Conflict Resolution:**
+          - {{conflict_strategy_1}}
+          - {{conflict_strategy_2}}
+
+          **Local/Cloud Coordination:**
+          - {{coordination_rule_1}}
+          - {{coordination_rule_2}}
+      - id: ugs-analytics
+        title: Analytics Integration
+        template: |
+          **Analytics Events:**
+          - {{event_category_1}}: {{event_examples_1}}
+          - {{event_category_2}}: {{event_examples_2}}
+
+          **Key Metrics:**
+          - {{metric_1}}: {{metric_purpose_1}}
+          - {{metric_2}}: {{metric_purpose_2}}
+
+          **Custom Parameters:**
+          - {{parameter_1}}: {{parameter_usage_1}}
+          - {{parameter_2}}: {{parameter_usage_2}}
+
+          **Data Retention:**
+          - {{retention_policy}}
+          - {{privacy_compliance}}
+      - id: ugs-remote-config
+        title: Remote Configuration
+        template: |
+          **Configuration Categories:**
+          - {{config_category_1}}: {{category_items_1}}
+          - {{config_category_2}}: {{category_items_2}}
+
+          **Update Strategy:**
+          - {{update_frequency}}
+          - {{cache_policy}}
+
+          **A/B Testing:**
+          - {{test_parameter_1}}: {{test_purpose_1}}
+          - {{test_parameter_2}}: {{test_purpose_2}}
+
+          **Fallback Values:**
+          - {{fallback_strategy_1}}
+          - {{fallback_strategy_2}}
+
+  - id: multiplayer-architecture
+    title: Multiplayer Architecture (if applicable)
+    instruction: |
+      [[LLM: Only include this section if the game has multiplayer features]]
+      
+      Design the multiplayer architecture using Unity's networking solutions:
+
+      1. Choose networking solution (Netcode for GameObjects, Mirror, Photon, etc.)
+      2. Define network topology and authority model
+      3. Plan state synchronization and prediction
+      4. Design matchmaking and lobby systems
+      5. Consider latency compensation and anti-cheat measures
+
+      Focus on responsive, fair multiplayer experiences with proper security.
+    elicit: true
+    conditional: has_multiplayer
+    sections:
+      - id: networking-foundation
+        title: Networking Foundation
+        template: |
+          **Networking Solution:** {{networking_choice}}
+          
+          **Network Topology:** {{topology_type}}
+          
+          **Authority Model:** {{authority_model}}
+
+          **Player Capacity:**
+          - {{capacity_spec_1}}
+          - {{capacity_spec_2}}
+
+          **Network Requirements:**
+          - {{requirement_1}}: {{requirement_value_1}}
+          - {{requirement_2}}: {{requirement_value_2}}
+      - id: state-synchronization
+        title: State Synchronization
+        template: |
+          **Synchronized Objects:**
+          - {{sync_object_1}}: {{sync_frequency_1}}
+          - {{sync_object_2}}: {{sync_frequency_2}}
+
+          **Prediction Strategy:**
+          - {{prediction_approach_1}}
+          - {{prediction_approach_2}}
+
+          **Reconciliation:**
+          - {{reconciliation_method_1}}
+          - {{reconciliation_method_2}}
+
+          **Bandwidth Optimization:**
+          - {{optimization_1}}
+          - {{optimization_2}}
+      - id: matchmaking-lobby
+        title: Matchmaking & Lobby System
+        template: |
+          **Matchmaking Criteria:**
+          - {{criteria_1}}: {{weight_1}}
+          - {{criteria_2}}: {{weight_2}}
+
+          **Lobby Features:**
+          - {{lobby_feature_1}}
+          - {{lobby_feature_2}}
+
+          **Session Management:**
+          - {{session_rule_1}}
+          - {{session_rule_2}}
+
+          **Migration Strategy:**
+          - {{host_migration_approach}}
+          - {{reconnection_policy}}
+
   - id: next-steps
     title: Next Steps
     content: |

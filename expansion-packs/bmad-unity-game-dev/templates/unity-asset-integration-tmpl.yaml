@@ -1,0 +1,420 @@
+template:
+  id: unity-asset-integration-template-v1
+  name: Unity Asset Store Integration Document
+  version: 1.0
+  output:
+    format: markdown
+    filename: docs/unity-asset-integration.md
+    title: "{{project_name}} Unity Asset Store Integration"
+
+workflow:
+  mode: interactive
+  elicitation: advanced-elicitation
+
+sections:
+  - id: introduction
+    title: Unity Asset Store Integration Overview
+    content: |
+      This document defines the Unity Asset Store integration strategy for {{project_name}}. It covers third-party asset dependencies, licensing, version management, and integration patterns for external Unity packages.
+
+      All asset integrations must be carefully evaluated for performance impact, licensing compliance, and long-term maintenance considerations.
+
+  - id: asset-requirements
+    title: Asset Store Requirements Analysis
+    instruction: |
+      Analyze the project's requirements for third-party Unity assets:
+
+      1. Review GDD and architecture documents for feature gaps
+      2. Identify areas where third-party assets would accelerate development
+      3. Evaluate build vs. buy decisions for each requirement
+      4. Consider licensing implications and budget constraints
+      5. Assess long-term maintenance and update requirements
+
+      Focus on strategic asset selection that provides maximum value with minimal risk.
+    elicit: true
+    sections:
+      - id: requirements-matrix
+        title: Asset Requirements Matrix
+        type: table
+        columns: [Requirement, Priority, Build/Buy, Rationale, Budget Range]
+        instruction: List all potential third-party asset needs
+        examples:
+          - "| Dialogue System | High | Buy | Complex system, mature solutions available | $50-150 |"
+          - "| Shader Library | Medium | Buy | Specialized effects needed quickly | $30-100 |"
+          - "| AI Navigation | Low | Build | Custom requirements, simple needs | N/A |"
+
+  - id: selected-assets
+    title: Selected Unity Assets
+    instruction: |
+      Document the third-party Unity assets selected for the project:
+
+      1. List each selected asset with its purpose and justification
+      2. Include version numbers and compatibility requirements
+      3. Document licensing terms and restrictions
+      4. Note any dependencies or conflicts with other assets
+      5. Include fallback plans if assets become unavailable
+
+      Maintain a clear inventory of all third-party dependencies.
+    elicit: true
+    repeatable: true
+    sections:
+      - id: asset-entry
+        title: "{{asset_name}}"
+        template: |
+          **Asset Details:**
+          - **Publisher:** {{publisher_name}}
+          - **Version:** {{asset_version}}
+          - **Unity Version:** {{unity_compatibility}}
+          - **License Type:** {{license_type}}
+          - **Cost:** {{asset_cost}}
+
+          **Purpose & Justification:**
+          {{asset_purpose}}
+
+          **Key Features Used:**
+          - {{feature_1}}
+          - {{feature_2}}
+          - {{feature_3}}
+
+          **Dependencies:**
+          - {{dependency_1}}
+          - {{dependency_2}}
+
+          **Integration Complexity:** {{complexity_level}}
+
+          **Known Issues:**
+          - {{issue_1}}
+          - {{issue_2}}
+
+          **Update Policy:**
+          {{update_strategy}}
+
+  - id: integration-patterns
+    title: Asset Integration Patterns
+    instruction: |
+      Define standard patterns for integrating third-party assets:
+
+      1. Establish wrapper/adapter patterns for asset APIs
+      2. Define namespace and folder organization conventions
+      3. Plan for asset customization and extension
+      4. Design abstraction layers for replaceable assets
+      5. Consider performance profiling and optimization
+
+      Create maintainable integration patterns that isolate third-party dependencies.
+    elicit: true
+    sections:
+      - id: wrapper-patterns
+        title: Wrapper & Adapter Patterns
+        template: |
+          **Wrapper Strategy:**
+          - {{wrapper_approach}}
+          - {{abstraction_level}}
+
+          **Namespace Organization:**
+          ```csharp
+          {{namespace_structure}}
+          ```
+
+          **Folder Structure:**
+          ```
+          {{folder_hierarchy}}
+          ```
+
+          **Extension Points:**
+          - {{extension_point_1}}
+          - {{extension_point_2}}
+
+      - id: api-abstraction
+        title: API Abstraction Layers
+        template: |
+          **Abstraction Interfaces:**
+          ```csharp
+          {{interface_definitions}}
+          ```
+
+          **Implementation Mapping:**
+          - {{mapping_1}}
+          - {{mapping_2}}
+
+          **Fallback Implementations:**
+          - {{fallback_1}}
+          - {{fallback_2}}
+
+  - id: version-management
+    title: Asset Version Management
+    instruction: |
+      Establish version management and update procedures for third-party assets:
+
+      1. Define version tracking and documentation requirements
+      2. Plan update testing and validation procedures
+      3. Create rollback strategies for failed updates
+      4. Document breaking changes and migration paths
+      5. Consider automated compatibility testing
+
+      Ensure stable, predictable asset version management throughout development.
+    elicit: true
+    sections:
+      - id: version-tracking
+        title: Version Tracking System
+        template: |
+          **Version Documentation:**
+          - {{tracking_location}}
+          - {{documentation_format}}
+
+          **Update Schedule:**
+          - {{update_frequency}}
+          - {{update_criteria}}
+
+          **Testing Requirements:**
+          - {{test_requirement_1}}
+          - {{test_requirement_2}}
+
+          **Compatibility Matrix:**
+          | Asset | Current Version | Unity Version | Last Updated |
+          | ----- | -------------- | ------------- | ------------ |
+          | {{asset_1}} | {{version_1}} | {{unity_1}} | {{date_1}} |
+          | {{asset_2}} | {{version_2}} | {{unity_2}} | {{date_2}} |
+
+      - id: update-procedures
+        title: Update Procedures
+        template: |
+          **Pre-Update Checklist:**
+          - [ ] {{checklist_item_1}}
+          - [ ] {{checklist_item_2}}
+          - [ ] {{checklist_item_3}}
+
+          **Update Process:**
+          1. {{update_step_1}}
+          2. {{update_step_2}}
+          3. {{update_step_3}}
+
+          **Rollback Strategy:**
+          - {{rollback_trigger}}
+          - {{rollback_procedure}}
+
+          **Migration Paths:**
+          - {{migration_scenario_1}}: {{migration_approach_1}}
+          - {{migration_scenario_2}}: {{migration_approach_2}}
+
+  - id: license-compliance
+    title: License Compliance & Management
+    instruction: |
+      Document license compliance requirements and management procedures:
+
+      1. Catalog all asset licenses and their terms
+      2. Identify distribution restrictions and requirements
+      3. Plan for license renewals and seat management
+      4. Document attribution requirements
+      5. Consider open-source license compatibility
+
+      Ensure full compliance with all third-party asset licenses.
+    elicit: true
+    sections:
+      - id: license-inventory
+        title: License Inventory
+        type: table
+        columns: [Asset, License Type, Seats/Users, Restrictions, Attribution Required]
+        instruction: Document all asset licenses
+        examples:
+          - "| Dialogue System Pro | Per-Seat | 5 seats | No source distribution | Yes, in credits |"
+          - "| Mobile Shaders | Single License | Unlimited | Commercial use allowed | No |"
+
+      - id: compliance-procedures
+        title: Compliance Procedures
+        template: |
+          **Distribution Restrictions:**
+          - {{restriction_1}}
+          - {{restriction_2}}
+
+          **Attribution Requirements:**
+          - {{attribution_1}}
+          - {{attribution_2}}
+
+          **License Renewal Schedule:**
+          - {{renewal_1}}: {{renewal_date_1}}
+          - {{renewal_2}}: {{renewal_date_2}}
+
+          **Compliance Checklist:**
+          - [ ] {{compliance_check_1}}
+          - [ ] {{compliance_check_2}}
+          - [ ] {{compliance_check_3}}
+
+  - id: performance-impact
+    title: Asset Performance Impact
+    instruction: |
+      Analyze and document the performance impact of third-party assets:
+
+      1. Profile baseline performance metrics
+      2. Measure impact of each major asset
+      3. Identify optimization opportunities
+      4. Document performance budgets per asset
+      5. Plan for mobile/low-end platform considerations
+
+      Maintain performance awareness throughout asset integration.
+    elicit: true
+    sections:
+      - id: performance-metrics
+        title: Performance Metrics
+        template: |
+          **Baseline Metrics (without assets):**
+          - Frame Rate: {{baseline_fps}}
+          - Memory Usage: {{baseline_memory}}
+          - Build Size: {{baseline_size}}
+          - Load Time: {{baseline_load}}
+
+          **Asset Impact Analysis:**
+          | Asset | FPS Impact | Memory Impact | Size Impact | Load Impact |
+          | ----- | ---------- | ------------- | ----------- | ----------- |
+          | {{asset_1}} | {{fps_1}} | {{mem_1}} | {{size_1}} | {{load_1}} |
+          | {{asset_2}} | {{fps_2}} | {{mem_2}} | {{size_2}} | {{load_2}} |
+
+          **Optimization Strategies:**
+          - {{optimization_1}}
+          - {{optimization_2}}
+
+          **Performance Budgets:**
+          - {{budget_category_1}}: {{budget_limit_1}}
+          - {{budget_category_2}}: {{budget_limit_2}}
+
+  - id: fallback-strategies
+    title: Fallback & Contingency Planning
+    instruction: |
+      Create fallback strategies for critical third-party dependencies:
+
+      1. Identify single points of failure in asset dependencies
+      2. Plan alternatives for each critical asset
+      3. Document switching costs and procedures
+      4. Consider in-house development fallbacks
+      5. Maintain vendor relationships and support channels
+
+      Ensure project continuity regardless of third-party asset availability.
+    elicit: true
+    sections:
+      - id: critical-dependencies
+        title: Critical Dependencies
+        template: |
+          **Critical Assets:**
+          - {{critical_asset_1}}: {{criticality_reason_1}}
+          - {{critical_asset_2}}: {{criticality_reason_2}}
+
+          **Fallback Options:**
+          - {{asset_1_fallback}}: {{fallback_details_1}}
+          - {{asset_2_fallback}}: {{fallback_details_2}}
+
+          **Switching Costs:**
+          - {{switch_cost_1}}
+          - {{switch_cost_2}}
+
+          **Risk Mitigation:**
+          - {{mitigation_1}}
+          - {{mitigation_2}}
+
+  - id: asset-workflow
+    title: Asset Integration Workflow
+    instruction: |
+      Define the workflow for evaluating and integrating new assets:
+
+      1. Establish evaluation criteria and approval process
+      2. Define integration testing requirements
+      3. Plan documentation and training needs
+      4. Create asset onboarding procedures
+      5. Document deprecation and removal processes
+
+      Create a repeatable, efficient asset integration workflow.
+    elicit: true
+    sections:
+      - id: evaluation-process
+        title: Asset Evaluation Process
+        template: |
+          **Evaluation Criteria:**
+          - [ ] {{criteria_1}}
+          - [ ] {{criteria_2}}
+          - [ ] {{criteria_3}}
+
+          **Approval Workflow:**
+          1. {{approval_step_1}}
+          2. {{approval_step_2}}
+          3. {{approval_step_3}}
+
+          **Integration Checklist:**
+          - [ ] {{integration_check_1}}
+          - [ ] {{integration_check_2}}
+          - [ ] {{integration_check_3}}
+
+          **Documentation Requirements:**
+          - {{doc_requirement_1}}
+          - {{doc_requirement_2}}
+
+  - id: best-practices
+    title: Asset Integration Best Practices
+    content: |
+      **Recommended Practices:**
+
+      1. **Isolation:** Always wrap third-party APIs in project-specific interfaces
+      2. **Documentation:** Maintain detailed documentation of asset usage and customizations
+      3. **Version Control:** Use Git LFS for large asset files, exclude unnecessary files
+      4. **Testing:** Create automated tests for critical asset functionality
+      5. **Performance:** Profile before and after asset integration
+      6. **Updates:** Test updates in isolation before full integration
+      7. **Licensing:** Maintain a central license documentation repository
+      8. **Communication:** Keep team informed of new assets and changes
+
+      **Common Pitfalls to Avoid:**
+
+      - Over-reliance on single vendor solutions
+      - Ignoring license restrictions until release
+      - Updating assets without proper testing
+      - Not planning for asset deprecation
+      - Mixing incompatible asset versions
+      - Ignoring performance impacts on target platforms
+
+  - id: maintenance-plan
+    title: Long-term Maintenance Plan
+    instruction: |
+      Create a long-term maintenance strategy for third-party assets:
+
+      1. Plan for asset lifecycle management
+      2. Budget for license renewals and updates
+      3. Document knowledge transfer requirements
+      4. Consider technical debt from outdated assets
+      5. Plan for Unity version migrations
+
+      Ensure sustainable asset management throughout the project lifecycle.
+    elicit: true
+    sections:
+      - id: lifecycle-management
+        title: Asset Lifecycle Management
+        template: |
+          **Lifecycle Phases:**
+          - Evaluation → Integration → Production → Maintenance → Deprecation
+
+          **Maintenance Schedule:**
+          - {{maintenance_task_1}}: {{frequency_1}}
+          - {{maintenance_task_2}}: {{frequency_2}}
+
+          **Budget Allocation:**
+          - License Renewals: {{renewal_budget}}
+          - Update Testing: {{testing_budget}}
+          - Emergency Replacements: {{contingency_budget}}
+
+          **Knowledge Documentation:**
+          - {{knowledge_item_1}}
+          - {{knowledge_item_2}}
+
+          **Technical Debt Management:**
+          - {{debt_item_1}}: {{mitigation_plan_1}}
+          - {{debt_item_2}}: {{mitigation_plan_2}}
+
+  - id: conclusion
+    title: Integration Summary
+    content: |
+      This Unity Asset Store Integration document provides a comprehensive framework for managing third-party asset dependencies in {{project_name}}. Regular review and updates of this document ensure effective asset management throughout development.
+
+      **Key Success Factors:**
+      - Strategic asset selection aligned with project goals
+      - Robust integration patterns with proper abstractions
+      - Proactive version and license management
+      - Performance-aware integration practices
+      - Comprehensive fallback strategies
+
+      The strategies defined here should be reviewed quarterly and updated as the project evolves and new assets become available or deprecated.

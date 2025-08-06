@@ -51,6 +51,34 @@ workflow:
       updates: flagged_design_documents
       condition: design_validation_issues
       notes: If design validation finds issues, return to relevant agent to fix and re-export updated documents to docs/ folder.
+  unity_ecosystem_setup:
+    - action: unity-package-setup
+      agent: unity-developer
+      uses: unity-package-setup
+      requires: game-architecture.md
+      notes: Configure Unity Package Manager dependencies, create package.json and manifest.json with required packages for the project.
+    - action: unity-package-integration
+      agent: unity-developer
+      uses: unity-package-integration
+      requires: unity-package-setup
+      notes: Integrate Unity packages into project architecture, configure APIs and establish integration patterns.
+    - action: unity-editor-automation
+      agent: unity-developer
+      uses: unity-editor-automation
+      requires: game-architecture.md
+      notes: Set up Unity Editor automation tools, custom inspectors, and development workflow enhancements.
+    - condition: requires_cloud_services
+      action: unity-cloud-services-setup
+      agent: unity-developer
+      uses: unity-cloud-services-setup
+      requires: game-architecture.md
+      notes: Configure Unity Gaming Services (Authentication, Cloud Save, Analytics, Remote Config) based on project requirements.
+    - condition: has_asset_store_dependencies
+      action: unity-asset-integration
+      agent: solution-architect
+      uses: unity-asset-integration-tmpl
+      requires: game-architecture.md
+      notes: Document Unity Asset Store integration strategy, licensing compliance, and performance impact analysis.
   project_setup_guidance:
     action: guide_game_project_structure
     notes: Set up Unity project structure following game architecture document. Create Assets/ with subdirectories for Scenes, Scripts, Prefabs, etc.
@@ -88,12 +116,16 @@ workflow:
         G --> H[game-designer: validate design consistency]
         H --> I{Design validation issues?}
         I -->|Yes| J[Return to relevant agent for fixes]
-        I -->|No| K[Set up game project structure]
+        I -->|No| K[unity-developer: Unity Package Setup]
         J --> H
-        K --> L[Move to Story Development Phase]
+        K --> L[unity-developer: Package Integration]
+        L --> M[unity-developer: Editor Automation]
+        M --> N[unity-developer: Cloud Services Setup]
+        N --> O[Set up game project structure]
+        O --> P[Move to Story Development Phase]
 
-        D --> M[game-designer: prototype-design.md]
-        M --> N[Move to Rapid Implementation]
+        D --> Q[game-designer: prototype-design.md]
+        Q --> R[Move to Rapid Implementation]
 
         C -.-> C1[Optional: brainstorming]
         C -.-> C2[Optional: game research]
@@ -102,14 +134,18 @@ workflow:
         G -.-> G1[Optional: technical research]
         D -.-> D1[Optional: quick brainstorming]
 
-        style L fill:#90EE90
-        style N fill:#90EE90
+        style P fill:#90EE90
+        style R fill:#90EE90
         style C fill:#FFE4B5
         style E fill:#FFE4B5
         style F fill:#FFE4B5
         style G fill:#FFE4B5
+        style K fill:#87CEEB
+        style L fill:#87CEEB
+        style M fill:#87CEEB
+        style N fill:#87CEEB
         style D fill:#FFB6C1
-        style M fill:#FFB6C1
+        style Q fill:#FFB6C1
     ```
   decision_guidance:
     use_full_sequence_when:
@@ -133,7 +169,9 @@ workflow:
     level_to_architect: Level design complete. Save it as docs/design/level-design-doc.md, then create the technical architecture.
     architect_review: Architecture complete. Save it as docs/architecture/game-architecture.md. Please validate all design documents for consistency.
     validation_issues: Design validation found issues with [document]. Please return to [agent] to fix and re-save the updated document.
-    full_complete: All design artifacts validated and saved. Set up game project structure and move to story development phase.
+    validation_to_unity_setup: Design validation passed. Begin Unity ecosystem setup with Package Manager configuration.
+    unity_setup_complete: Unity ecosystem setup complete. All packages configured and Unity Gaming Services initialized. Set up game project structure and move to story development phase.
+    full_complete: All design artifacts validated and Unity setup complete. Begin story development phase.
     prototype_designer_to_dev: Prototype brief complete. Save it as docs/game-brief.md, then create minimal design or jump directly to implementation stories.
     prototype_complete: Prototype defined. Begin rapid implementation focusing on core mechanics and immediate playability.
   story_development_guidance:

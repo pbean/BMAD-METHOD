@@ -52,7 +52,7 @@ For each package category, read relevant architecture docs:
 #### 2.1 Configure Input System Settings
 
 **Project Settings Configuration**:
-```csharp
+```json
 // ProjectSettings/InputSystem.asset configuration
 {
   "updateMode": "ProcessEventsInDynamicUpdate",
@@ -65,7 +65,7 @@ For each package category, read relevant architecture docs:
 #### 2.2 Create Input Action Assets
 
 Generate template structure:
-```
+```text
 Assets/
 ├── Settings/
 │   └── Input/
@@ -122,7 +122,7 @@ public class PlayerController : MonoBehaviour
 **For URP Projects**:
 
 Create pipeline assets:
-```
+```text
 Assets/
 ├── Settings/
 │   └── URP/
@@ -135,7 +135,7 @@ Assets/
 ```
 
 Configure quality tiers:
-```csharp
+```json
 // Quality configuration per platform
 {
   "Mobile": "Low",
@@ -149,7 +149,7 @@ Configure quality tiers:
 - Convert Built-in materials to URP/HDRP
 - Document shader upgrade process
 - Create material library structure:
-  ```
+  ```text
   Assets/Art/Materials/
   ├── Environment/
   ├── Characters/
@@ -161,7 +161,7 @@ Configure quality tiers:
 #### 4.1 Initialize Addressables System
 
 **Create Addressable Groups**:
-```
+```text
 Assets/
 ├── AddressableAssetsData/
 │   ├── AddressableAssetSettings.asset
@@ -203,7 +203,7 @@ public static class AddressableHelper
 #### 5.1 Virtual Camera Setup
 
 Create camera prefab structure:
-```
+```text
 Assets/
 ├── Prefabs/
 │   └── Cameras/
@@ -214,7 +214,7 @@ Assets/
 
 #### 5.2 Configure Brain Settings
 
-```csharp
+```json
 // CinemachineBrain configuration
 {
   "defaultBlend": {
@@ -375,7 +375,7 @@ Create `docs/package-integration-summary.md`:
 - Commit with message: "Unity package integration completed"
 - Document any manual steps required
 
-## Success Criteria
+### Success Criteria
 
 - All installed packages properly configured
 - Package-specific APIs documented with examples
