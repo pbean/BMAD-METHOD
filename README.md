@@ -23,7 +23,7 @@ Foundations in Agentic Agile Driven Development, known as the Breakthrough Metho
 
 This two-phase approach eliminates both **planning inconsistency** and **context loss** - the biggest problems in AI-assisted development. Your Dev agent opens a story file with complete understanding of what to build, how to build it, and why.
 
-**📖 [See the complete workflow in the User Guide](bmad-core/user-guide.md)** - Planning phase, development cycle, and all agent roles
+**📖 [See the complete workflow in the User Guide](docs/user-guide.md)** - Planning phase, development cycle, and all agent roles
 
 ## Quick Navigation
 
@@ -31,18 +31,18 @@ This two-phase approach eliminates both **planning inconsistency** and **context
 
 **Before diving in, review these critical workflow diagrams that explain how BMad works:**
 
-1. **[Planning Workflow (Web UI)](bmad-core/user-guide.md#the-planning-workflow-web-ui)** - How to create PRD and Architecture documents
-2. **[Core Development Cycle (IDE)](bmad-core/user-guide.md#the-core-development-cycle-ide)** - How SM, Dev, and QA agents collaborate through story files
+1. **[Planning Workflow (Web UI)](docs/user-guide.md#the-planning-workflow-web-ui)** - How to create PRD and Architecture documents
+2. **[Core Development Cycle (IDE)](docs/user-guide.md#the-core-development-cycle-ide)** - How SM, Dev, and QA agents collaborate through story files
 
 > ⚠️ **These diagrams explain 90% of BMad Method Agentic Agile flow confusion** - Understanding the PRD+Architecture creation and the SM/Dev/QA workflow and how agents pass notes through story files is essential - and also explains why this is NOT taskmaster or just a simple task runner!
 
 ### What would you like to do?
 
 - **[Install and Build software with Full Stack Agile AI Team](#quick-start)** → Quick Start Instruction
-- **[Learn how to use BMad](bmad-core/user-guide.md)** → Complete user guide and walkthrough
-- **[See available AI agents](#available-agents)** → Specialized roles for your team
+- **[Learn how to use BMad](docs/user-guide.md)** → Complete user guide and walkthrough
+- **[See available AI agents](/bmad-core/agents))** → Specialized roles for your team
 - **[Explore non-technical uses](#-beyond-software-development---expansion-packs)** → Creative writing, business, wellness, education
-- **[Create my own AI agents](#creating-your-own-expansion-pack)** → Build agents for your domain
+- **[Create my own AI agents](docs/expansion-packs.md)** → Build agents for your domain
 - **[Browse ready-made expansion packs](expansion-packs/)** → Game dev, DevOps, infrastructure and get inspired with ideas and examples
 - **[Understand the architecture](docs/core-architecture.md)** → Technical deep dive
 - **[Join the community](https://discord.gg/gk8jAdXWmj)** → Get help and share ideas
@@ -97,7 +97,7 @@ This single command handles:
 3. **Upload & configure**: Upload the file and set instructions: "Your critical operating instructions are attached, do not break character as directed"
 4. **Start Ideating and Planning**: Start chatting! Type `*help` to see available commands or pick an agent like `*analyst` to start right in on creating a brief.
 5. **CRITICAL**: Talk to BMad Orchestrator in the web at ANY TIME (#bmad-orchestrator command) and ask it questions about how this all works!
-6. **When to move to the IDE**: Once you have your PRD, Architecture, optional UX and Briefs - its time to switch over to the IDE to shard your docs, and start implementing the actual code! See the [User guide](bmad-core/user-guide.md) for more details
+6. **When to move to the IDE**: Once you have your PRD, Architecture, optional UX and Briefs - its time to switch over to the IDE to shard your docs, and start implementing the actual code! See the [User guide](docs/user-guide.md) for more details
 
 ### Alternative: Clone and Build
 
@@ -110,11 +110,58 @@ npm run install:bmad # build and install all to a destination folder
 
 BMad's natural language framework works in ANY domain. Expansion packs provide specialized AI agents for creative writing, business strategy, health & wellness, education, and more. Also expansion packs can expand the core BMad-Method with specific functionality that is not generic for all cases. [See the Expansion Packs Guide](docs/expansion-packs.md) and learn to create your own!
 
+## Codebase Flattener Tool
+
+The BMad-Method includes a powerful codebase flattener tool designed to prepare your project files for AI model consumption. This tool aggregates your entire codebase into a single XML file, making it easy to share your project context with AI assistants for analysis, debugging, or development assistance.
+
+### Features
+
+- **AI-Optimized Output**: Generates clean XML format specifically designed for AI model consumption
+- **Smart Filtering**: Automatically respects `.gitignore` patterns to exclude unnecessary files
+- **Binary File Detection**: Intelligently identifies and excludes binary files, focusing on source code
+- **Progress Tracking**: Real-time progress indicators and comprehensive completion statistics
+- **Flexible Output**: Customizable output file location and naming
+
+### Usage
+
+```bash
+# Basic usage - creates flattened-codebase.xml in current directory
+npx bmad-method flatten
+
+# Specify custom input directory
+npx bmad-method flatten --input /path/to/source/directory
+npx bmad-method flatten -i /path/to/source/directory
+
+# Specify custom output file
+npx bmad-method flatten --output my-project.xml
+npx bmad-method flatten -o /path/to/output/codebase.xml
+
+# Combine input and output options
+npx bmad-method flatten --input /path/to/source --output /path/to/output/codebase.xml
+```
+
+### Example Output
+
+The tool will display progress and provide a comprehensive summary:
+
+```
+📊 Completion Summary:
+✅ Successfully processed 156 files into flattened-codebase.xml
+📁 Output file: /path/to/your/project/flattened-codebase.xml
+📏 Total source size: 2.3 MB
+📄 Generated XML size: 2.1 MB
+📝 Total lines of code: 15,847
+🔢 Estimated tokens: 542,891
+📊 File breakdown: 142 text, 14 binary, 0 errors
+```
+
+The generated XML file contains all your project's source code in a structured format that AI models can easily parse and understand, making it perfect for code reviews, architecture discussions, or getting AI assistance with your BMad-Method projects.
+
 ## Documentation & Resources
 
 ### Essential Guides
 
-- 📖 **[User Guide](bmad-core/user-guide.md)** - Complete walkthrough from project inception to completion
+- 📖 **[User Guide](docs/user-guide.md)** - Complete walkthrough from project inception to completion
 - 🏗️ **[Core Architecture](docs/core-architecture.md)** - Technical deep dive and system design
 - 🚀 **[Expansion Packs Guide](docs/expansion-packs.md)** - Extend BMad to any domain beyond software development
 

@@ -237,6 +237,10 @@ class Installer {
       // Copy common/ items to .bmad-core
       spinner.text = "Copying common utilities...";
       await this.copyCommonItems(installDir, ".bmad-core", spinner);
+      
+      // Copy documentation files from docs/ to .bmad-core
+      spinner.text = "Copying documentation files...";
+      await this.copyDocsItems(installDir, ".bmad-core", spinner);
 
       // Get list of all files for manifest
       const foundFiles = await resourceLocator.findFiles("**/*", {
@@ -308,6 +312,11 @@ class Installer {
       spinner.text = "Copying common utilities...";
       const commonFiles = await this.copyCommonItems(installDir, ".bmad-core", spinner);
       files.push(...commonFiles);
+      
+      // Copy documentation files from docs/ to .bmad-core
+      spinner.text = "Copying documentation files...";
+      const docFiles = await this.copyDocsItems(installDir, ".bmad-core", spinner);
+      files.push(...docFiles);
     } else if (config.installType === "team") {
       // Team installation
       spinner.text = `Installing ${config.team} team...`;
@@ -353,6 +362,11 @@ class Installer {
       spinner.text = "Copying common utilities...";
       const commonFiles = await this.copyCommonItems(installDir, ".bmad-core", spinner);
       files.push(...commonFiles);
+      
+      // Copy documentation files from docs/ to .bmad-core
+      spinner.text = "Copying documentation files...";
+      const docFiles = await this.copyDocsItems(installDir, ".bmad-core", spinner);
+      files.push(...docFiles);
     } else if (config.installType === "expansion-only") {
       // Expansion-only installation - DO NOT create .bmad-core
       // Only install expansion packs
@@ -497,7 +511,7 @@ class Installer {
       case "reinstall":
         // For reinstall, don't check for modifications - just overwrite
         return await this.performReinstall(config, installDir, spinner);
-      case "expansions":
+      case "expansions": {
         // Ask which expansion packs to install
         const availableExpansionPacks = await resourceLocator.getExpansionPacks();
         
@@ -534,6 +548,7 @@ class Installer {
           console.log(chalk.green(`  - ${packId} → .${packId}/`));
         }
         return;
+      }
       case "cancel":
         console.log("Installation cancelled.");
         return;
@@ -866,6 +881,8 @@ class Installer {
       }).join(", ");
       console.log(chalk.green(`✓ IDE rules and configurations set up for: ${ideNames}`));
     }
+    
+
 
     // Information about web bundles
     if (!config.includeWebBundles) {
@@ -894,7 +911,7 @@ class Installer {
     }
 
     // Important notice to read the user guide
-    console.log(chalk.red.bold("\n📖 IMPORTANT: Please read the user guide installed at .bmad-core/user-guide.md"));
+    console.log(chalk.red.bold("\n📖 IMPORTANT: Please read the user guide at docs/user-guide.md (also installed at .bmad-core/user-guide.md)"));
     console.log(chalk.red("This guide contains essential information about the BMad workflow and how to use the agents effectively."));
   }
 
@@ -1429,7 +1446,7 @@ class Installer {
         return config.selectedWebBundleTeams ? 
           `teams: ${config.selectedWebBundleTeams.join(', ')}` : 
           'selected teams';
-      case 'custom':
+      case 'custom': {
         const parts = [];
         if (config.selectedWebBundleTeams && config.selectedWebBundleTeams.length > 0) {
           parts.push(`teams: ${config.selectedWebBundleTeams.join(', ')}`);
@@ -1438,6 +1455,7 @@ class Installer {
           parts.push('individual agents');
         }
         return parts.length > 0 ? parts.join(' + ') : 'custom selection';
+      }
       default:
         return 'selected bundles';
     }
@@ -1551,6 +1569,54 @@ class Installer {
     }
     
     console.log(chalk.dim(`  Added ${commonItems.length} common utilities`));
+    return copiedFiles;
+  }
+
+  async copyDocsItems(installDir, targetSubdir, spinner) {
+    const fs = require('fs').promises;
+    const sourceBase = path.dirname(path.dirname(path.dirname(path.dirname(__filename)))); // Go up to project root
+    const docsPath = path.join(sourceBase, 'docs');
+    const targetPath = path.join(installDir, targetSubdir);
+    const copiedFiles = [];
+    
+    // Specific documentation files to copy
+    const docFiles = [
+      'enhanced-ide-development-workflow.md',
+      'user-guide.md',
+      'working-in-the-brownfield.md'
+    ];
+    
+    // Check if docs/ exists
+    if (!(await fileManager.pathExists(docsPath))) {
+      console.warn('Warning: docs/ folder not found');
+      return copiedFiles;
+    }
+    
+    // Copy specific documentation files from docs/ to target
+    for (const docFile of docFiles) {
+      const sourcePath = path.join(docsPath, docFile);
+      const destPath = path.join(targetPath, docFile);
+      
+      // Check if the source file exists
+      if (await fileManager.pathExists(sourcePath)) {
+        // Read the file content
+        const content = await fs.readFile(sourcePath, 'utf8');
+        
+        // Replace {root} with the target subdirectory
+        const updatedContent = content.replace(/\{root\}/g, targetSubdir);
+        
+        // Ensure directory exists
+        await fileManager.ensureDirectory(path.dirname(destPath));
+        
+        // Write the updated content
+        await fs.writeFile(destPath, updatedContent, 'utf8');
+        copiedFiles.push(path.join(targetSubdir, docFile));
+      }
+    }
+    
+    if (copiedFiles.length > 0) {
+      console.log(chalk.dim(`  Added ${copiedFiles.length} documentation files`));
+    }
     return copiedFiles;
   }
 
@@ -1736,7 +1802,7 @@ class Installer {
       const manifestPath = path.join(bmadDir, "install-manifest.yaml");
 
       if (await fileManager.pathExists(manifestPath)) {
-        return bmadDir;
+        return currentDir; // Return parent directory, not .bmad-core itself
       }
 
       currentDir = path.dirname(currentDir);
@@ -1746,11 +1812,33 @@ class Installer {
     if (path.basename(process.cwd()) === ".bmad-core") {
       const manifestPath = path.join(process.cwd(), "install-manifest.yaml");
       if (await fileManager.pathExists(manifestPath)) {
-        return process.cwd();
+        return path.dirname(process.cwd()); // Return parent directory
       }
     }
 
     return null;
+  }
+
+  async flatten(options) {
+    const { spawn } = require('child_process');
+    const flattenerPath = path.join(__dirname, '..', '..', 'flattener', 'main.js');
+    
+    const args = [];
+    if (options.input) {
+      args.push('--input', options.input);
+    }
+    if (options.output) {
+      args.push('--output', options.output);
+    }
+    
+    const child = spawn('node', [flattenerPath, ...args], {
+      stdio: 'inherit',
+      cwd: process.cwd()
+    });
+    
+    child.on('exit', (code) => {
+      process.exit(code);
+    });
   }
 }
 

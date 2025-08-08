@@ -93,6 +93,7 @@ program
     const agents = await builder.resolver.listAgents();
     console.log('Available agents:');
     agents.forEach(agent => console.log(`  - ${agent}`));
+    process.exit(0);
   });
 
 program
@@ -103,6 +104,7 @@ program
     const expansions = await builder.listExpansionPacks();
     console.log('Available expansion packs:');
     expansions.forEach(expansion => console.log(`  - ${expansion}`));
+    process.exit(0);
   });
 
 program
