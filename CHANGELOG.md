@@ -79,13 +79,11 @@
 ### Features
 
 =======
-
 - enhanced user guide with better diagrams ([c445962](https://github.com/bmadcode/BMAD-METHOD/commit/c445962f259cd7d84c47a896e7fda99e83a30c8d))
 
 ### Features
 
-> > > > > > > 6925873 (cleanup commit)
-
+>>>>>>> 6925873 (cleanup commit)
 - Installation includes a getting started user guide with detailed mermaid diagram ([df57d77](https://github.com/bmadcode/BMAD-METHOD/commit/df57d772cac9f9010811e7e86a6433a0fe636a45))
 
 ## [4.30.4](https://github.com/bmadcode/BMAD-METHOD/compare/v4.30.3...v4.30.4) (2025-07-19)
