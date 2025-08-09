@@ -1,7 +1,7 @@
 template:
-  id: game-architecture-systems-template-v1
+  id: game-architecture-systems-template-v2
   name: Game Architecture Systems Document
-  version: 1.0
+  version: 2.0
   output:
     format: markdown
     filename: docs/game-architecture-systems.md
@@ -88,6 +88,33 @@ sections:
           **Events/Communication:**
           - {{event_1}}: {{event_description_1}}
           - {{event_2}}: {{event_description_2}}
+
+      [[LLM: Include Visual Scripting integration if the project involves non-programmer team members, designers who need to implement logic, or rapid prototyping workflows. Detect based on team composition or prototyping requirements mentioned.]]
+      
+      - id: visual-scripting-integration
+        title: Visual Scripting Integration
+        template: |
+          **Visual Scripting Scope:** {{visual_scripting_scope}}
+          
+          **Script Graph Categories:**
+          - {{graph_category_1}}: {{graph_purpose_1}}
+          - {{graph_category_2}}: {{graph_purpose_2}}
+          
+          **C# Script Integration:**
+          - Custom Nodes: {{custom_node_1}}, {{custom_node_2}}
+          - Exposed Variables: {{exposed_var_1}}, {{exposed_var_2}}
+          
+          **Designer-Accessible Systems:**
+          - {{designer_system_1}}: {{accessibility_level_1}}
+          - {{designer_system_2}}: {{accessibility_level_2}}
+          
+          **Visual Script Organization:**
+          - Graph Assets: `Assets/_Project/VisualScripts/{{category}}/`
+          - Shared Variables: `Assets/_Project/VisualScripts/Variables/`
+          
+          **Workflow Integration:**
+          - {{workflow_integration_1}}
+          - {{workflow_integration_2}}
 
   - id: gameplay-systems
     title: Gameplay Systems
@@ -199,36 +226,66 @@ sections:
   - id: physics-config
     title: Physics Configuration
     instruction: |
+      [[LLM: Enhance physics configuration based on detected gameplay mechanics. Include advanced physics features if complex interactions, realistic simulations, or physics-based puzzles are mentioned. Scale complexity based on game requirements.]]
+      
       Configure Unity's physics system for the game's requirements:
 
-      1. Review GDD mechanics for physics requirements
-      2. Configure physics layers and collision matrix
-      3. Define physics materials and properties
-      4. Plan physics-based gameplay interactions
-      5. Consider performance optimization for physics
+      1. Review GDD mechanics for physics complexity and requirements
+      2. Configure physics layers, collision matrix, and performance settings
+      3. Design physics materials and interaction behaviors  
+      4. Plan advanced physics features if needed (joints, effectors, custom physics)
+      5. Optimize physics performance for target platforms
 
-      Align physics configuration with gameplay mechanics and performance needs.
+      [[LLM: For simple games, focus on basic collision detection and layers. For physics-based games, include advanced features like joints, effectors, and complex materials.]]
     elicit: true
     sections:
       - id: physics-layers
         title: Physics Layers Configuration
         type: table
-        columns: [Layer Name, Layer ID, Purpose, Collision Matrix]
+        columns: [Layer Name, Layer ID, Purpose, Collision Matrix, Performance Notes]
         instruction: Define all physics layers needed for the game
         examples:
-          - "| Player | 8 | Player character collision | Collides with: Ground, Enemies, Pickups |"
-          - "| Enemy | 9 | Enemy collision detection | Collides with: Player, Ground, Projectiles |"
-          - "| Ground | 10 | Static environment collision | Collides with: Player, Enemies, Projectiles |"
+          - "| Player | 8 | Player character collision | Collides with: Ground, Enemies, Pickups | High priority, optimized shapes |"
+          - "| Enemy | 9 | Enemy collision detection | Collides with: Player, Ground, Projectiles | Medium priority, compound colliders |"
+          - "| Ground | 10 | Static environment collision | Collides with: All dynamic objects | Static optimization enabled |"
       - id: physics-materials
-        title: Physics Materials
+        title: Physics Materials & Interactions
         template: |
           **Material Definitions:**
-          - {{material_1}}: {{material_properties_1}}
-          - {{material_2}}: {{material_properties_2}}
+          - {{material_1}}: Friction {{friction_1}}, Bounciness {{bounce_1}} - {{material_purpose_1}}
+          - {{material_2}}: Friction {{friction_2}}, Bounciness {{bounce_2}} - {{material_purpose_2}}
 
-          **Gameplay Applications:**
-          - {{application_1}}
-          - {{application_2}}
+          **Interaction Behaviors:**
+          - {{interaction_1}}: {{interaction_description_1}}
+          - {{interaction_2}}: {{interaction_description_2}}
+
+          **Performance Optimization:**
+          - Fixed Timestep: {{physics_timestep}}
+          - Solver Iterations: {{solver_iterations}}
+          - Contact Processing: {{contact_processing_optimization}}
+
+      - id: advanced-physics
+        title: Advanced Physics Features
+        conditional: has_complex_physics || needs_realistic_simulation
+        template: |
+          [[LLM: Only include if complex physics interactions, realistic simulations, physics-based puzzles, or advanced mechanical systems are required]]
+          
+          **Physics Joints & Constraints:**
+          - {{joint_type_1}}: {{joint_purpose_1}} - {{joint_configuration_1}}
+          - {{joint_type_2}}: {{joint_purpose_2}} - {{joint_configuration_2}}
+
+          **Physics Effectors (2D):**
+          - {{effector_type_1}}: {{effector_application_1}}
+          - {{effector_type_2}}: {{effector_application_2}}
+
+          **Custom Physics Behaviors:**
+          - {{custom_behavior_1}}: {{behavior_implementation_1}}
+          - {{custom_behavior_2}}: {{behavior_implementation_2}}
+
+          **Advanced Optimization:**
+          - LOD Physics: {{physics_lod_strategy}}
+          - Predictive Systems: {{physics_prediction}}
+          - Multi-threading: {{physics_threading_approach}}
 
   - id: input-system
     title: Input System Architecture
@@ -316,6 +373,90 @@ sections:
           - {{init_pattern_1}}
           - {{init_pattern_2}}
 
+  - id: cinemachine-cameras
+    title: Cinemachine Camera System
+    instruction: |
+      [[LLM: Include this section if the game requires dynamic cameras, camera following, smooth transitions, or complex camera behaviors. Auto-detect 2D vs 3D requirements and provide appropriate camera configurations.]]
+      
+      Design Cinemachine virtual camera system for dynamic camera management:
+
+      1. Identify camera requirements from gameplay mechanics
+      2. Plan virtual camera hierarchy and priorities
+      3. Configure camera blending and transitions
+      4. Design camera constraints and behaviors
+      5. Optimize for target platform performance
+
+      [[LLM: For 2D games, emphasize pixel-perfect cameras, orthographic setups, confiner and follow components. For 3D games, focus on free-look cameras, orbital cameras, and cinematic camera movements.]]
+    elicit: true
+    conditional: needs_dynamic_cameras || has_character_following || has_camera_transitions
+    sections:
+      - id: virtual-camera-setup
+        title: Virtual Camera Configuration
+        template: |
+          **Camera Hierarchy:**
+          - {{camera_type_1}}: Priority {{priority_1}} - {{camera_purpose_1}}
+          - {{camera_type_2}}: Priority {{priority_2}} - {{camera_purpose_2}}
+          
+          **Brain Configuration:**
+          - Default Blend: {{default_blend_type}} ({{blend_duration}}s)
+          - Custom Blends: {{custom_blend_1}}
+          
+          **2D Camera Components** (if applicable):
+          - Pixel Perfect Camera: {{pixel_perfect_settings}}
+          - 2D Confiner: {{confiner_configuration}}
+          - 2D Follow: {{follow_settings_2d}}
+          
+          **3D Camera Components** (if applicable):
+          - Free Look: {{freelook_configuration}}
+          - Orbital Transposer: {{orbital_settings}}
+          - Third Person Follow: {{third_person_settings}}
+          
+          **Performance Optimization:**
+          - {{optimization_1}}
+          - {{optimization_2}}
+
+  - id: timeline-cinematics
+    title: Timeline & Cinematics System
+    instruction: |
+      [[LLM: Only include this section if the game requires cutscenes, cinematics, complex animations, or narrative sequences. Detect based on user responses about story elements, character interactions, or cinematic presentation needs.]]
+      
+      Design Unity Timeline integration for cinematic sequences and complex animations:
+
+      1. Review GDD for cinematic requirements (cutscenes, character interactions, story beats)
+      2. Plan Timeline asset organization and track types needed
+      3. Design integration with Cinemachine for camera choreography
+      4. Consider Timeline Signals for gameplay integration
+      5. Plan for both 2D and 3D cinematic approaches
+
+      [[LLM: For 2D games, focus on sprite-based cinematics, UI animations, and orthographic camera movements. For 3D games, emphasize virtual cameras, 3D character animation, and environmental storytelling.]]
+    elicit: true
+    conditional: has_cinematics || has_cutscenes || has_narrative_sequences
+    sections:
+      - id: timeline-architecture
+        title: Timeline System Architecture
+        template: |
+          **Timeline Organization Strategy:** {{timeline_organization}}
+          
+          **Primary Track Types:**
+          - {{track_type_1}}: {{track_purpose_1}}
+          - {{track_type_2}}: {{track_purpose_2}}
+          
+          **Cinemachine Integration:**
+          - {{cinemachine_integration_1}}
+          - {{cinemachine_integration_2}}
+          
+          **Timeline Signals & Events:**
+          - {{signal_1}}: {{signal_trigger_1}}
+          - {{signal_2}}: {{signal_trigger_2}}
+          
+          **Asset Organization:**
+          - Timeline Assets: `Assets/_Project/Timelines/{{timeline_category}}/`
+          - Playable Assets: `Assets/_Project/Timelines/Playables/`
+          
+          **2D/3D Considerations:**
+          - {{dimension_consideration_1}}
+          - {{dimension_consideration_2}}
+
   - id: data-persistence
     title: Data Persistence Architecture
     instruction: |
@@ -365,161 +506,176 @@ sections:
   - id: unity-gaming-services
     title: Unity Gaming Services Integration
     instruction: |
-      Design the integration with Unity Gaming Services (UGS) for cloud-based features:
+      [[LLM: Conditionally include Gaming Services based on detected requirements. Include Authentication if multiplayer or social features exist. Include Cloud Save if progression systems are mentioned. Include Analytics if monetization or player behavior tracking is needed. Include Remote Config if live operations or A/B testing requirements are identified.]]
+      
+      Design intelligent Unity Gaming Services integration:
 
-      1. Review multiplayer and online requirements from GDD
-      2. Identify required UGS services (Authentication, Cloud Save, Analytics, etc.)
-      3. Plan service initialization and configuration
-      4. Design error handling and offline fallbacks
-      5. Consider GDPR compliance and data privacy requirements
+      1. Analyze project requirements for cloud services needs
+      2. Identify required UGS services based on game features and monetization model
+      3. Plan service initialization, dependency management, and graceful degradation
+      4. Design privacy compliance and consent management
+      5. Configure service integration with offline fallbacks
 
-      Focus on robust service integration with proper fallback mechanisms.
+      [[LLM: Only include services sections that match detected project requirements. For single-player offline games, consider minimal analytics only.]]
     elicit: true
+    conditional: needs_cloud_features || has_progression || needs_analytics || has_live_ops
     sections:
       - id: ugs-authentication
         title: Authentication Services
+        conditional: has_multiplayer || has_social_features || needs_cloud_save
         template: |
-          **Authentication Provider:** {{auth_provider}}
+          [[LLM: Only include if multiplayer, social features, or cloud save requirements detected]]
+          
+          **Authentication Strategy:** {{auth_strategy}}
+          **Primary Provider:** {{auth_provider}}
           
           **Sign-in Methods:**
-          - {{signin_method_1}}: {{method_description_1}}
-          - {{signin_method_2}}: {{method_description_2}}
+          - {{signin_method_1}}: {{method_priority_1}} - {{method_description_1}}
+          - {{signin_method_2}}: {{method_priority_2}} - {{method_description_2}}
 
-          **Player Profile Management:**
-          - {{profile_data_1}}
-          - {{profile_data_2}}
-
-          **Session Management:**
-          - {{session_policy_1}}
-          - {{session_policy_2}}
-
-          **Offline Mode:**
-          - {{offline_capability_1}}
-          - {{offline_capability_2}}
+          **Anonymous Authentication:** {{anonymous_support}}
+          **Account Linking:** {{account_linking_strategy}}
+          
+          **Privacy & Consent:**
+          - GDPR Compliance: {{gdpr_implementation}}
+          - Data Processing Consent: {{consent_management}}
       - id: ugs-cloud-save
-        title: Cloud Save Integration
+        title: Cloud Save Integration  
+        conditional: has_progression || needs_cross_platform
         template: |
-          **Cloud Save Strategy:**
-          - {{cloud_save_approach}}
-          - {{sync_frequency}}
-
+          [[LLM: Only include if progression systems, cross-platform play, or user data persistence requirements detected]]
+          
+          **Cloud Save Scope:** {{cloud_save_scope}}
+          
           **Data Synchronization:**
-          - {{sync_data_1}}: {{sync_priority_1}}
-          - {{sync_data_2}}: {{sync_priority_2}}
+          - {{sync_data_1}}: Priority {{sync_priority_1}} - {{sync_frequency_1}}
+          - {{sync_data_2}}: Priority {{sync_priority_2}} - {{sync_frequency_2}}
 
-          **Conflict Resolution:**
-          - {{conflict_strategy_1}}
-          - {{conflict_strategy_2}}
-
-          **Local/Cloud Coordination:**
-          - {{coordination_rule_1}}
-          - {{coordination_rule_2}}
+          **Conflict Resolution Strategy:** {{conflict_resolution}}
+          **Offline/Online Coordination:** {{offline_coordination}}
+          
+          **Data Structure:**
+          - Save Format: {{save_format}}
+          - Versioning: {{save_versioning}}
+          - Encryption: {{save_encryption}}
       - id: ugs-analytics
         title: Analytics Integration
+        conditional: needs_player_insights || has_monetization || needs_optimization
         template: |
-          **Analytics Events:**
+          [[LLM: Include if monetization, player behavior analysis, game balancing, or performance optimization requirements detected]]
+          
+          **Analytics Strategy:** {{analytics_strategy}}
+          
+          **Core Event Categories:**
           - {{event_category_1}}: {{event_examples_1}}
           - {{event_category_2}}: {{event_examples_2}}
 
-          **Key Metrics:**
-          - {{metric_1}}: {{metric_purpose_1}}
-          - {{metric_2}}: {{metric_purpose_2}}
+          **Key Performance Indicators:**
+          - {{kpi_1}}: {{kpi_measurement_1}}
+          - {{kpi_2}}: {{kpi_measurement_2}}
 
           **Custom Parameters:**
-          - {{parameter_1}}: {{parameter_usage_1}}
-          - {{parameter_2}}: {{parameter_usage_2}}
+          - {{custom_param_1}}: {{param_purpose_1}}
+          - {{custom_param_2}}: {{param_purpose_2}}
 
-          **Data Retention:**
-          - {{retention_policy}}
-          - {{privacy_compliance}}
+          **Privacy Compliance:**
+          - Data Retention: {{data_retention_policy}}
+          - User Consent: {{analytics_consent_method}}
       - id: ugs-remote-config
         title: Remote Configuration
+        conditional: has_live_ops || needs_ab_testing || has_monetization
         template: |
+          [[LLM: Include if live operations, A/B testing, balancing updates, or monetization optimization requirements detected]]
+          
+          **Configuration Strategy:** {{remote_config_strategy}}
+          
           **Configuration Categories:**
-          - {{config_category_1}}: {{category_items_1}}
-          - {{config_category_2}}: {{category_items_2}}
+          - {{config_category_1}}: {{config_items_1}}
+          - {{config_category_2}}: {{config_items_2}}
 
-          **Update Strategy:**
-          - {{update_frequency}}
-          - {{cache_policy}}
+          **Update & Deployment:**
+          - Update Frequency: {{update_frequency}}
+          - Rollout Strategy: {{rollout_strategy}}
+          - Rollback Procedures: {{rollback_procedures}}
 
-          **A/B Testing:**
-          - {{test_parameter_1}}: {{test_purpose_1}}
-          - {{test_parameter_2}}: {{test_purpose_2}}
+          **A/B Testing Framework:**
+          - {{ab_test_1}}: {{test_hypothesis_1}}
+          - {{ab_test_2}}: {{test_hypothesis_2}}
 
           **Fallback Values:**
           - {{fallback_strategy_1}}
           - {{fallback_strategy_2}}
 
   - id: multiplayer-architecture
-    title: Multiplayer Architecture (if applicable)
+    title: Multiplayer Architecture
     instruction: |
-      [[LLM: Only include this section if the game has multiplayer features]]
+      [[LLM: Include this section if the game has any multiplayer features including: cooperative play, competitive multiplayer, shared worlds, social features, leaderboards, or online functionality. Detect networking requirements from gameplay mechanics, player interaction descriptions, or social features mentioned.]]
       
-      Design the multiplayer architecture using Unity's networking solutions:
+      Design comprehensive multiplayer architecture using Unity's networking solutions:
 
-      1. Choose networking solution (Netcode for GameObjects, Mirror, Photon, etc.)
-      2. Define network topology and authority model
-      3. Plan state synchronization and prediction
-      4. Design matchmaking and lobby systems
-      5. Consider latency compensation and anti-cheat measures
+      1. Analyze multiplayer scope and player interaction patterns
+      2. Choose appropriate networking solution based on requirements
+      3. Design network topology, authority model, and state synchronization
+      4. Plan matchmaking, lobbies, and session management
+      5. Consider platform-specific multiplayer requirements (Steam, console networks)
+      6. Design offline fallbacks and network error handling
 
-      Focus on responsive, fair multiplayer experiences with proper security.
+      [[LLM: For simple co-op or local multiplayer, suggest Unity Input System multi-device setup. For online multiplayer, recommend Netcode for GameObjects for Unity-native solution or evaluate third-party options based on complexity.]]
     elicit: true
-    conditional: has_multiplayer
+    conditional: has_multiplayer || has_coop || has_online_features || has_social_features
     sections:
       - id: networking-foundation
         title: Networking Foundation
         template: |
           **Networking Solution:** {{networking_choice}}
+          **Selection Rationale:** {{networking_rationale}}
           
           **Network Topology:** {{topology_type}}
-          
           **Authority Model:** {{authority_model}}
+          **Connection Model:** {{connection_model}}
 
-          **Player Capacity:**
-          - {{capacity_spec_1}}
-          - {{capacity_spec_2}}
+          **Player Capacity & Sessions:**
+          - Max Players: {{max_players}}
+          - Session Duration: {{session_duration}}
+          - Join-in-Progress: {{join_in_progress_support}}
 
-          **Network Requirements:**
-          - {{requirement_1}}: {{requirement_value_1}}
-          - {{requirement_2}}: {{requirement_value_2}}
+          **Platform Integration:**
+          - {{platform_1}}: {{platform_networking_1}}
+          - {{platform_2}}: {{platform_networking_2}}
+
       - id: state-synchronization
-        title: State Synchronization
+        title: Advanced State Synchronization
         template: |
-          **Synchronized Objects:**
-          - {{sync_object_1}}: {{sync_frequency_1}}
-          - {{sync_object_2}}: {{sync_frequency_2}}
+          **Synchronization Strategy:**
+          - High Priority Objects: {{high_priority_sync}}
+          - Medium Priority Objects: {{medium_priority_sync}}
+          - Low Priority Objects: {{low_priority_sync}}
 
-          **Prediction Strategy:**
-          - {{prediction_approach_1}}
-          - {{prediction_approach_2}}
+          **Client Prediction & Reconciliation:**
+          - Prediction Systems: {{prediction_systems}}
+          - Rollback Implementation: {{rollback_approach}}
+          - Lag Compensation: {{lag_compensation_method}}
 
-          **Reconciliation:**
-          - {{reconciliation_method_1}}
-          - {{reconciliation_method_2}}
+          **Anti-Cheat Considerations:**
+          - Server Authority: {{server_authority_scope}}
+          - Validation Systems: {{validation_systems}}
+          - Monitoring: {{anti_cheat_monitoring}}
 
-          **Bandwidth Optimization:**
-          - {{optimization_1}}
-          - {{optimization_2}}
-      - id: matchmaking-lobby
-        title: Matchmaking & Lobby System
+      - id: social-features
+        title: Social & Matchmaking Systems
         template: |
           **Matchmaking Criteria:**
-          - {{criteria_1}}: {{weight_1}}
-          - {{criteria_2}}: {{weight_2}}
+          - {{criteria_1}}: Weight {{weight_1}} - {{criteria_description_1}}
+          - {{criteria_2}}: Weight {{weight_2}} - {{criteria_description_2}}
 
-          **Lobby Features:**
-          - {{lobby_feature_1}}
-          - {{lobby_feature_2}}
+          **Social Features:**
+          - {{social_feature_1}}: {{feature_implementation_1}}
+          - {{social_feature_2}}: {{feature_implementation_2}}
 
           **Session Management:**
-          - {{session_rule_1}}
-          - {{session_rule_2}}
-
-          **Migration Strategy:**
-          - {{host_migration_approach}}
-          - {{reconnection_policy}}
+          - Session Types: {{session_types}}
+          - Migration Strategy: {{host_migration_strategy}}
+          - Reconnection Policy: {{reconnection_policy}}
 
   - id: next-steps
     title: Next Steps

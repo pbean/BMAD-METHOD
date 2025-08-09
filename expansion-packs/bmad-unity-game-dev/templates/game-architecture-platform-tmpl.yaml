@@ -1,7 +1,7 @@
 template:
-  id: game-architecture-platform-template-v1
+  id: game-architecture-platform-template-v2
   name: Game Architecture Platform Document
-  version: 1.0
+  version: 2.0
   output:
     format: markdown
     filename: docs/game-architecture-platform.md
@@ -18,6 +18,83 @@ sections:
       This document defines the platform-specific architecture and optimizations for {{project_name}}. This is Part 3 of the multi-phase architecture design, focusing on target platform configurations, performance optimization, and cross-platform compatibility.
 
       This document builds upon both the Foundation Architecture and Systems Architecture documents. All previous architectural decisions are considered definitive and should inform the platform-specific implementations defined here.
+
+  - id: platform-detection
+    title: Target Platform Analysis and Configuration
+    instruction: |
+      Analyze the target platforms for this project and configure platform-specific settings. This section provides intelligent platform detection and automated configuration recommendations.
+
+      [[LLM: Based on the project requirements and target platforms mentioned in previous documents, automatically identify the primary target platforms (Mobile iOS/Android, Desktop Windows/Mac/Linux, Console PlayStation/Xbox/Switch, VR/AR Headsets). For each detected platform, analyze hardware capabilities, performance constraints, and platform-specific requirements. Generate detailed configuration recommendations including Unity player settings, platform-specific optimizations, and development considerations. If XR platforms are detected, flag the need for Unity XR Foundation setup in subsequent sections.]]
+
+      Focus on creating platform-aware configurations that leverage each platform's strengths while maintaining performance targets.
+    elicit: true
+    sections:
+      - id: target-platform-matrix
+        title: Target Platform Configuration Matrix
+        type: table
+        columns: [Platform, Hardware Profile, Performance Target, Key Constraints, Special Requirements]
+        instruction: |
+          Create a comprehensive platform matrix with intelligent configuration recommendations.
+          
+          [[LLM: For each detected target platform, automatically populate this table with platform-specific hardware profiles (e.g., "Mid-range mobile devices, 4GB RAM, Adreno 640 GPU" for Android), realistic performance targets based on platform capabilities, key constraints (battery life, thermal throttling, input methods), and special requirements (app store certification, platform SDKs, specific APIs). Use industry standards and Unity documentation to ensure accurate recommendations.]]
+        examples:
+          - "| iOS Mobile | iPhone 12+ equivalent, 6GB RAM, A14+ chip | 60 FPS, 2GB memory budget | Battery optimization, touch input only | App Store guidelines, iOS 14+ APIs |"
+          - "| Windows PC | GTX 1060 equivalent, 8GB RAM, Intel i5+ | 60+ FPS, 4GB memory budget | Variable hardware specs | Steam integration, Windows 10+ APIs |"
+      - id: unity-player-settings
+        title: Unity Player Settings Configuration
+        template: |
+          **Platform-Specific Player Settings:**
+          
+          [[LLM: Generate Unity player settings configurations for each target platform. Include specific settings for Graphics APIs (Metal for iOS, Vulkan for Android, DirectX for Windows), scripting backends (IL2CPP for mobile, Mono for development), target architectures, and platform-specific optimizations. Reference Unity documentation for current best practices and include version-specific recommendations.]]
+
+          {{platform_settings_config}}
+
+          **Cross-Platform Considerations:**
+          - {{cross_platform_setting_1}}: {{setting_rationale_1}}
+          - {{cross_platform_setting_2}}: {{setting_rationale_2}}
+
+  - id: unity-xr-foundation
+    title: Unity XR Foundation Configuration
+    instruction: |
+      Configure Unity XR Foundation for VR/AR development support. This section provides intelligent XR setup based on detected target platforms and 3D development requirements.
+
+      [[LLM: Based on the platform detection analysis, determine if XR development is required for this project. If VR/AR platforms are detected (Oculus, HTC Vive, ARKit, ARCore, Magic Leap, etc.) or if the project involves 3D spatial gameplay, automatically generate XR Foundation setup recommendations. Include XR package dependencies, provider configurations, interaction systems setup, and platform-specific XR optimizations. If no XR platforms are detected, provide guidance on preparing the project for future XR expansion.]]
+
+      Focus on scalable XR architecture that supports multiple XR platforms and input methods.
+    elicit: true
+    sections:
+      - id: xr-platform-support
+        title: XR Platform Support Configuration
+        template: |
+          **XR Foundation Setup:**
+          
+          [[LLM: Generate specific XR Foundation package configurations based on detected XR platforms. Include XR Plugin Management setup, provider configurations (Oculus XR, OpenXR, ARFoundation, etc.), and XR interaction systems. Provide package version recommendations and compatibility matrices for Unity versions.]]
+
+          **Required XR Packages:**
+          - {{xr_package_1}}: {{package_version_1}} - {{package_purpose_1}}
+          - {{xr_package_2}}: {{package_version_2}} - {{package_purpose_2}}
+
+          **XR Provider Configuration:**
+          - {{xr_provider_1}}: {{provider_config_1}}
+          - {{xr_provider_2}}: {{provider_config_2}}
+
+          **Input System Integration:**
+          - {{xr_input_config_1}}
+          - {{xr_input_config_2}}
+      - id: xr-interaction-design
+        title: XR Interaction and Locomotion Systems
+        template: |
+          **XR Interaction Framework:**
+          - {{interaction_system_1}}: {{system_description_1}}
+          - {{interaction_system_2}}: {{system_description_2}}
+
+          **Locomotion Systems:**
+          - {{locomotion_method_1}}: {{method_details_1}}
+          - {{locomotion_method_2}}: {{method_details_2}}
+
+          **Comfort and Accessibility:**
+          - {{comfort_feature_1}}: {{feature_rationale_1}}
+          - {{comfort_feature_2}}: {{feature_rationale_2}}
 
   - id: ui-architecture
     title: UI Architecture
@@ -91,20 +168,27 @@ sections:
     elicit: true
     sections:
       - id: render-pipeline-config
-        title: Render Pipeline Configuration
+        title: Platform-Aware Render Pipeline Configuration
         template: |
-          **Pipeline Configuration:**
-          - **Render Pipeline:** {{render_pipeline}}
-          - **Target Platforms:** {{target_platforms}}
-          - **Quality Tiers:** {{quality_tiers}}
+          **Intelligent Pipeline Configuration:**
+          
+          [[LLM: Based on the target platform analysis, automatically recommend the optimal render pipeline for each platform. For mobile platforms, typically recommend Universal Render Pipeline (URP) with mobile-optimized settings. For high-end PC/Console, consider High Definition Render Pipeline (HDRP) for visual fidelity or URP for performance. For XR platforms, URP is generally recommended. Generate specific pipeline configurations including renderer features, lighting settings, shadow configurations, and post-processing setups optimized for each platform's capabilities.]]
 
-          **Platform-Specific Settings:**
-          - {{platform_1}}: {{platform_1_settings}}
-          - {{platform_2}}: {{platform_2_settings}}
+          **Pipeline Selection:**
+          - **Primary Render Pipeline:** {{intelligent_pipeline_choice}}
+          - **Platform Rationale:** {{platform_pipeline_rationale}}
+          
+          **Platform-Optimized Settings:**
+          {{platform_optimized_pipeline_settings}}
 
-          **Performance Targets:**
-          - {{performance_target_1}}
-          - {{performance_target_2}}
+          **Quality Tier Configurations:**
+          - {{quality_tier_1}}: {{tier_settings_1}}
+          - {{quality_tier_2}}: {{tier_settings_2}}
+          - {{quality_tier_3}}: {{tier_settings_3}}
+
+          **Performance vs Quality Trade-offs:**
+          - {{tradeoff_1}}: {{optimization_strategy_1}}
+          - {{tradeoff_2}}: {{optimization_strategy_2}}
       - id: shader-guidelines
         title: Shader and Material Guidelines
         template: |
@@ -221,32 +305,30 @@ sections:
     elicit: true
     sections:
       - id: performance-targets
-        title: Performance Targets
-        type: table
-        columns: [Platform, Target FPS, Memory Budget, Load Time Target, Battery Life Target]
-        instruction: Define specific performance targets for each platform
-        examples:
-          - "| Mobile (Android/iOS) | 60 FPS | 2GB RAM | <3s scene load | 2+ hours gameplay |"
-          - "| PC (Windows) | 60+ FPS | 4GB RAM | <2s scene load | N/A |"
-          - "| Console | 60 FPS | Platform specific | <2s scene load | N/A |"
-      - id: optimization-strategies
-        title: Platform-Specific Optimizations
+        title: Platform-Specific Performance Optimization
         template: |
-          **CPU Optimizations:**
-          - {{cpu_optimization_1}}
-          - {{cpu_optimization_2}}
+          **Intelligent Performance Strategy:**
+          
+          [[LLM: Generate platform-specific performance optimization strategies based on the target platform analysis. For mobile platforms, focus on battery optimization, thermal management, and memory efficiency. For PC platforms, leverage variable hardware specs with scalable quality settings. For console platforms, optimize for fixed hardware specs with platform-specific features. Include specific Unity profiler guidance, optimization techniques (object pooling, LOD systems, occlusion culling), and performance monitoring strategies.]]
 
-          **GPU Optimizations:**
-          - {{gpu_optimization_1}}
-          - {{gpu_optimization_2}}
+          **Platform Performance Targets:**
+          {{intelligent_performance_matrix}}
 
-          **Memory Optimizations:**
-          - {{memory_optimization_1}}
-          - {{memory_optimization_2}}
+          **Mobile-Specific Optimizations:**
+          - {{mobile_optimization_1}}: {{mobile_strategy_1}}
+          - {{mobile_optimization_2}}: {{mobile_strategy_2}}
 
-          **Platform-Specific Techniques:**
-          - {{platform_technique_1}}
-          - {{platform_technique_2}}
+          **Desktop-Specific Optimizations:**
+          - {{desktop_optimization_1}}: {{desktop_strategy_1}}
+          - {{desktop_optimization_2}}: {{desktop_strategy_2}}
+
+          **Console-Specific Optimizations:**
+          - {{console_optimization_1}}: {{console_strategy_1}}
+          - {{console_optimization_2}}: {{console_strategy_2}}
+
+          **XR-Specific Optimizations:**
+          - {{xr_optimization_1}}: {{xr_strategy_1}}
+          - {{xr_optimization_2}}: {{xr_strategy_2}}
 
   - id: platform-integrations
     title: Platform Services Integration
@@ -292,6 +374,49 @@ sections:
           **Privacy Compliance:**
           - {{privacy_measure_1}}
           - {{privacy_measure_2}}
+
+  - id: cross-platform-input
+    title: Adaptive Input System Configuration
+    instruction: |
+      Configure Unity's Input System for seamless cross-platform input handling. This section provides intelligent input adaptation based on target platform capabilities.
+
+      [[LLM: Based on the target platform analysis, automatically configure Unity's Input System for optimal input handling across all detected platforms. For mobile platforms, configure touch input, accelerometer, and gyroscope. For desktop platforms, configure keyboard, mouse, and gamepad support. For console platforms, configure platform-specific controllers. For XR platforms, configure hand tracking, eye tracking, and spatial controllers. Generate input action maps, control schemes, and platform-specific input adaptations that provide consistent gameplay experience across all platforms.]]
+
+      Focus on creating unified input experiences that adapt intelligently to each platform's input capabilities.
+    elicit: true
+    sections:
+      - id: input-system-architecture
+        title: Input System Architecture
+        template: |
+          **Adaptive Input Configuration:**
+          
+          [[LLM: Generate Unity Input System configurations with platform-adaptive input handling. Create input action maps that automatically adapt to available input methods on each platform. Include control scheme switching, input device detection, and fallback input methods. Provide configuration for touch gestures on mobile, precision mouse control on PC, controller haptics on console, and spatial input for XR platforms.]]
+
+          **Input Action Maps:**
+          - {{input_map_1}}: {{map_description_1}}
+          - {{input_map_2}}: {{map_description_2}}
+
+          **Platform Control Schemes:**
+          - {{control_scheme_1}}: {{scheme_devices_1}}
+          - {{control_scheme_2}}: {{scheme_devices_2}}
+
+          **Input Adaptation Logic:**
+          - {{adaptation_rule_1}}: {{rule_implementation_1}}
+          - {{adaptation_rule_2}}: {{rule_implementation_2}}
+      - id: input-ui-integration
+        title: Input-UI Integration
+        template: |
+          **UI Input Integration:**
+          - {{ui_input_1}}: {{integration_approach_1}}
+          - {{ui_input_2}}: {{integration_approach_2}}
+
+          **Accessibility Features:**
+          - {{accessibility_input_1}}: {{feature_details_1}}
+          - {{accessibility_input_2}}: {{feature_details_2}}
+
+          **Input Feedback Systems:**
+          - {{feedback_system_1}}: {{feedback_config_1}}
+          - {{feedback_system_2}}: {{feedback_config_2}}
 
   - id: cross-platform-compatibility
     title: Cross-Platform Compatibility
@@ -351,19 +476,30 @@ sections:
     elicit: true
     sections:
       - id: build-configurations
-        title: Platform Build Configurations
+        title: Automated Platform Build Pipeline
         template: |
-          **Build Settings:**
-          - {{platform_1}}: {{build_config_1}}
-          - {{platform_2}}: {{build_config_2}}
+          **Intelligent Build Automation:**
+          
+          [[LLM: Generate automated build pipeline configurations for each target platform detected in the platform analysis. Include Unity Cloud Build configurations, local build scripts, platform-specific build settings, app signing configurations, and deployment strategies. For mobile platforms, include app store submission requirements. For PC platforms, include distribution platform integrations (Steam, Epic, etc.). For console platforms, include certification and submission processes. Generate CI/CD pipeline recommendations using Unity Cloud Build, GitHub Actions, or similar services.]]
 
-          **Certification Requirements:**
-          - {{cert_requirement_1}}
-          - {{cert_requirement_2}}
+          **Build Pipeline Architecture:**
+          {{intelligent_build_pipeline_config}}
 
-          **Distribution Channels:**
-          - {{distribution_1}}: {{channel_strategy_1}}
-          - {{distribution_2}}: {{channel_strategy_2}}
+          **Platform Build Configurations:**
+          - {{platform_build_1}}: {{build_config_details_1}}
+          - {{platform_build_2}}: {{build_config_details_2}}
+
+          **Automated Testing Integration:**
+          - {{automated_test_1}}: {{test_config_1}}
+          - {{automated_test_2}}: {{test_config_2}}
+
+          **Deployment and Distribution:**
+          - {{deployment_strategy_1}}: {{distribution_details_1}}
+          - {{deployment_strategy_2}}: {{distribution_details_2}}
+
+          **Version Management:**
+          - {{versioning_strategy}}: {{version_details}}
+          - {{build_numbering}}: {{numbering_scheme}}
       - id: update-strategy
         title: Update and Patching Strategy
         template: |

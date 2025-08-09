@@ -1,7 +1,7 @@
 template:
-  id: game-architecture-foundation-template-v1
+  id: game-architecture-foundation-template-v2
   name: Game Architecture Foundation Document
-  version: 1.0
+  version: 2.0
   output:
     format: markdown
     filename: docs/game-architecture-foundation.md
@@ -22,40 +22,104 @@ sections:
           This document outlines the foundational technical architecture for {{project_name}}, a {{ProjectDimension}} game built with Unity and C#. This is Part 1 of a multi-phase architecture design covering Unity setup, core infrastructure, and project organization.
 
           This foundation architecture is designed to support the gameplay mechanics defined in the Game Design Document while establishing solid technical groundwork for subsequent architectural phases.
+      
+      - id: unity-version-analysis
+        title: Unity Version Selection
+        instruction: |
+          [[LLM: Unity Version Intelligence]]
+          Before proceeding with architecture design, analyze the project requirements and recommend the most appropriate Unity version:
+          
+          1. **Project Analysis:**
+             - Review GDD for performance requirements, target platforms, and complexity
+             - Consider team experience level and development timeline
+             - Evaluate need for cutting-edge features vs stability
+          
+          2. **Version Recommendation Logic:**
+             - LTS (Long Term Support): Recommend for production games, teams prioritizing stability, mobile/console targets
+             - Tech Stream: Recommend for experimental projects, early adopters, or projects requiring newest features
+             - Check Unity roadmap for feature alignment with project needs
+          
+          3. **Specific Evaluation Criteria:**
+             - Mobile games: Strongly favor LTS for better platform compatibility
+             - VR/AR projects: May need Tech Stream for latest XR features
+             - 2D games: LTS typically sufficient unless using newest 2D tools
+             - 3D games with advanced rendering: Evaluate based on HDRP/URP requirements
+             - Console development: LTS required for certification compatibility
+          
+          4. **Output Format:**
+             - State recommended Unity version with specific build number
+             - Provide 2-3 sentence rationale based on project characteristics
+             - Note any version-specific considerations or limitations
+             - Mention upgrade path if starting with older version
+          
+          Document the selected Unity version and rationale here before proceeding.
+        elicit: true
+
       - id: starter-template
         title: Starter Template or Existing Project
         instruction: |
-          Before proceeding further with game architecture design, check if the project is based on a Unity template or existing codebase:
+          [[LLM: Starter Template Detection & Analysis]]
+          Before proceeding further with game architecture design, perform comprehensive starter template analysis:
 
-          1. Review the GDD and brainstorming brief for any mentions of:
-          - Unity templates (2D Core, 2D Mobile, 2D URP, etc.)
-          - Existing Unity projects being used as a foundation
-          - Asset Store packages or game development frameworks
-          - Previous game projects to be cloned or adapted
+          1. **Detection Phase:**
+             - Review GDD and brainstorming brief for mentions of Unity templates (2D Core, 2D Mobile, 2D URP, etc.)
+             - Look for existing Unity projects, Asset Store packages, or game frameworks
+             - Check for references to previous game projects to be adapted
+             - Identify any boilerplate or scaffolding tools mentioned
 
-          2. If a starter template or existing project is mentioned:
-          - Ask the user to provide access via one of these methods:
-            - Link to the Unity template documentation
-            - Upload/attach the project files (for small projects)
-            - Share a link to the project repository (GitHub, GitLab, etc.)
-          - Analyze the starter/existing project to understand:
-            - Pre-configured Unity version and render pipeline
-            - Project structure and organization patterns
-            - Built-in packages and dependencies
-            - Existing architectural patterns and conventions
-            - Any limitations or constraints imposed by the starter
-          - Use this analysis to inform and align your architecture decisions
+          2. **Template Analysis (if found):**
+             - Analyze starter template architecture and patterns
+             - Document pre-configured Unity version, render pipeline, and package dependencies
+             - Identify built-in project structure, scripts, and organizational conventions
+             - Note any architectural constraints or opinionated decisions in the template
+             - Evaluate alignment with project requirements from GDD
 
-          3. If no starter template is mentioned but this is a greenfield project:
-          - Suggest appropriate Unity templates based on the target platform
-          - Explain the benefits (faster setup, best practices, package integration)
-          - Let the user decide whether to use one
+          3. **Recommendation Logic:**
+             - For greenfield projects without starter: Suggest appropriate Unity templates based on target platform and game type
+             - For projects with starter: Validate template choice against project requirements
+             - Consider benefits: faster setup, Unity best practices, package integration, community support
+             - Note limitations: reduced flexibility, potential feature conflicts, learning curve
 
-          4. If the user confirms no starter template will be used:
-          - Proceed with architecture design from scratch
-          - Note that manual setup will be required for all Unity configuration
+          4. **Integration Strategy:**
+             - If using starter: Align architecture decisions with template patterns
+             - Document how to extend or modify template structure for project needs
+             - Plan migration path if template becomes limiting
+             - Identify areas where template choices override normal architectural decisions
 
-          Document the decision here before proceeding with the architecture design. If none, just say N/A
+          Document the starter template decision and analysis here before proceeding. If none, state "N/A - Greenfield Unity Project".
+        elicit: true
+
+      - id: project-dimension-detection
+        title: Project Dimension Analysis
+        instruction: |
+          [[LLM: 2D/3D Project Intelligence]]
+          Analyze the project characteristics to determine optimal Unity configuration and feature set:
+
+          1. **Dimension Classification:**
+             - Pure 2D: Side-scrollers, top-down games, mobile puzzle games
+             - 2.5D: 2D gameplay with 3D assets, isometric games, layered 2D environments
+             - Pure 3D: First-person, third-person, fully 3D environments
+             - Hybrid: Games switching between 2D and 3D modes
+
+          2. **Unity Feature Implications:**
+             - 2D Projects: Tilemap system, 2D Physics, 2D Lighting, Sprite Renderer optimization
+             - 3D Projects: 3D Physics, advanced lighting, post-processing, terrain systems
+             - 2.5D Projects: Mixed physics systems, camera management, depth sorting
+             - Hybrid Projects: Scene management, performance optimization for mode switching
+
+          3. **Technology Stack Adaptation:**
+             - Render Pipeline: Built-in (2D simple), URP (2D/3D balanced), HDRP (3D advanced)
+             - Physics: Box2D vs 3D Physics vs hybrid approach
+             - Camera Systems: Orthographic vs Perspective vs dynamic switching
+             - Asset Pipeline: 2D sprites vs 3D models vs mixed workflows
+
+          4. **Performance Considerations:**
+             - Mobile 2D: Sprite atlasing, draw call optimization, 2D batching
+             - Mobile 3D: LOD systems, occlusion culling, texture compression
+             - Desktop 2D: High-resolution assets, advanced 2D effects, large world streaming
+             - Desktop 3D: Advanced rendering features, complex shaders, high polygon counts
+
+          Based on GDD analysis, classify this project and document dimension-specific architectural decisions.
         elicit: true
       - id: changelog
         title: Change Log
@@ -72,12 +136,34 @@ sections:
       - id: technical-summary
         title: Technical Summary
         instruction: |
-          Provide a brief paragraph (3-5 sentences) overview of:
-          - The game's overall architecture style (component-based Unity architecture)
-          - Key game systems and their relationships
-          - Primary technology choices (Unity, C#, target platforms)
-          - Core architectural patterns being used (MonoBehaviour components, ScriptableObjects, Unity Events)
-          - Reference back to the GDD goals and how this architecture supports them
+          [[LLM: Architecture Summary Intelligence]]
+          Generate a comprehensive technical summary that adapts to the project characteristics identified above:
+
+          1. **Contextual Summary Generation:**
+             - Reference Unity version selected and its capabilities
+             - Incorporate 2D/3D dimension analysis results
+             - Include starter template implications if applicable
+             - Align with target platform requirements
+
+          2. **Content Adaptation:**
+             - 2D Projects: Emphasize component-based 2D systems, sprite management, 2D physics integration
+             - 3D Projects: Focus on 3D rendering pipeline, complex scene management, 3D physics systems
+             - Mobile Projects: Highlight performance optimization, battery efficiency, touch input systems
+             - Desktop/Console: Emphasize advanced graphics, complex input systems, high-performance computing
+
+          3. **Unity-Specific Architecture Patterns:**
+             - Component composition over inheritance patterns
+             - ScriptableObject data architecture
+             - Unity Events vs C# Events decision rationale
+             - Prefab workflow and asset organization
+             - Scene management and loading strategies
+
+          Provide a unified paragraph (3-5 sentences) that weaves together:
+          - The game's overall architecture style adapted to Unity patterns
+          - Key game systems and their Unity-specific relationships
+          - Primary technology choices from version and dimension analysis
+          - Core architectural patterns optimized for the detected project type
+          - Reference back to GDD goals and how this Unity architecture specifically supports them
       - id: high-level-overview
         title: High Level Overview
         instruction: |
@@ -88,17 +174,51 @@ sections:
           3. Game system architecture (modular systems, manager singletons, data-driven design)
           4. Primary player interaction flow and core game loop
           5. Key architectural decisions and their rationale (render pipeline, input system, physics)
+      - id: render-pipeline-selection
+        title: Render Pipeline Configuration
+        instruction: |
+          [[LLM: Render Pipeline Intelligence]]
+          Select and configure the optimal render pipeline based on project analysis:
+
+          1. **Pipeline Analysis:**
+             - Built-in Render Pipeline: Legacy, simple 2D games, basic 3D, broad compatibility
+             - Universal Render Pipeline (URP): Modern 2D/3D games, mobile optimization, balanced features
+             - High Definition Render Pipeline (HDRP): High-end 3D, desktop/console, advanced graphics
+
+          2. **Selection Logic:**
+             - 2D Games: URP for modern features and optimization, Built-in for simplicity
+             - Mobile 3D: URP for performance optimization and battery efficiency
+             - Desktop/Console 3D: URP for balanced approach, HDRP for cutting-edge graphics
+             - VR/AR: URP for performance requirements
+             - Web/WebGL: Built-in or URP (check compatibility)
+
+          3. **Configuration Implications:**
+             - Lighting system setup and optimization
+             - Shader compatibility and upgrade requirements
+             - Post-processing pipeline configuration
+             - Performance profiling and optimization strategies
+             - Asset creation workflow adaptation
+
+          4. **Technical Specifications:**
+             - Document specific render pipeline version
+             - List required package dependencies
+             - Note shader and material compatibility
+             - Specify lighting model and setup requirements
+
+          Based on the project dimension analysis and target platforms, select and document the render pipeline choice with rationale.
+
       - id: project-diagram
         title: High Level Project Diagram
         type: mermaid
         mermaid_type: graph
         instruction: |
-          Create a Mermaid diagram that visualizes the high-level game architecture. Consider:
-          - Core game systems (Input, Physics, Rendering, Audio, UI)
-          - Game managers and their responsibilities
-          - Data flow between systems
-          - External integrations (platform services, analytics)
-          - Player interaction points
+          Create a Mermaid diagram that visualizes the Unity-specific game architecture:
+          - Core Unity systems (Input, Physics, Rendering, Audio, UI)
+          - MonoBehaviour managers and ScriptableObject data
+          - Unity Events and C# event communication
+          - Asset loading and management systems
+          - Platform-specific service integrations
+          - Player interaction points through Unity's input systems
 
       - id: architectural-patterns
         title: Architectural and Design Patterns
@@ -110,39 +230,61 @@ sections:
           3. Get user confirmation before finalizing
           4. These patterns should align with the GDD's technical assumptions and project goals
 
-          Common Unity patterns to consider:
-          - Component patterns (MonoBehaviour composition, ScriptableObject data)
-          - Game management patterns (Singleton managers, Event systems, State machines)
-          - Data patterns (ScriptableObject configuration, Save/Load systems)
-          - Unity-specific patterns (Object pooling, Coroutines, Unity Events)
-        template: "- **{{pattern_name}}:** {{pattern_description}} - _Rationale:_ {{rationale}}"
+          Unity-specific patterns to consider:
+          - Component patterns (MonoBehaviour composition, Component-based design, Interface segregation)
+          - Data patterns (ScriptableObject configuration, Persistent data, Event-driven architecture)
+          - Unity lifecycle patterns (Initialization order, Update optimization, Object pooling)
+          - Asset management patterns (Prefab workflows, Asset bundling, Addressables)
+          - Scene management patterns (Additive loading, Persistent scenes, State management)
+        template: "- **{{pattern_name}}:** {{pattern_description}} - _Unity Rationale:_ {{unity_specific_rationale}}"
         examples:
-          - "**Component-Based Architecture:** Using MonoBehaviour components for game logic - _Rationale:_ Aligns with Unity's design philosophy and enables reusable, testable game systems"
-          - "**ScriptableObject Data:** Using ScriptableObjects for game configuration - _Rationale:_ Enables data-driven design and easy balancing without code changes"
-          - "**Event-Driven Communication:** Using Unity Events and C# events for system decoupling - _Rationale:_ Supports modular architecture and easier testing"
+          - "**Component-Based Architecture:** Using MonoBehaviour components with clear responsibilities - _Unity Rationale:_ Leverages Unity's native component system for reusability and inspector-friendly development"
+          - "**ScriptableObject Data Architecture:** Using ScriptableObjects for game configuration and runtime data - _Unity Rationale:_ Enables data-driven design, easy balancing, and asset-based workflow integration"
+          - "**Unity Events with C# Actions:** Hybrid event system using both Unity Events and C# delegates - _Unity Rationale:_ Unity Events for designer-configurable connections, C# Actions for performance-critical systems"
 
   - id: tech-stack
     title: Tech Stack
     instruction: |
-      This is the DEFINITIVE technology selection section for the Unity game. Work with the user to make specific choices:
+      [[LLM: Platform-Aware Technology Stack Intelligence]]
+      This is the DEFINITIVE technology selection section for the Unity game. Generate intelligent recommendations based on project analysis:
 
-      1. Review GDD technical assumptions and any preferences from {root}/data/technical-preferences.yaml or an attached technical-preferences
-      2. For each category, present 2-3 viable options with pros/cons
-      3. Make a clear recommendation based on project needs
-      4. Get explicit user approval for each selection
-      5. Document exact versions (avoid "latest" - pin specific versions)
-      6. This table is the single source of truth - all other docs must reference these choices
+      1. **Intelligent Recommendation Logic:**
+         - Adapt suggestions based on Unity version selected above
+         - Consider 2D/3D project dimension for feature selection
+         - Factor in target platform requirements and limitations
+         - Account for starter template constraints if applicable
+         - Reference team technical preferences when available
 
-      Key decisions to finalize - before displaying the table, ensure you are aware of or ask the user about:
+      2. **Unity Package Manager Integration:**
+         - Recommend packages based on detected game requirements
+         - Ensure version compatibility with selected Unity version
+         - Consider package dependencies and conflicts
+         - Prioritize packages with good Unity integration
 
-      - Unity version and render pipeline
-      - Target platforms and their specific requirements
+      3. **Platform-Specific Optimizations:**
+         - Mobile: Lightweight packages, performance-optimized choices
+         - Desktop: Feature-rich options, development productivity tools
+         - Console: Platform SDK requirements, certification considerations
+         - Web: WebGL compatibility, size constraints
+
+      4. **Technology Selection Process:**
+         - For each category, present 2-3 viable options with pros/cons
+         - Make clear recommendations based on project characteristics analysis
+         - Get explicit user approval for each selection
+         - Document exact versions (avoid "latest" - pin specific versions)
+         - This table is the single source of truth for all subsequent architecture documents
+
+      Key Unity-specific decisions to finalize:
+      - Unity version and render pipeline (from analysis above)
       - Unity Package Manager packages and versions
-      - Third-party assets or frameworks
-      - Platform SDKs and services
-      - Build and deployment tools
+      - Input system choice (Legacy vs New Input System)
+      - Physics system configuration (2D vs 3D vs hybrid)
+      - Audio system and middleware integration
+      - Platform SDKs and Unity Services
+      - Development and debugging tools
+      - Testing framework and CI/CD integration
 
-      Upon render of the table, ensure the user is aware of the importance of this sections choices, should also look for gaps or disagreements with anything, ask for any clarifications if something is unclear why its in the list, and also right away elicit feedback.
+      Present the technology stack table with intelligent, context-aware recommendations.
     elicit: true
     sections:
       - id: platform-infrastructure
@@ -150,35 +292,68 @@ sections:
         template: |
           - **Target Platforms:** {{target_platforms}}
           - **Primary Platform:** {{primary_platform}}
-          - **Platform Services:** {{platform_services_list}}
+          - **Unity Services:** {{unity_services_list}}
           - **Distribution:** {{distribution_channels}}
       - id: technology-stack-table
         title: Technology Stack Table
         type: table
         columns: [Category, Technology, Version, Purpose, Rationale]
-        instruction: Populate the technology stack table with all relevant Unity technologies
+        instruction: |
+          [[LLM: Technology Stack Validation]]
+          Populate the technology stack table with intelligent, project-adapted recommendations:
+
+          1. **Validation Logic:**
+             - Ensure Unity version compatibility for all selected packages
+             - Verify render pipeline support for graphics-related packages
+             - Check platform compatibility for all target platforms
+             - Validate package dependency compatibility
+
+          2. **Intelligent Package Selection:**
+             - 2D Projects: Include 2D-specific packages (2D Tilemap, 2D Animation, 2D Lights)
+             - 3D Projects: Include 3D-specific packages (Cinemachine, Timeline, ProBuilder)
+             - Mobile Projects: Prioritize performance and optimization packages
+             - Multiplayer Games: Include Netcode or Mirror networking
+             - VR/AR Projects: Include XR Foundation and platform-specific SDKs
+
+          3. **Required Core Entries:**
+             - Game Engine: Unity with selected version and rationale
+             - Language: C# with version compatible with Unity version
+             - Render Pipeline: Selected pipeline with version and rationale
+             - Input System: Legacy or New based on project requirements
+             - Physics: Unity 2D Physics, 3D Physics, or hybrid approach
+             - Audio: Unity Audio or third-party middleware
+             - Testing: Unity Test Framework with version
+
         examples:
-          - "| **Game Engine** | Unity | 2022.3.21f1 | Core game development platform | Latest LTS version, comprehensive package ecosystem |"
-          - "| **Language** | C# | 10.0 | Primary scripting language | Unity's native language, strong typing, excellent tooling |"
-          - "| **Render Pipeline** | Universal Render Pipeline (URP) | 14.0.10 | 2D/3D rendering | Optimized for mobile, excellent 2D features, future-proof |"
-          - "| **Input System** | Unity Input System | 1.7.0 | Cross-platform input handling | Modern input system, supports multiple devices, rebindable controls |"
-          - "| **Physics** | Unity 2D Physics | Built-in | 2D collision and physics | Integrated Box2D, optimized for 2D games |"
-          - "| **Audio** | Unity Audio | Built-in | Audio playback and mixing | Built-in audio system with mixer support |"
-          - "| **Testing** | Unity Test Framework | 1.1.33 | Unit and integration testing | Built-in testing framework based on NUnit |"
+          - "| **Game Engine** | Unity | 2022.3.21f1 LTS | Core development platform | LTS version provides stability for production, comprehensive 2D/3D toolset |"
+          - "| **Language** | C# | 9.0 | Primary scripting language | Unity 2022.3 C# 9.0 support, strong typing, excellent tooling |"
+          - "| **Render Pipeline** | Universal Render Pipeline (URP) | 14.0.10 | 2D/3D rendering optimization | Balanced 2D/3D performance, mobile-optimized, future-proof architecture |"
+          - "| **Input System** | Unity Input System | 1.7.0 | Modern input handling | Cross-platform input, rebindable controls, touch and gamepad support |"
+          - "| **Physics** | Unity 2D Physics | Built-in | 2D collision and physics | Integrated Box2D, optimized for 2D gameplay, sprite-based colliders |"
+          - "| **Testing** | Unity Test Framework | 1.1.33 | Unit and integration testing | Built-in NUnit-based testing, play-mode and edit-mode support |"
 
   - id: unity-project-structure
     title: Unity Project Structure
     instruction: |
-      Define the complete Unity project folder structure and organization patterns:
+      Define the complete Unity project folder structure optimized for the detected project characteristics:
 
-      1. Review Unity best practices for project organization
-      2. Consider the game's scale and complexity from the GDD
-      3. Plan for team collaboration and asset management
-      4. Include organization for scripts, prefabs, scenes, and data assets
-      5. Consider platform-specific asset organization
-      6. Plan for editor tools and development utilities
+      1. **Project-Specific Structure:**
+         - Adapt folder organization for 2D vs 3D asset types
+         - Consider starter template structure if applicable
+         - Plan for target platform asset organization
+         - Include Unity Package Manager local packages if needed
 
-      Use Unity naming conventions and folder structures that scale with project growth.
+      2. **Unity Best Practices Integration:**
+         - Follow Unity naming conventions and folder hierarchy
+         - Organize for team collaboration and asset management
+         - Consider Unity version control best practices
+         - Plan for editor tools and development utilities
+
+      3. **Scalability Considerations:**
+         - Structure that grows with project complexity
+         - Separate concerns for better maintainability
+         - Consider asset loading performance implications
+         - Plan for localization and platform variants
     elicit: true
     sections:
       - id: folder-structure
@@ -200,6 +375,7 @@ sections:
           │   ├── Art/
           │   │   ├── {{art_categories}}
           │   └── Resources/               # Runtime loaded assets
+          ├── Packages/                    # Local UPM packages
           ├── Plugins/                     # Third-party plugins
           ├── StreamingAssets/             # Platform-deployed assets
           └── Editor/                      # Editor-only scripts and tools
@@ -224,17 +400,23 @@ sections:
   - id: unity-conventions
     title: Unity Development Conventions
     instruction: |
-      Establish Unity-specific coding and development conventions that the team will follow:
+      Establish Unity-specific coding and development conventions adapted to the project:
 
-      1. Unity component design patterns (MonoBehaviour best practices)
-      2. ScriptableObject usage guidelines
-      3. Prefab organization and naming
-      4. Scene organization patterns
-      5. Unity Event vs C# Event usage
-      6. Coroutine vs async/await guidelines
-      7. Editor scripting conventions
+      1. **Project-Adapted Conventions:**
+         - Adapt conventions for 2D vs 3D development patterns
+         - Consider starter template conventions if applicable
+         - Align with target platform development requirements
+         - Factor in team size and collaboration needs
 
-      Focus on Unity-specific patterns that complement general C# coding standards.
+      2. **Unity-Specific Patterns:**
+         - MonoBehaviour lifecycle best practices
+         - ScriptableObject usage guidelines optimized for project type
+         - Prefab organization and naming conventions
+         - Scene organization patterns for game architecture
+         - Unity Events vs C# Events usage guidelines
+         - Coroutine vs async/await decision framework
+
+      Focus on Unity-specific patterns that complement general C# coding standards and support the architectural decisions made above.
     elicit: true
     sections:
       - id: component-patterns
@@ -270,16 +452,27 @@ sections:
   - id: infrastructure-deployment
     title: Infrastructure and Deployment
     instruction: |
-      Define the build pipeline, deployment strategy, and infrastructure requirements:
+      Define Unity-specific build pipeline, deployment strategy, and infrastructure:
 
-      1. Unity build pipeline configuration for target platforms
-      2. Version control setup and Unity-specific considerations (.gitignore, LFS)
-      3. Continuous integration setup for Unity projects
-      4. Platform-specific build and deployment processes
-      5. Testing pipeline integration
-      6. Asset optimization and build size management
+      1. **Unity Build Pipeline:**
+         - Configuration for target platforms from tech stack
+         - Build settings optimization for project type
+         - Asset optimization and compression strategies
+         - Platform-specific build variants and configurations
 
-      Consider team workflow and automated deployment needs.
+      2. **Unity Version Control:**
+         - Unity-specific .gitignore configuration
+         - Unity Cloud Build integration considerations
+         - Large asset handling (Git LFS or alternatives)
+         - Team collaboration workflow with Unity projects
+
+      3. **Deployment Strategy:**
+         - Platform-specific deployment pipelines
+         - Unity Cloud Build or custom CI/CD integration
+         - Automated testing pipeline with Unity Test Framework
+         - Platform store deployment automation
+
+      Consider Unity-native solutions and integration with general DevOps practices.
     elicit: true
     sections:
       - id: build-pipeline
@@ -293,44 +486,47 @@ sections:
           - {{platform_build_1}}
           - {{platform_build_2}}
 
-          **Build Optimization:**
-          - {{optimization_1}}
-          - {{optimization_2}}
+          **Unity Optimization:**
+          - {{unity_optimization_1}}
+          - {{unity_optimization_2}}
       - id: version-control
         title: Version Control Setup
         template: |
-          **Repository Configuration:**
-          - {{repo_config_1}}
-          - {{repo_config_2}}
+          **Unity Project Configuration:**
+          - {{unity_vcs_config_1}}
+          - {{unity_vcs_config_2}}
 
-          **Unity-Specific Settings:**
-          - {{unity_vcs_setting_1}}
-          - {{unity_vcs_setting_2}}
+          **Asset Management:**
+          - {{asset_management_1}}
+          - {{asset_management_2}}
 
           **Team Workflow:**
-          - {{workflow_rule_1}}
-          - {{workflow_rule_2}}
+          - {{unity_workflow_rule_1}}
+          - {{unity_workflow_rule_2}}
 
   - id: next-steps
     title: Next Steps
     instruction: |
       Outline the next phases of the architecture design process and what will be covered in subsequent templates.
     content: |
-      This foundation architecture document establishes the core Unity setup and project structure. The following architecture phases will build upon this foundation:
+      This foundation architecture document establishes the core Unity setup and project structure optimized for {{project_name}}. The following architecture phases will build upon this Unity-native foundation:
 
-      **Phase 2: Game Systems Architecture**
-      - Core gameplay systems and mechanics
-      - Data models and game state management
-      - Component architecture and interactions
+      **Phase 2: Game Systems Architecture** (`game-architecture-systems-tmpl.yaml`)
+      - Unity-specific gameplay systems and mechanics implementation
+      - MonoBehaviour component architecture and ScriptableObject data models  
+      - Unity Events and C# event system integration
+      - Game state management with Unity's lifecycle
 
-      **Phase 3: Platform Architecture**
-      - Platform-specific implementations
-      - Performance optimization strategies
-      - Cross-platform compatibility
+      **Phase 3: Platform Architecture** (`game-architecture-platform-tmpl.yaml`)  
+      - Unity platform-specific optimizations and build configurations
+      - Performance optimization strategies for Unity projects
+      - Cross-platform compatibility with Unity's deployment pipeline
+      - Unity Services integration and platform SDK configuration
 
-      **Phase 4: Advanced Architecture**
-      - Advanced Unity features and integrations
-      - Scalability and maintenance considerations
-      - Production deployment strategies
+      **Phase 4: Advanced Architecture** (`game-architecture-advanced-tmpl.yaml`)
+      - Advanced Unity features integration (Addressables, Timeline, Cinemachine)
+      - Unity Editor automation and custom tool development
+      - Scalability patterns for large Unity projects  
+      - Production deployment strategies and Unity Cloud services
 
-      Each phase should be completed in sequence, with this foundation document serving as the basis for all subsequent architectural decisions.
+      Each phase should be completed in sequence, with this foundation document serving as the basis for all subsequent Unity architectural decisions and maintaining consistency with the technology stack and patterns established here.

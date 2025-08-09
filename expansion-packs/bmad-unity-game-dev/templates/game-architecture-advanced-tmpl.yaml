@@ -1,7 +1,7 @@
 template:
-  id: game-architecture-advanced-template-v1
+  id: game-architecture-advanced-template-v2
   name: Game Architecture Advanced Document
-  version: 1.0
+  version: 2.0
   output:
     format: markdown
     filename: docs/game-architecture-advanced.md
@@ -18,6 +18,59 @@ sections:
       This document defines the advanced architectural considerations and production-ready features for {{project_name}}. This is Part 4 of the multi-phase architecture design, focusing on advanced Unity features, scalability, maintainability, and production operations.
 
       This document builds upon Foundation, Systems, and Platform Architecture documents. All previous architectural decisions inform the advanced techniques and patterns defined here.
+
+  - id: addressables-architecture
+    title: Addressables Asset Management Architecture
+    instruction: |
+      Design comprehensive Addressables system for scalable asset management:
+
+      1. Analyze project asset complexity and distribution requirements
+      2. Design Addressables group structure and loading strategies  
+      3. Plan remote content delivery and caching mechanisms
+      4. Configure platform-specific optimization settings
+      5. Design asset lifecycle management and cleanup strategies
+
+      Focus on production-ready asset management that scales with project growth.
+    elicit: true
+    sections:
+      - id: addressables-configuration
+        title: Addressables System Configuration
+        template: |
+          [[LLM: Analyze the project's asset complexity, target platforms, and distribution strategy to recommend appropriate Addressables configuration. For projects with <500 assets, recommend simpler local groups. For projects with 500-2000 assets, recommend hybrid local/remote groups. For projects with >2000 assets or live content updates, recommend advanced remote content delivery with CDN integration. Consider platform storage limitations (mobile vs desktop) and network connectivity requirements.]]
+
+          **Addressables Group Structure:**
+          - {{group_1}}: {{group_purpose_1}} ({{loading_strategy_1}})
+          - {{group_2}}: {{group_purpose_2}} ({{loading_strategy_2}})
+          - {{group_3}}: {{group_purpose_3}} ({{loading_strategy_3}})
+
+          **Loading Strategies:**
+          - {{strategy_1}}: {{strategy_implementation_1}}
+          - {{strategy_2}}: {{strategy_implementation_2}}
+
+          **Remote Content Configuration:**
+          - CDN Setup: {{cdn_configuration}}
+          - Caching Strategy: {{caching_approach}}
+          - Update Mechanism: {{update_strategy}}
+
+          **Performance Optimization:**
+          - Bundle Size Limits: {{bundle_size_limits}}
+          - Compression Settings: {{compression_config}}
+          - Loading Priorities: {{priority_system}}
+      - id: asset-lifecycle-management
+        title: Asset Lifecycle Management
+        template: |
+          **Asset Loading Patterns:**
+          - {{loading_pattern_1}}: {{pattern_use_case_1}}
+          - {{loading_pattern_2}}: {{pattern_use_case_2}}
+
+          **Memory Management:**
+          - {{memory_strategy_1}}: {{cleanup_approach_1}}
+          - {{memory_strategy_2}}: {{cleanup_approach_2}}
+
+          **Asset Versioning:**
+          - Version Control: {{versioning_approach}}
+          - Rollback Strategy: {{rollback_mechanism}}
+          - Dependency Tracking: {{dependency_management}}
 
   - id: advanced-unity-features
     title: Advanced Unity Features Integration
@@ -51,42 +104,48 @@ sections:
           **Integration Architecture:**
           - {{integration_pattern_1}}
           - {{integration_pattern_2}}
-      - id: unity-gaming-services
-        title: Unity Gaming Services Integration
+      - id: unity-gaming-services-advanced
+        title: Advanced Unity Gaming Services Integration
         template: |
-          **Selected Services:**
-          - {{service_1}}: {{service_implementation_1}}
-          - {{service_2}}: {{service_implementation_2}}
+          [[LLM: Analyze the project type, target audience, and business model to recommend appropriate Unity Gaming Services integration. For single-player games, focus on Analytics and Cloud Build. For multiplayer games, add Relay, Lobby, and Netcode services. For games with monetization, include Economy and Cloud Save. For competitive games, add Leaderboards and Matchmaking. Consider privacy regulations and data sovereignty requirements for the target regions.]]
 
-          **Service Architecture:**
-          - {{architecture_pattern_1}}
-          - {{architecture_pattern_2}}
+          **Core Services Integration:**
+          - {{core_service_1}}: {{service_implementation_1}}
+          - {{core_service_2}}: {{service_implementation_2}}
+          - {{core_service_3}}: {{service_implementation_3}}
 
-          **Data Flow:**
-          - {{data_flow_1}}
-          - {{data_flow_2}}
+          **Advanced Services (Project-Specific):**
+          - {{advanced_service_1}}: {{advanced_implementation_1}}
+          - {{advanced_service_2}}: {{advanced_implementation_2}}
 
-          **Offline/Online Handling:**
-          - {{offline_strategy_1}}
-          - {{offline_strategy_2}}
+          **Service Architecture Patterns:**
+          - Authentication Flow: {{auth_implementation}}
+          - Data Synchronization: {{sync_strategy}}
+          - Offline/Online Handling: {{offline_strategy}}
+
+          **Privacy and Compliance:**
+          - Data Collection: {{data_collection_policy}}
+          - Regional Compliance: {{compliance_requirements}}
+          - User Consent: {{consent_management}}
       - id: advanced-rendering
-        title: Advanced Rendering Features
+        title: Advanced Unity Features Integration
         template: |
-          **Rendering Techniques:**
-          - {{rendering_technique_1}}: {{technique_purpose_1}}
-          - {{rendering_technique_2}}: {{technique_purpose_2}}
+          [[LLM: Analyze project genre, team composition, and content creation workflows to recommend appropriate advanced Unity features integration. For cinematic games or cutscenes, prioritize Timeline and Cinemachine. For games with designer-driven logic, include Visual Scripting. For procedural content, emphasize ProBuilder and terrain tools. For mobile games, focus on performance-oriented features like GPU Instancing and LOD systems. Consider team skills - technical teams can handle code-heavy integrations, mixed teams benefit from visual tools. Evaluate content pipeline - linear content benefits from Timeline, systemic content needs flexible scripting solutions.]]
 
-          **Shader Graph Integration:**
-          - {{shader_graph_usage_1}}
-          - {{shader_graph_usage_2}}
+          **Advanced Features Selection:**
+          - Timeline Integration: {{timeline_implementation}}
+          - Cinemachine Setup: {{cinemachine_configuration}}
+          - Visual Scripting Scope: {{visual_scripting_integration}}
 
-          **VFX Graph Integration:**
-          - {{vfx_graph_usage_1}}
-          - {{vfx_graph_usage_2}}
+          **Feature Integration Strategy:**
+          - Team Workflow Integration: {{workflow_optimization}}
+          - Performance Optimization: {{feature_performance}}
+          - Content Pipeline: {{content_creation_pipeline}}
 
-          **Performance Considerations:**
-          - {{performance_consideration_1}}
-          - {{performance_consideration_2}}
+          **Advanced Rendering Features:**
+          - Shader Graph Integration: {{shader_graph_usage}}
+          - VFX Graph Integration: {{vfx_graph_usage}}
+          - Post-Processing Pipeline: {{post_processing_setup}}
 
   - id: scalability-architecture
     title: Scalability and Growth Architecture  
@@ -102,24 +161,29 @@ sections:
       Focus on sustainable growth patterns that maintain code quality over time.
     elicit: true
     sections:
-      - id: modular-architecture
-        title: Modular Architecture Design
+      - id: modular-architecture-enhanced
+        title: Adaptive Modular Architecture Design
         template: |
-          **Module Boundaries:**
-          - {{module_1}}: {{module_scope_1}}
-          - {{module_2}}: {{module_scope_2}}
+          [[LLM: Analyze team size, project scope, expected feature growth, and maintenance timeline to recommend appropriate modular architecture patterns. For teams <5 developers, recommend simple feature-based modules. For teams 5-15 developers, recommend domain-driven modules with clear boundaries. For teams >15 developers, recommend microservice-style architecture with strong isolation. Consider project timeline - prototypes need flexible boundaries, production projects need strict module contracts. Evaluate expected feature growth rate to determine extension point complexity.]]
 
-          **Inter-Module Communication:**
-          - {{communication_pattern_1}}
-          - {{communication_pattern_2}}
+          **Module Architecture Strategy:**
+          - Module Complexity: {{module_complexity_level}}
+          - Boundary Enforcement: {{boundary_strategy}}
+          - Communication Patterns: {{inter_module_communication}}
 
-          **Module Dependencies:**
-          - {{dependency_rule_1}}
-          - {{dependency_rule_2}}
+          **Scalability Patterns:**
+          - {{scalability_pattern_1}}: {{pattern_rationale_1}}
+          - {{scalability_pattern_2}}: {{pattern_rationale_2}}
 
-          **Extension Points:**
-          - {{extension_point_1}}: {{extension_purpose_1}}
-          - {{extension_point_2}}: {{extension_purpose_2}}
+          **Team Scaling Considerations:**
+          - Code Ownership: {{ownership_model}}
+          - Development Workflow: {{scaling_workflow}}
+          - Integration Strategy: {{integration_approach}}
+
+          **Architecture Evolution Path:**
+          - Phase 1 (MVP): {{mvp_architecture}}
+          - Phase 2 (Growth): {{growth_architecture}}
+          - Phase 3 (Scale): {{scale_architecture}}
       - id: feature-flag-architecture
         title: Feature Flag and A/B Testing Architecture
         template: |
@@ -290,19 +354,27 @@ sections:
     elicit: true
     sections:
       - id: monitoring-strategy
-        title: Production Monitoring Strategy
+        title: Performance Profiling and Monitoring Strategy
         template: |
-          **Key Metrics:**
-          - {{metric_1}}: {{metric_threshold_1}}
-          - {{metric_2}}: {{metric_threshold_2}}
+          **Performance Profiling Strategy:**
+          - {{profiling_approach_1}}: {{profiling_scope_1}}
+          - {{profiling_approach_2}}: {{profiling_scope_2}}
 
-          **Alerting Rules:**
-          - {{alert_1}}: {{alert_condition_1}}
-          - {{alert_2}}: {{alert_condition_2}}
+          [[LLM: Analyze target platforms, performance requirements, and project complexity to configure appropriate performance profiling strategy. For mobile projects, emphasize memory profiling and battery usage. For PC/Console projects, focus on GPU profiling and frame time optimization. For VR projects, prioritize frame rate consistency and motion-to-photon latency. Configure automated profiling for CI/CD pipeline based on project complexity - simple projects need basic frame rate monitoring, complex projects need comprehensive CPU/GPU/memory profiling with regression detection.]]
 
-          **Monitoring Tools:**
-          - {{tool_1}}: {{tool_purpose_1}}
-          - {{tool_2}}: {{tool_purpose_2}}
+          **Automated Performance Monitoring:**
+          - CI/CD Integration: {{ci_performance_monitoring}}
+          - Performance Regression Detection: {{regression_detection}}
+          - Automated Optimization: {{auto_optimization_rules}}
+
+          **Platform-Specific Profiling:**
+          - {{platform_1}} Profiling: {{platform_1_strategy}}
+          - {{platform_2}} Profiling: {{platform_2_strategy}}
+
+          **Optimization Workflows:**
+          - Asset Optimization: {{asset_optimization_process}}
+          - Code Optimization: {{code_optimization_process}}
+          - Rendering Optimization: {{rendering_optimization_process}}
       - id: diagnostics-logging
         title: Diagnostics and Logging
         template: |
@@ -336,22 +408,30 @@ sections:
       Focus on flexible systems that enable ongoing game evolution and community engagement.
     elicit: true
     sections:
-      - id: content-delivery
-        title: Live Content Delivery
+      - id: live-operations-intelligent
+        title: Intelligent Live Operations Configuration
         template: |
-          **Content Delivery Network:** {{cdn_strategy}}
+          [[LLM: Analyze game genre, business model, target audience, and content update frequency to configure appropriate live operations systems. For premium games, focus on content patches and bug fixes. For free-to-play games, emphasize live events, A/B testing, and monetization optimization. For competitive games, add real-time balancing and anti-cheat integration. For narrative games, consider episodic content delivery. Evaluate technical complexity - simple games need basic remote config, complex games need full live ops pipeline with feature flags, remote content, and real-time analytics.]]
 
-          **Update Mechanisms:**
-          - {{update_mechanism_1}}: {{mechanism_scope_1}}
-          - {{update_mechanism_2}}: {{mechanism_scope_2}}
+          **Live Operations Strategy:**
+          - Content Update Frequency: {{update_frequency}}
+          - Live Event System: {{live_events_approach}}
+          - Remote Configuration: {{remote_config_complexity}}
 
-          **Content Versioning:**
-          - {{versioning_strategy_1}}
-          - {{versioning_strategy_2}}
+          **Business Model Integration:**
+          - Monetization Support: {{monetization_integration}}
+          - A/B Testing Framework: {{ab_testing_setup}}
+          - User Segmentation: {{segmentation_strategy}}
 
-          **Rollback Capabilities:**
-          - {{rollback_1}}: {{rollback_scope_1}}
-          - {{rollback_2}}: {{rollback_scope_2}}
+          **Technical Implementation:**
+          - Content Delivery Pipeline: {{content_pipeline}}
+          - Feature Flag System: {{feature_flag_implementation}}
+          - Analytics Integration: {{analytics_setup}}
+
+          **Operational Monitoring:**
+          - Live Metrics Dashboard: {{metrics_dashboard}}
+          - Automated Alerts: {{alert_configuration}}
+          - Emergency Response: {{emergency_procedures}}
       - id: live-configuration
         title: Live Configuration Management
         template: |
