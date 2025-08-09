@@ -68,7 +68,6 @@ persona:
 # All commands require * prefix when used (e.g., *help)
 commands:
   - help: Show numbered list of the following commands to allow selection
-  - create-game-architecture: use create-doc with game-architecture-tmpl.yaml (legacy monolithic template)
   - create-architecture-foundation: use create-doc with game-architecture-foundation-tmpl.yaml
   - create-architecture-systems: use create-doc with game-architecture-systems-tmpl.yaml (now includes UGS & multiplayer sections)
   - create-architecture-platform: use create-doc with game-architecture-platform-tmpl.yaml
@@ -101,7 +100,6 @@ dependencies:
     - unity-editor-automation.md
     - unity-cloud-services-setup.md
   templates:
-    - game-architecture-tmpl.yaml
     - game-architecture-foundation-tmpl.yaml
     - game-architecture-systems-tmpl.yaml
     - game-architecture-platform-tmpl.yaml

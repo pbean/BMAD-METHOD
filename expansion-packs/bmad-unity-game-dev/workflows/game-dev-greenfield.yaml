@@ -41,7 +41,7 @@ workflow:
         - technical_research_prompt
         - performance_analysis
         - platform_research
-      notes: 'Create comprehensive technical architecture using game-architecture-tmpl. Defines Unity systems, performance optimization, and code structure. SAVE OUTPUT: Copy final game-architecture.md to your project''s docs/architecture/ folder.'
+      notes: 'Create modular technical architecture using split templates (foundation, systems, platform, advanced). Defines Unity systems, performance optimization, and code structure. SAVE OUTPUT: Copy final architecture documents to your project''s docs/architecture/ folder.'
     - agent: game-designer
       validates: design_consistency
       requires: all_design_documents
