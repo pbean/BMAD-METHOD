@@ -35,6 +35,7 @@ CLAUDE.md
 .ai/*
 .claude
 .gemini
+.mcp.json
 
 # Project-specific
 .bmad-core
