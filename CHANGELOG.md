@@ -1,8 +1,13 @@
+# [4.36.0](https://github.com/bmadcode/BMAD-METHOD/compare/v4.35.3...v4.36.0) (2025-08-09)
+
+
+### Features
+
+* modularize flattener tool into separate components with improved project root detection ([#417](https://github.com/bmadcode/BMAD-METHOD/issues/417)) ([0fdbca7](https://github.com/bmadcode/BMAD-METHOD/commit/0fdbca73fc60e306109f682f018e105e2b4623a2))
+
 ## [4.35.3](https://github.com/bmadcode/BMAD-METHOD/compare/v4.35.2...v4.35.3) (2025-08-06)
 
 ### Bug Fixes
-
-<<<<<<< HEAD
 
 - doc location improvement ([1676f51](https://github.com/bmadcode/BMAD-METHOD/commit/1676f5189ed057fa2d7facbd6a771fe67cdb6372))
 
