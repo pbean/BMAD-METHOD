@@ -39,6 +39,32 @@ class AgentTransformer extends BaseTransformer {
   }
 
   /**
+   * Transform BMad agent specifically for Kiro with expansion pack support
+   * @param {string} bmadAgentPath - Path to BMad agent file
+   * @param {string} kiroOutputPath - Output path for Kiro agent
+   * @param {Object} options - Transformation options
+   * @returns {Promise<boolean>} - Success status
+   */
+  async transformAgentForKiro(bmadAgentPath, kiroOutputPath, options = {}) {
+    this.log(`Transforming agent for Kiro: ${this.getRelativePath(bmadAgentPath)} -> ${this.getRelativePath(kiroOutputPath)}`);
+
+    // Enhanced options for Kiro-specific transformation
+    const kiroOptions = {
+      ...options,
+      enableKiroFeatures: true,
+      addExpansionPackSupport: options.expansionPack ? true : false,
+      expansionPackId: options.expansionPack,
+      enableExpansionPackFeatures: options.enableExpansionPackFeatures || false
+    };
+
+    return await this.transformFile(
+      bmadAgentPath,
+      kiroOutputPath,
+      (content, inputPath) => this.performKiroAgentTransformation(content, inputPath, kiroOptions)
+    );
+  }
+
+  /**
    * Parse BMad agent content (handles embedded YAML blocks)
    * @param {string} content - BMad agent content
    * @returns {Object} - Parsed front matter and content
@@ -78,6 +104,42 @@ class AgentTransformer extends BaseTransformer {
         frontMatter: {},
         content: content
       };
+    }
+  }
+
+  /**
+   * Perform Kiro-specific agent transformation with expansion pack support
+   * @param {string} content - Original agent content
+   * @param {string} inputPath - Input file path
+   * @param {Object} options - Transformation options
+   * @returns {string} - Transformed content
+   */
+  async performKiroAgentTransformation(content, inputPath, options) {
+    try {
+      // Parse BMad agent content (handles both front matter and embedded YAML)
+      const { frontMatter, content: markdownContent } = this.parseBMadAgent(content);
+
+      // Create enhanced front matter for Kiro with expansion pack support
+      const kiroFrontMatter = this.createKiroFrontMatterWithExpansionPack(frontMatter, inputPath, options);
+
+      // Inject context awareness into content using the context injector
+      const agentId = frontMatter.agent?.id || path.basename(inputPath, '.md');
+      const contextAwareContent = this.contextInjector.injectAutomaticContextReferences(markdownContent, agentId);
+
+      // Add steering integration with expansion pack rules
+      const steeringIntegratedContent = this.addSteeringIntegrationWithExpansionPack(contextAwareContent, options);
+
+      // Add expansion pack specific capabilities
+      const expansionEnhancedContent = this.addExpansionPackCapabilities(steeringIntegratedContent, options);
+
+      // Preserve BMad persona while adding Kiro and expansion pack capabilities
+      const finalContent = this.preserveBMadPersonaWithKiroEnhancements(expansionEnhancedContent, frontMatter, options);
+
+      // Combine and return
+      return this.combineContent(kiroFrontMatter, finalContent);
+    } catch (error) {
+      console.error('Error in Kiro agent transformation:', error.message);
+      throw error;
     }
   }
 
@@ -523,4 +585,214 @@ These rules ensure consistency across all my recommendations and align with your
   }
 }
 
-module.exports = AgentTransformer;
+module.exports = AgentTransformer;  
+/**
+   * Create Kiro-specific front matter with expansion pack support
+   * @param {Object} originalFrontMatter - Original BMad front matter
+   * @param {string} inputPath - Input file path
+   * @param {Object} options - Transformation options
+   * @returns {Object} - Enhanced front matter with expansion pack support
+   */
+  createKiroFrontMatterWithExpansionPack(originalFrontMatter, inputPath, options) {
+    const baseFrontMatter = this.createKiroFrontMatter(originalFrontMatter, inputPath, options);
+    
+    if (options.expansionPack) {
+      // Add expansion pack specific metadata
+      baseFrontMatter.expansion_pack = {
+        id: options.expansionPack,
+        enabled: true,
+        features: options.enableExpansionPackFeatures ? ['templates', 'workflows', 'hooks'] : []
+      };
+      
+      // Add expansion pack specific steering rules
+      const expansionSteeringRules = [`${options.expansionPack}.md`];
+      baseFrontMatter.steering_rules = [...new Set([...baseFrontMatter.steering_rules, ...expansionSteeringRules])];
+      
+      // Add expansion pack specific MCP tools
+      const expansionMCPTools = this.getExpansionPackMCPTools(options.expansionPack);
+      baseFrontMatter.mcp_tools = [...new Set([...baseFrontMatter.mcp_tools, ...expansionMCPTools])];
+    }
+    
+    return baseFrontMatter;
+  }
+
+  /**
+   * Add steering integration with expansion pack rules
+   * @param {string} content - Content with context awareness
+   * @param {Object} options - Transformation options
+   * @returns {string} - Content with enhanced steering integration
+   */
+  addSteeringIntegrationWithExpansionPack(content, options) {
+    let steeringNote = `
+## Steering Rules Integration
+
+I automatically apply project-specific conventions and technical preferences from your Kiro steering rules:
+- **product.md**: Product and business context
+- **tech.md**: Technical stack and preferences  
+- **structure.md**: Project structure and conventions`;
+
+    if (options.expansionPack) {
+      steeringNote += `
+- **${options.expansionPack}.md**: ${options.expansionPack} domain-specific conventions and best practices`;
+    }
+
+    steeringNote += `
+
+These rules ensure consistency across all my recommendations and align with your project's established patterns.
+
+`;
+
+    // Add steering section before any existing "Capabilities" or similar section
+    const capabilitiesIndex = content.toLowerCase().indexOf('## capabilities');
+    if (capabilitiesIndex !== -1) {
+      return content.slice(0, capabilitiesIndex) + steeringNote + content.slice(capabilitiesIndex);
+    }
+
+    // Otherwise append to the end
+    return content + steeringNote;
+  }
+
+  /**
+   * Add expansion pack specific capabilities
+   * @param {string} content - Content with steering integration
+   * @param {Object} options - Transformation options
+   * @returns {string} - Content with expansion pack capabilities
+   */
+  addExpansionPackCapabilities(content, options) {
+    if (!options.expansionPack) {
+      return content;
+    }
+
+    const expansionCapabilities = this.generateExpansionPackCapabilities(options.expansionPack);
+    
+    // Add expansion pack section before workflow section
+    const workflowIndex = content.toLowerCase().indexOf('## how i work');
+    if (workflowIndex !== -1) {
+      return content.slice(0, workflowIndex) + expansionCapabilities + '\n\n' + content.slice(workflowIndex);
+    }
+
+    // Otherwise append before the end
+    return content + '\n\n' + expansionCapabilities;
+  }
+
+  /**
+   * Preserve BMad persona with Kiro and expansion pack enhancements
+   * @param {string} content - Content with all enhancements
+   * @param {Object} originalFrontMatter - Original front matter
+   * @param {Object} options - Transformation options
+   * @returns {string} - Final content with all enhancements
+   */
+  preserveBMadPersonaWithKiroEnhancements(content, originalFrontMatter, options) {
+    // Start with base BMad persona preservation
+    let enhancedContent = this.preserveBMadPersona(content, originalFrontMatter);
+    
+    // Add expansion pack specific persona enhancements
+    if (options.expansionPack) {
+      const expansionPersona = this.createExpansionPackPersonaEnhancement(originalFrontMatter, options);
+      
+      // Insert expansion pack persona after the main introduction
+      const firstSectionIndex = enhancedContent.indexOf('\n\n');
+      if (firstSectionIndex !== -1) {
+        enhancedContent = enhancedContent.slice(0, firstSectionIndex) + 
+                         '\n\n' + expansionPersona + 
+                         enhancedContent.slice(firstSectionIndex);
+      } else {
+        enhancedContent = expansionPersona + '\n\n' + enhancedContent;
+      }
+    }
+    
+    return enhancedContent;
+  }
+
+  /**
+   * Generate expansion pack specific capabilities
+   * @param {string} expansionPackId - Expansion pack ID
+   * @returns {string} - Expansion pack capabilities section
+   */
+  generateExpansionPackCapabilities(expansionPackId) {
+    const capabilityMap = {
+      'bmad-2d-phaser-game-dev': `## Game Development Expertise
+
+**Phaser.js Game Development**:
+- 2D game architecture and scene management
+- Sprite animation and physics integration
+- Game state management and progression systems
+- Asset optimization and loading strategies
+
+**Game Design Patterns**:
+- Entity-Component-System (ECS) architecture
+- Game loop optimization and performance tuning
+- Input handling and user interaction design
+- Audio integration and sound effect management`,
+
+      'bmad-2d-unity-game-dev': `## Unity Game Development Expertise
+
+**Unity 2D Development**:
+- Unity scene management and prefab systems
+- 2D physics and collision detection
+- Animation controllers and state machines
+- Unity asset pipeline and optimization
+
+**Game Development Workflow**:
+- Unity project structure and organization
+- Component-based architecture patterns
+- Unity editor scripting and custom tools
+- Build pipeline and platform deployment`,
+
+      'bmad-infrastructure-devops': `## Infrastructure & DevOps Expertise
+
+**Infrastructure as Code**:
+- Terraform and CloudFormation templates
+- Kubernetes deployment and orchestration
+- Docker containerization strategies
+- CI/CD pipeline design and implementation
+
+**DevOps Best Practices**:
+- Infrastructure monitoring and alerting
+- Security scanning and compliance
+- Automated testing and deployment
+- Cloud platform optimization (AWS, GCP, Azure)`
+    };
+
+    return capabilityMap[expansionPackId] || `## ${expansionPackId} Domain Expertise
+
+**Specialized Knowledge**:
+- Domain-specific patterns and best practices
+- Industry-standard tools and workflows
+- Performance optimization techniques
+- Quality assurance and testing strategies`;
+  }
+
+  /**
+   * Create expansion pack persona enhancement
+   * @param {Object} originalFrontMatter - Original front matter
+   * @param {Object} options - Transformation options
+   * @returns {string} - Expansion pack persona enhancement
+   */
+  createExpansionPackPersonaEnhancement(originalFrontMatter, options) {
+    const expansionPackId = options.expansionPack;
+    const domainMap = {
+      'bmad-2d-phaser-game-dev': 'Phaser.js 2D game development',
+      'bmad-2d-unity-game-dev': 'Unity 2D game development',
+      'bmad-infrastructure-devops': 'Infrastructure and DevOps'
+    };
+
+    const domain = domainMap[expansionPackId] || expansionPackId.replace(/-/g, ' ');
+
+    return `**Enhanced with ${domain}**: I bring specialized expertise in ${domain} while maintaining my core BMad Method approach. I understand domain-specific patterns, tools, and best practices that I seamlessly integrate with BMad's structured workflows.`;
+  }
+
+  /**
+   * Get expansion pack specific MCP tools
+   * @param {string} expansionPackId - Expansion pack ID
+   * @returns {Array} - List of MCP tools for the expansion pack
+   */
+  getExpansionPackMCPTools(expansionPackId) {
+    const toolMap = {
+      'bmad-2d-phaser-game-dev': ['web-search', 'documentation', 'api-testing'],
+      'bmad-2d-unity-game-dev': ['web-search', 'documentation', 'file-manager'],
+      'bmad-infrastructure-devops': ['web-search', 'api-testing', 'ssh-client', 'kubernetes']
+    };
+
+    return toolMap[expansionPackId] || ['web-search', 'documentation'];
+  }

@@ -41,10 +41,42 @@ program
   .option('-f, --full', 'Install complete BMad Method')
   .option('-x, --expansion-only', 'Install only expansion packs (no bmad-core)')
   .option('-d, --directory <path>', 'Installation directory')
-  .option('-i, --ide <ide...>', 'Configure for specific IDE(s) - can specify multiple (cursor, claude-code, windsurf, trae, roo, kilo, cline, gemini, qwen-code, github-copilot, other)')
+  .option('-i, --ide <ide...>', 'Configure for specific IDE(s) - can specify multiple (cursor, claude-code, windsurf, trae, roo, kilo, cline, gemini, qwen-code, github-copilot, kiro, other)')
   .option('-e, --expansion-packs <packs...>', 'Install specific expansion packs (can specify multiple)')
+  .option('--upgrade', 'Upgrade existing installation (preserves customizations)')
   .action(async (options) => {
     try {
+      // Check for Kiro-specific installation
+      if (options.ide && options.ide.includes('kiro')) {
+        const KiroInstaller = require('../../kiro-adapter/kiro-installer');
+        const kiroInstaller = new KiroInstaller();
+        const ora = require('ora');
+        const spinner = ora('Initializing Kiro installation...').start();
+        
+        try {
+          const config = {
+            installType: options.expansionOnly ? 'expansion-only' : (options.full ? 'full' : 'interactive'),
+            directory: options.directory || '.',
+            ides: options.ide || ['kiro'],
+            expansionPacks: options.expansionPacks || [],
+            generateHooks: true, // Enable hooks by default for Kiro
+            upgrade: options.upgrade || false
+          };
+
+          if (config.upgrade) {
+            await kiroInstaller.upgradeKiroInstallation(config, path.resolve(config.directory), spinner);
+          } else {
+            await kiroInstaller.installForKiro(config, path.resolve(config.directory), spinner);
+          }
+          
+          spinner.succeed('Kiro installation completed successfully!');
+          process.exit(0);
+        } catch (error) {
+          spinner.fail('Kiro installation failed');
+          throw error;
+        }
+      }
+
       if (!options.full && !options.expansionOnly) {
         // Interactive mode
         const answers = await promptInstallation();
@@ -77,8 +109,37 @@ program
   .description('Update existing BMad installation')
   .option('--force', 'Force update, overwriting modified files')
   .option('--dry-run', 'Show what would be updated without making changes')
-  .action(async () => {
+  .option('--ide <ide>', 'Update for specific IDE (kiro, cursor, etc.)')
+  .action(async (options) => {
     try {
+      // Handle Kiro-specific updates
+      if (options.ide === 'kiro') {
+        const KiroInstaller = require('../../kiro-adapter/kiro-installer');
+        const kiroInstaller = new KiroInstaller();
+        const ora = require('ora');
+        const spinner = ora('Updating Kiro BMad installation...').start();
+        
+        try {
+          const config = {
+            installType: 'full',
+            directory: '.',
+            ides: ['kiro'],
+            expansionPacks: [],
+            generateHooks: true,
+            upgrade: true,
+            force: options.force,
+            dryRun: options.dryRun
+          };
+
+          await kiroInstaller.upgradeKiroInstallation(config, process.cwd(), spinner);
+          spinner.succeed('Kiro BMad installation updated successfully!');
+          process.exit(0);
+        } catch (error) {
+          spinner.fail('Kiro update failed');
+          throw error;
+        }
+      }
+
       await installer.update();
     } catch (error) {
       console.error(chalk.red('Update failed:'), error.message);
@@ -315,7 +376,8 @@ async function promptInstallation() {
           { name: 'Cline', value: 'cline' },
           { name: 'Gemini CLI', value: 'gemini' },
           { name: 'Qwen Code', value: 'qwen-code' },
-          { name: 'Github Copilot', value: 'github-copilot' }
+          { name: 'Github Copilot', value: 'github-copilot' },
+          { name: 'Kiro IDE', value: 'kiro' }
         ]
       }
     ]);
