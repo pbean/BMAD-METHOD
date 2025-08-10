@@ -5,12 +5,14 @@
 
 const BaseTransformer = require('./base-transformer');
 const ContextInjector = require('./context-injector');
+const MCPIntegrator = require('./mcp-integrator');
 const path = require('path');
 
 class AgentTransformer extends BaseTransformer {
   constructor(options = {}) {
     super(options);
     this.contextInjector = new ContextInjector(options);
+    this.mcpIntegrator = new MCPIntegrator(options);
     this.kiroContextProviders = [
       '#File',
       '#Folder', 
@@ -129,8 +131,11 @@ class AgentTransformer extends BaseTransformer {
       // Add steering integration with expansion pack rules
       const steeringIntegratedContent = this.addSteeringIntegrationWithExpansionPack(contextAwareContent, options);
 
+      // Add MCP tool integration
+      const mcpIntegratedContent = await this.addMCPToolIntegration(steeringIntegratedContent, agentId, options);
+
       // Add expansion pack specific capabilities
-      const expansionEnhancedContent = this.addExpansionPackCapabilities(steeringIntegratedContent, options);
+      const expansionEnhancedContent = this.addExpansionPackCapabilities(mcpIntegratedContent, options);
 
       // Preserve BMad persona while adding Kiro and expansion pack capabilities
       const finalContent = this.preserveBMadPersonaWithKiroEnhancements(expansionEnhancedContent, frontMatter, options);
@@ -165,8 +170,11 @@ class AgentTransformer extends BaseTransformer {
       // Add steering integration
       const steeringIntegratedContent = this.addSteeringIntegration(contextAwareContent);
 
+      // Add MCP tool integration
+      const mcpIntegratedContent = await this.addMCPToolIntegration(steeringIntegratedContent, agentId, options);
+
       // Preserve BMad persona while adding Kiro capabilities
-      const finalContent = this.preserveBMadPersona(steeringIntegratedContent, frontMatter);
+      const finalContent = this.preserveBMadPersona(mcpIntegratedContent, frontMatter);
 
       // Combine and return
       return this.combineContent(kiroFrontMatter, finalContent);
@@ -358,15 +366,19 @@ class AgentTransformer extends BaseTransformer {
   getMCPTools(frontMatter, options) {
     const agentType = this.getAgentType(frontMatter);
     
-    const toolMap = {
-      'analyst': ['web-search', 'documentation'],
-      'dev': ['web-search', 'api-testing'],
-      'architect': ['documentation', 'web-search'],
-      'pm': ['web-search', 'documentation'],
-      'qa': ['api-testing', 'web-search']
-    };
-
-    const defaultTools = toolMap[agentType] || ['web-search'];
+    // Use MCP integrator's tool mappings for more sophisticated mapping
+    const toolMap = this.mcpIntegrator.mcpToolMappings;
+    const relevantTools = [];
+    
+    // Find tools that are mapped to this agent type
+    for (const [toolName, agentTypes] of Object.entries(toolMap)) {
+      if (agentTypes.includes(agentType)) {
+        relevantTools.push(toolName);
+      }
+    }
+    
+    // Fallback to default tools if no specific mapping found
+    const defaultTools = relevantTools.length > 0 ? relevantTools : ['web-search'];
     const customTools = options.mcpTools || [];
 
     return [...new Set([...defaultTools, ...customTools])];
@@ -430,6 +442,57 @@ These rules ensure consistency across all my recommendations and align with your
 
     // Otherwise append to the end
     return content + steeringNote;
+  }
+
+  /**
+   * Add MCP tool integration to agent content
+   * @param {string} content - Content to enhance
+   * @param {string} agentId - Agent identifier
+   * @param {Object} options - Transformation options
+   * @returns {Promise<string>} - Content with MCP integration
+   */
+  async addMCPToolIntegration(content, agentId, options) {
+    try {
+      // Skip MCP integration if disabled
+      if (options.disableMCP) {
+        return content;
+      }
+
+      // Discover available MCP tools from Kiro workspace
+      const kiroPath = options.kiroPath || process.cwd();
+      const availableTools = await this.mcpIntegrator.discoverAvailableMCPTools(kiroPath);
+      
+      // Get configuration recommendations regardless of available tools
+      const recommendations = this.mcpIntegrator.addMCPConfigurationRecommendations(agentId, availableTools);
+      
+      if (availableTools.length === 0) {
+        this.log('No MCP tools discovered, adding setup guidance');
+        return this.addMCPSetupGuidance(content, agentId, recommendations);
+      }
+
+      // Map tools to agent
+      const mappedTools = this.mcpIntegrator.mapAgentToMCPTools(agentId, availableTools);
+      
+      if (mappedTools.length === 0) {
+        this.log(`No relevant MCP tools found for ${agentId} agent, adding recommendations`);
+        return this.addMCPSetupGuidance(content, agentId, recommendations);
+      }
+
+      // Add MCP tools section to content
+      let mcpEnhancedContent = this.mcpIntegrator.addAutomaticMCPUsage(content, mappedTools);
+      
+      // Add recommendations for missing tools if any
+      if (recommendations.missingTools.length > 0) {
+        mcpEnhancedContent = this.addMCPRecommendations(mcpEnhancedContent, recommendations);
+      }
+      
+      this.log(`Added ${mappedTools.length} MCP tools to ${agentId} agent`);
+      return mcpEnhancedContent;
+      
+    } catch (error) {
+      this.log(`Error adding MCP integration: ${error.message}`, 'error');
+      return content; // Return original content on error
+    }
   }
 
   /**
@@ -583,10 +646,7 @@ These rules ensure consistency across all my recommendations and align with your
     const agentType = this.getAgentType(frontMatter);
     return specializationMap[agentType] || 'development support and project guidance';
   }
-}
-
-module.exports = AgentTransformer;  
-/**
+  /**
    * Create Kiro-specific front matter with expansion pack support
    * @param {Object} originalFrontMatter - Original BMad front matter
    * @param {string} inputPath - Input file path
@@ -796,3 +856,135 @@ These rules ensure consistency across all my recommendations and align with your
 
     return toolMap[expansionPackId] || ['web-search', 'documentation'];
   }
+
+  /**
+   * Add MCP setup guidance when no tools are available
+   * @param {string} content - Agent content
+   * @param {string} agentId - Agent identifier
+   * @param {Object} recommendations - MCP recommendations
+   * @returns {string} - Content with setup guidance
+   */
+  addMCPSetupGuidance(content, agentId, recommendations) {
+    const guidanceSection = `## MCP Tools Setup
+
+I can be enhanced with external tools through Kiro's MCP (Model Context Protocol) integration. Currently, no MCP tools are configured for your workspace.
+
+### Recommended Tools for ${agentId.charAt(0).toUpperCase() + agentId.slice(1)} Agent
+
+${recommendations.priority.map(tool => 
+  `- **${tool.name}** (Priority: ${tool.priority}/10): ${this.getToolBenefit(tool.name, agentId)}`
+).join('\n')}
+
+### Quick Setup
+
+To enable these tools, add them to your \`.kiro/settings/mcp.json\` configuration file. Use the command palette in Kiro and search for "MCP" to find setup commands and documentation.
+
+Once configured, I'll automatically use these tools to provide enhanced assistance for your ${agentId} workflows.
+
+`;
+
+    // Add guidance section before any existing "Capabilities" or similar section
+    const capabilitiesIndex = content.toLowerCase().indexOf('## capabilities');
+    if (capabilitiesIndex !== -1) {
+      return content.slice(0, capabilitiesIndex) + guidanceSection + content.slice(capabilitiesIndex);
+    }
+
+    // Otherwise append to the end
+    return content + guidanceSection;
+  }
+
+  /**
+   * Add MCP recommendations for missing tools
+   * @param {string} content - Agent content
+   * @param {Object} recommendations - MCP recommendations
+   * @returns {string} - Content with recommendations
+   */
+  addMCPRecommendations(content, recommendations) {
+    if (recommendations.missingTools.length === 0) {
+      return content;
+    }
+
+    const recommendationsSection = `
+
+### Additional Recommended Tools
+
+The following tools would further enhance my capabilities:
+
+${recommendations.priority.map(tool => 
+  `- **${tool.name}**: ${this.getToolBenefit(tool.name, recommendations.agentType)}`
+).join('\n')}
+
+These tools can be added to your \`.kiro/settings/mcp.json\` configuration file.
+
+`;
+
+    // Add after the existing MCP tools section
+    const mcpSectionMatch = content.match(/(## Available MCP Tools[\s\S]*?)(\n## |$)/);
+    if (mcpSectionMatch) {
+      const beforeNext = mcpSectionMatch[2] || '';
+      return content.replace(mcpSectionMatch[0], mcpSectionMatch[1] + recommendationsSection + beforeNext);
+    }
+
+    return content + recommendationsSection;
+  }
+
+  /**
+   * Get benefit description for a tool
+   * @param {string} toolName - Name of the tool
+   * @param {string} agentType - Type of agent
+   * @returns {string} - Benefit description
+   */
+  getToolBenefit(toolName, agentType) {
+    const benefits = {
+      'web-search': {
+        'analyst': 'Real-time market research and competitive analysis',
+        'pm': 'Market validation and requirement research',
+        'architect': 'Technology research and best practices lookup',
+        'dev': 'Technical documentation and solution research',
+        'qa': 'Bug research and testing methodology lookup',
+        'sm': 'Project management best practices and methodology research'
+      },
+      'api-testing': {
+        'analyst': 'API analysis for competitive research',
+        'pm': 'API requirement validation and testing',
+        'architect': 'API design validation and testing',
+        'dev': 'Automated endpoint testing and validation',
+        'qa': 'Comprehensive API testing and quality assurance',
+        'sm': 'API integration status monitoring'
+      },
+      'documentation': {
+        'analyst': 'Automated research report generation',
+        'pm': 'PRD and specification document creation',
+        'architect': 'Architecture documentation and spec generation',
+        'dev': 'Code documentation and API spec creation',
+        'qa': 'Test documentation and quality reports',
+        'sm': 'Project documentation and status reports'
+      },
+      'github': {
+        'analyst': 'Repository analysis and competitive intelligence',
+        'pm': 'Project tracking and issue management',
+        'architect': 'Architecture review and code analysis',
+        'dev': 'Repository management and code collaboration',
+        'qa': 'Issue tracking and quality monitoring',
+        'sm': 'Sprint planning and team coordination'
+      },
+      'aws-docs': {
+        'analyst': 'Cloud service analysis and research',
+        'pm': 'Cloud solution planning and requirements',
+        'architect': 'Cloud architecture guidance and best practices',
+        'dev': 'AWS service integration and development',
+        'qa': 'Cloud testing and monitoring strategies',
+        'sm': 'Cloud project planning and resource management'
+      }
+    };
+
+    const toolBenefits = benefits[toolName];
+    if (toolBenefits && toolBenefits[agentType]) {
+      return toolBenefits[agentType];
+    }
+
+    return `Enhanced ${toolName} capabilities for ${agentType} workflows`;
+  }
+}
+
+module.exports = AgentTransformer;
