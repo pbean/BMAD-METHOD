@@ -562,6 +562,487 @@ describe('Kiro Installer Integration Tests', () => {
     });
   });
 
+  describe('8.1 Test partial failure scenarios', () => {
+    it('should handle KiroInstaller success but standard IDE setup failure', async () => {
+      // Mock KiroInstaller to succeed
+      mockKiroInstaller.installForKiro = jest.fn().mockImplementation(async (config, directory) => {
+        // Simulate successful Kiro setup
+        const kiroDir = path.join(directory, '.kiro');
+        await fs.mkdir(kiroDir, { recursive: true });
+        await fs.mkdir(path.join(kiroDir, 'agents'), { recursive: true });
+        await fs.writeFile(
+          path.join(kiroDir, 'agents', 'dev.md'),
+          '# Dev Agent\n\nTransformed for Kiro.'
+        );
+        
+        // But simulate standard IDE setup failure
+        if (config.ides && config.ides.includes('cursor')) {
+          throw new Error('Cursor IDE setup failed: Unable to create configuration files');
+        }
+      });
+
+      const config = {
+        installType: 'full',
+        directory: tempDir,
+        ides: ['kiro', 'cursor'],
+        expansionPacks: [],
+        generateHooks: true,
+        upgrade: false
+      };
+
+      const kiroInstaller = new KiroInstaller();
+      
+      // Should throw error about Cursor setup failure
+      await expect(kiroInstaller.installForKiro(config, tempDir, {})).rejects.toThrow('Cursor IDE setup failed');
+      
+      // Verify KiroInstaller was called
+      expect(mockKiroInstaller.installForKiro).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle KiroInstaller failure with appropriate error messages', async () => {
+      // Mock KiroInstaller to fail during Kiro enhancements
+      mockKiroInstaller.installForKiro = jest.fn().mockRejectedValue(
+        new Error('Failed to create .kiro directory structure: Permission denied')
+      );
+
+      const config = {
+        installType: 'full',
+        directory: tempDir,
+        ides: ['kiro'],
+        expansionPacks: [],
+        generateHooks: true,
+        upgrade: false
+      };
+
+      const kiroInstaller = new KiroInstaller();
+      
+      // Should throw error about Kiro setup failure
+      await expect(kiroInstaller.installForKiro(config, tempDir, {})).rejects.toThrow('Permission denied');
+      
+      // Verify KiroInstaller was called
+      expect(mockKiroInstaller.installForKiro).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle BMad installation success but Kiro enhancement failure', async () => {
+      // Mock successful BMad installation but failed Kiro enhancements
+      mockKiroInstaller.installForKiro = jest.fn().mockImplementation(async (config, directory) => {
+        // Simulate successful BMad installation
+        const bmadCoreDir = path.join(directory, '.bmad-core');
+        await fs.mkdir(bmadCoreDir, { recursive: true });
+        await fs.writeFile(path.join(bmadCoreDir, 'manifest.json'), JSON.stringify({
+          version: '4.0.0',
+          type: 'bmad-core'
+        }));
+        
+        // But fail during Kiro enhancements
+        throw new Error('Kiro agent transformation failed: Unable to read BMad core agents');
+      });
+
+      const config = {
+        installType: 'full',
+        directory: tempDir,
+        ides: ['kiro'],
+        expansionPacks: [],
+        generateHooks: true,
+        upgrade: false
+      };
+
+      const kiroInstaller = new KiroInstaller();
+      
+      // Should throw error about Kiro enhancement failure
+      await expect(kiroInstaller.installForKiro(config, tempDir, {})).rejects.toThrow('Kiro agent transformation failed');
+      
+      // Verify KiroInstaller was called
+      expect(mockKiroInstaller.installForKiro).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle expansion pack installation failure during Kiro setup', async () => {
+      // Mock failure during expansion pack processing
+      mockKiroInstaller.installForKiro = jest.fn().mockImplementation(async (config, directory) => {
+        // Simulate successful BMad core installation
+        const bmadCoreDir = path.join(directory, '.bmad-core');
+        await fs.mkdir(bmadCoreDir, { recursive: true });
+        
+        // But fail during expansion pack processing
+        if (config.expansionPacks && config.expansionPacks.length > 0) {
+          throw new Error('Expansion pack bmad-2d-unity-game-dev installation failed: Package not found');
+        }
+      });
+
+      const config = {
+        installType: 'full',
+        directory: tempDir,
+        ides: ['kiro'],
+        expansionPacks: ['bmad-2d-unity-game-dev'],
+        generateHooks: true,
+        upgrade: false
+      };
+
+      const kiroInstaller = new KiroInstaller();
+      
+      // Should throw error about expansion pack failure
+      await expect(kiroInstaller.installForKiro(config, tempDir, {})).rejects.toThrow('Package not found');
+      
+      // Verify KiroInstaller was called
+      expect(mockKiroInstaller.installForKiro).toHaveBeenCalledTimes(1);
+    });
+
+    it('should provide detailed error context for different failure types', async () => {
+      const errorReporter = new ErrorReporter();
+      
+      // Test Kiro setup error context
+      const kiroError = new Error('Failed to create .kiro directory');
+      const kiroReport = errorReporter.createErrorReport(
+        kiroError,
+        errorReporter.errorTypes.KIRO_SETUP,
+        {
+          phase: 'Phase 2 - Kiro Enhancements',
+          component: 'kiro',
+          operation: 'enhance',
+          directory: tempDir,
+          bmadInstalled: true
+        }
+      );
+
+      expect(kiroReport.type).toBe('KIRO_SETUP');
+      expect(kiroReport.actionable).toContain('Kiro setup failed during Phase 2 - Kiro Enhancements');
+      expect(kiroReport.actionable).toContain('BMad core components were installed successfully');
+      expect(kiroReport.troubleshooting).toContain('Ensure you have write permissions in the target directory');
+
+      // Test standard IDE error context
+      const ideError = new Error('Cursor configuration failed');
+      const ideReport = errorReporter.createErrorReport(
+        ideError,
+        errorReporter.errorTypes.STANDARD_IDE,
+        {
+          ide: 'cursor',
+          operation: 'configuration setup'
+        }
+      );
+
+      expect(ideReport.type).toBe('STANDARD_IDE');
+      expect(ideReport.actionable).toContain('IDE configuration failed for cursor during configuration setup');
+      expect(ideReport.troubleshooting).toContain('Verify the IDE is properly installed on your system');
+
+      // Test expansion pack error context
+      const packError = new Error('Package not found');
+      const packReport = errorReporter.createErrorReport(
+        packError,
+        errorReporter.errorTypes.EXPANSION_PACK,
+        {
+          packId: 'bmad-2d-unity-game-dev',
+          operation: 'installation'
+        }
+      );
+
+      expect(packReport.type).toBe('EXPANSION_PACK');
+      expect(packReport.actionable).toContain('Expansion pack installation failed for bmad-2d-unity-game-dev during installation');
+      expect(packReport.troubleshooting).toContain('Verify the expansion pack name is correct');
+    });
+
+    it('should handle cleanup after partial failures', async () => {
+      // Mock partial installation that creates some files but fails
+      mockKiroInstaller.installForKiro = jest.fn().mockImplementation(async (config, directory) => {
+        // Create some files
+        const kiroDir = path.join(directory, '.kiro');
+        await fs.mkdir(kiroDir, { recursive: true });
+        await fs.mkdir(path.join(kiroDir, 'agents'), { recursive: true });
+        await fs.writeFile(
+          path.join(kiroDir, 'agents', 'partial.md'),
+          '# Partial Agent\n\nThis was created before failure.'
+        );
+        
+        // Then fail
+        throw new Error('Installation failed after partial setup');
+      });
+
+      const config = {
+        installType: 'full',
+        directory: tempDir,
+        ides: ['kiro'],
+        expansionPacks: [],
+        generateHooks: true,
+        upgrade: false
+      };
+
+      const kiroInstaller = new KiroInstaller();
+      
+      // Should throw error
+      await expect(kiroInstaller.installForKiro(config, tempDir, {})).rejects.toThrow('Installation failed after partial setup');
+      
+      // Verify partial files were created (no automatic cleanup expected)
+      const partialFile = path.join(tempDir, '.kiro', 'agents', 'partial.md');
+      expect(await fs.access(partialFile).then(() => true).catch(() => false)).toBe(true);
+    });
+
+    it('should handle multiple IDE failures gracefully', async () => {
+      // Mock failure with multiple IDEs
+      mockKiroInstaller.installForKiro = jest.fn().mockImplementation(async (config, directory) => {
+        // Simulate successful Kiro setup
+        const kiroDir = path.join(directory, '.kiro');
+        await fs.mkdir(kiroDir, { recursive: true });
+        
+        // But fail on multiple IDE setup
+        const failedIdes = config.ides.filter(ide => ide !== 'kiro');
+        if (failedIdes.length > 0) {
+          throw new Error(`Multiple IDE setup failed: ${failedIdes.join(', ')} could not be configured`);
+        }
+      });
+
+      const config = {
+        installType: 'full',
+        directory: tempDir,
+        ides: ['kiro', 'cursor', 'windsurf'],
+        expansionPacks: [],
+        generateHooks: true,
+        upgrade: false
+      };
+
+      const kiroInstaller = new KiroInstaller();
+      
+      // Should throw error about multiple IDE failures
+      await expect(kiroInstaller.installForKiro(config, tempDir, {})).rejects.toThrow('cursor, windsurf could not be configured');
+      
+      // Verify KiroInstaller was called
+      expect(mockKiroInstaller.installForKiro).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('8.2 Test invalid input handling', () => {
+    it('should handle invalid IDE names gracefully', async () => {
+      const ideValidator = new IdeValidator();
+      
+      // Test with invalid IDE names
+      const invalidIdes = ['invalid-ide', 'nonexistent', 'fake-ide'];
+      const validation = ideValidator.validateIdeArray(invalidIdes);
+      
+      expect(validation.isValid).toBe(false);
+      expect(validation.errors).toHaveLength(2); // One for invalid IDEs, one for supported list
+      expect(validation.errors[0]).toContain('Unsupported IDE(s): invalid-ide, nonexistent, fake-ide');
+      expect(validation.errors[1]).toContain('Supported IDEs:');
+      expect(validation.sanitizedIdes).toHaveLength(0);
+    });
+
+    it('should handle mixed valid and invalid IDE names', async () => {
+      const ideValidator = new IdeValidator();
+      
+      // Test with mix of valid and invalid IDEs
+      const mixedIdes = ['kiro', 'invalid-ide', 'cursor', 'nonexistent'];
+      const validation = ideValidator.validateIdeArray(mixedIdes);
+      
+      expect(validation.isValid).toBe(false);
+      expect(validation.errors[0]).toContain('Unsupported IDE(s): invalid-ide, nonexistent');
+      expect(validation.sanitizedIdes).toEqual(['kiro', 'cursor']);
+    });
+
+    it('should handle non-array IDE input', async () => {
+      const ideValidator = new IdeValidator();
+      
+      // Test with string instead of array
+      const stringInput = 'kiro';
+      const validation = ideValidator.validateIdeArray(stringInput);
+      
+      expect(validation.isValid).toBe(false);
+      expect(validation.errors[0]).toContain('IDE input must be an array, received: string');
+      
+      // Test with object instead of array
+      const objectInput = { ide: 'kiro' };
+      const validation2 = ideValidator.validateIdeArray(objectInput);
+      
+      expect(validation2.isValid).toBe(false);
+      expect(validation2.errors[0]).toContain('IDE input must be an array, received: object');
+      
+      // Test with null
+      const nullInput = null;
+      const validation3 = ideValidator.validateIdeArray(nullInput);
+      
+      expect(validation3.isValid).toBe(false);
+      expect(validation3.errors[0]).toContain('IDE array is undefined or null');
+      
+      // Test with undefined
+      const undefinedInput = undefined;
+      const validation4 = ideValidator.validateIdeArray(undefinedInput);
+      
+      expect(validation4.isValid).toBe(false);
+      expect(validation4.errors[0]).toContain('IDE array is undefined or null');
+    });
+
+    it('should handle empty and malformed IDE arrays', async () => {
+      const ideValidator = new IdeValidator();
+      
+      // Test with empty array
+      const emptyArray = [];
+      const validation = ideValidator.validateIdeArray(emptyArray);
+      
+      expect(validation.isValid).toBe(true);
+      expect(validation.warnings).toHaveLength(1);
+      expect(validation.warnings[0]).toContain('No IDEs selected');
+      expect(validation.sanitizedIdes).toHaveLength(0);
+      
+      // Test with array containing non-string values
+      const malformedArray = ['kiro', 123, null, undefined, '', 'cursor'];
+      const validation2 = ideValidator.validateIdeArray(malformedArray);
+      
+      expect(validation2.isValid).toBe(false);
+      expect(validation2.errors[0]).toContain('Unsupported IDE(s): 123 (type: number), null (type: object), undefined (type: undefined), empty string');
+      expect(validation2.sanitizedIdes).toEqual(['kiro', 'cursor']);
+    });
+
+    it('should handle duplicate IDE entries', async () => {
+      const ideValidator = new IdeValidator();
+      
+      // Test with duplicate IDEs
+      const duplicateIdes = ['kiro', 'cursor', 'kiro', 'windsurf', 'cursor'];
+      const validation = ideValidator.validateIdeArray(duplicateIdes);
+      
+      expect(validation.isValid).toBe(true);
+      expect(validation.warnings).toHaveLength(1);
+      expect(validation.warnings[0]).toContain('Duplicate IDE(s) removed: kiro, cursor');
+      expect(validation.sanitizedIdes).toEqual(['kiro', 'cursor', 'windsurf']);
+    });
+
+    it('should handle malformed configuration objects', async () => {
+      // Test with missing required properties
+      const malformedConfig1 = {
+        // Missing installType, directory, ides
+        expansionPacks: [],
+        upgrade: false
+      };
+
+      // Mock KiroInstaller to validate configuration
+      mockKiroInstaller.installForKiro = jest.fn().mockImplementation(async (config, directory) => {
+        if (!config.installType) {
+          throw new Error('Configuration validation failed: installType is required');
+        }
+        if (!config.directory) {
+          throw new Error('Configuration validation failed: directory is required');
+        }
+        if (!config.ides || !Array.isArray(config.ides)) {
+          throw new Error('Configuration validation failed: ides must be an array');
+        }
+      });
+
+      const kiroInstaller = new KiroInstaller();
+      
+      // Should throw configuration validation error
+      await expect(kiroInstaller.installForKiro(malformedConfig1, tempDir, {})).rejects.toThrow('installType is required');
+      
+      // Test with invalid property types
+      const malformedConfig2 = {
+        installType: 'full',
+        directory: tempDir,
+        ides: 'kiro', // Should be array
+        expansionPacks: 'pack1,pack2', // Should be array
+        upgrade: 'false' // Should be boolean
+      };
+
+      await expect(kiroInstaller.installForKiro(malformedConfig2, tempDir, {})).rejects.toThrow('ides must be an array');
+    });
+
+    it('should validate configuration object structure', async () => {
+      const errorReporter = new ErrorReporter();
+      
+      // Test configuration error reporting
+      const configError = new Error('Invalid configuration: missing required field');
+      const configReport = errorReporter.createErrorReport(
+        configError,
+        errorReporter.errorTypes.CONFIGURATION,
+        {
+          configFile: 'installation config',
+          field: 'installType'
+        }
+      );
+
+      expect(configReport.type).toBe('CONFIGURATION');
+      expect(configReport.actionable).toContain('Configuration error in installation config for field: installType');
+      expect(configReport.troubleshooting).toContain('Check configuration file syntax');
+      expect(configReport.troubleshooting).toContain('Verify all required configuration fields are present');
+    });
+
+    it('should handle IDE validation errors with proper error reporting', async () => {
+      const ideValidator = new IdeValidator();
+      const errorReporter = new ErrorReporter();
+      
+      // Test IDE validation error
+      const invalidIdes = ['invalid-ide', 'fake-ide'];
+      const supportedIdes = ideValidator.getSupportedIdes();
+      
+      const ideError = new Error('IDE validation failed');
+      const ideReport = errorReporter.createErrorReport(
+        ideError,
+        errorReporter.errorTypes.IDE_VALIDATION,
+        {
+          invalidIdes: invalidIdes,
+          supportedIdes: supportedIdes
+        }
+      );
+
+      expect(ideReport.type).toBe('IDE_VALIDATION');
+      expect(ideReport.actionable).toContain('Invalid IDE(s): invalid-ide, fake-ide');
+      expect(ideReport.actionable).toContain('Supported IDEs are:');
+      expect(ideReport.troubleshooting).toContain('Check that IDE names are spelled correctly');
+      expect(ideReport.troubleshooting.join(' ')).toContain('Use supported IDE identifiers:');
+    });
+
+    it('should gracefully handle edge cases in input validation', async () => {
+      const ideValidator = new IdeValidator();
+      
+      // Test with whitespace-only IDE names
+      const whitespaceIdes = ['kiro', '   ', '\t', '\n', 'cursor'];
+      const validation = ideValidator.validateIdeArray(whitespaceIdes);
+      
+      expect(validation.isValid).toBe(false);
+      expect(validation.errors[0]).toContain('empty string');
+      expect(validation.sanitizedIdes).toEqual(['kiro', 'cursor']);
+      
+      // Test with case variations
+      const caseVariationIdes = ['KIRO', 'Cursor', 'kiro', 'cursor'];
+      const validation2 = ideValidator.validateIdeArray(caseVariationIdes);
+      
+      expect(validation2.isValid).toBe(true);
+      expect(validation2.warnings[0]).toContain('Duplicate IDE(s) removed');
+      expect(validation2.sanitizedIdes).toEqual(['kiro', 'cursor']);
+      
+      // Test with very long IDE names
+      const longIdeName = 'a'.repeat(1000);
+      const longIdes = ['kiro', longIdeName];
+      const validation3 = ideValidator.validateIdeArray(longIdes);
+      
+      expect(validation3.isValid).toBe(false);
+      expect(validation3.errors[0]).toContain(`Unsupported IDE(s): ${longIdeName}`);
+    });
+
+    it('should handle special IDE handling detection with invalid inputs', async () => {
+      const ideValidator = new IdeValidator();
+      
+      // Test requiresSpecialIdeHandling with invalid inputs
+      expect(ideValidator.requiresSpecialIdeHandling(null)).toBeFalsy();
+      expect(ideValidator.requiresSpecialIdeHandling(undefined)).toBeFalsy();
+      expect(ideValidator.requiresSpecialIdeHandling([])).toBe(false);
+      expect(ideValidator.requiresSpecialIdeHandling('kiro')).toBeFalsy(); // Not an array
+      expect(ideValidator.requiresSpecialIdeHandling(['invalid-ide'])).toBe(false);
+      expect(ideValidator.requiresSpecialIdeHandling(['kiro'])).toBe(true);
+      expect(ideValidator.requiresSpecialIdeHandling(['cursor', 'kiro'])).toBe(true);
+    });
+
+    it('should provide helpful error messages for common mistakes', async () => {
+      const ideValidator = new IdeValidator();
+      
+      // Test common IDE name mistakes
+      const commonMistakes = ['vscode', 'vs-code', 'visual-studio-code', 'copilot'];
+      const validation = ideValidator.validateIdeArray(commonMistakes);
+      
+      expect(validation.isValid).toBe(false);
+      expect(validation.errors[0]).toContain('Unsupported IDE(s): vscode, vs-code, visual-studio-code, copilot');
+      expect(validation.errors[1]).toContain('cursor, claude-code, windsurf, trae, roo, kilo, cline, gemini, qwen-code, github-copilot, kiro');
+      
+      // Format and display the error
+      const formattedError = ideValidator.formatValidationError(validation);
+      expect(formattedError).toContain('IDE Validation Error:');
+      expect(formattedError).toContain('Unsupported IDE(s):');
+    });
+  });
+
   describe('7.3 Command-line mode consistency', () => {
     it('should produce same result for --ide kiro as interactive Kiro selection', async () => {
       // Mock installation for both modes
