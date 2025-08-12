@@ -1,6 +1,6 @@
 name: Discord Notification
 
-on: [push, pull_request, workflow_dispatch, release, create, delete, issue_comment, fork, watch, pull_request_review, pull_request_review_comment, repository_dispatch]
+on: [pull_request, release, create, delete, issue_comment, pull_request_review, pull_request_review_comment]
 
 jobs:
   notify:

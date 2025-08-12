@@ -144,7 +144,7 @@ npx bmad-method flatten --input /path/to/source --output /path/to/output/codebas
 
 The tool will display progress and provide a comprehensive summary:
 
-```
+```text
 📊 Completion Summary:
 ✅ Successfully processed 156 files into flattened-codebase.xml
 📁 Output file: /path/to/your/project/flattened-codebase.xml
@@ -155,7 +155,40 @@ The tool will display progress and provide a comprehensive summary:
 📊 File breakdown: 142 text, 14 binary, 0 errors
 ```
 
-The generated XML file contains all your project's source code in a structured format that AI models can easily parse and understand, making it perfect for code reviews, architecture discussions, or getting AI assistance with your BMad-Method projects.
+The generated XML file contains your project's text-based source files in a structured format that AI models can easily parse and understand, making it perfect for code reviews, architecture discussions, or getting AI assistance with your BMad-Method projects.
+
+#### Advanced Usage & Options
+
+- CLI options
+  - `-i, --input <path>`: Directory to flatten. Default: current working directory or auto-detected project root when run interactively.
+  - `-o, --output <path>`: Output file path. Default: `flattened-codebase.xml` in the chosen directory.
+- Interactive mode
+  - If you do not pass `--input` and `--output` and the terminal is interactive (TTY), the tool will attempt to detect your project root (by looking for markers like `.git`, `package.json`, etc.) and prompt you to confirm or override the paths.
+  - In non-interactive contexts (e.g., CI), it will prefer the detected root silently; otherwise it falls back to the current directory and default filename.
+- File discovery and ignoring
+  - Uses `git ls-files` when inside a git repository for speed and correctness; otherwise falls back to a glob-based scan.
+  - Applies your `.gitignore` plus a curated set of default ignore patterns (e.g., `node_modules`, build outputs, caches, logs, IDE folders, lockfiles, large media/binaries, `.env*`, and previously generated XML outputs).
+- Binary handling
+  - Binary files are detected and excluded from the XML content. They are counted in the final summary but not embedded in the output.
+- XML format and safety
+  - UTF-8 encoded file with root element `<files>`.
+  - Each text file is emitted as a `<file path="relative/path">` element whose content is wrapped in `<![CDATA[ ... ]]>`.
+  - The tool safely handles occurrences of `]]>` inside content by splitting the CDATA to preserve correctness.
+  - File contents are preserved as-is and indented for readability inside the XML.
+- Performance
+  - Concurrency is selected automatically based on your CPU and workload size. No configuration required.
+  - Running inside a git repo improves discovery performance.
+
+#### Minimal XML example
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<files>
+  <file path="src/index.js"><![CDATA[
+    // your source content
+  ]]></file>
+</files>
+```
 
 ## Documentation & Resources
 

@@ -3,6 +3,8 @@ node_modules/
 pnpm-lock.yaml
 bun.lock
 deno.lock
+pnpm-workspace.yaml
+package-lock.json
 
 # Logs
 logs/
@@ -41,3 +43,5 @@ CLAUDE.md
 .bmad-creator-tools
 test-project-install/*
 sample-project/*
+flattened-codebase.xml
+

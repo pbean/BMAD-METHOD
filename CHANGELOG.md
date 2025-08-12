@@ -1,9 +1,27 @@
-## [4.35.3](https://github.com/bmadcode/BMAD-METHOD/compare/v4.35.2...v4.35.3) (2025-08-06)
+## [4.36.2](https://github.com/bmadcode/BMAD-METHOD/compare/v4.36.1...v4.36.2) (2025-08-10)
 
 
 ### Bug Fixes
 
-* doc location improvement ([1676f51](https://github.com/bmadcode/BMAD-METHOD/commit/1676f5189ed057fa2d7facbd6a771fe67cdb6372))
+* align installer dependencies with root package versions for ESM compatibility ([#420](https://github.com/bmadcode/BMAD-METHOD/issues/420)) ([3f6b674](https://github.com/bmadcode/BMAD-METHOD/commit/3f6b67443d61ae6add98656374bed27da4704644))
+
+## [4.36.1](https://github.com/bmadcode/BMAD-METHOD/compare/v4.36.0...v4.36.1) (2025-08-09)
+
+### Bug Fixes
+
+- update Node.js version to 20 in release workflow and reduce Discord spam ([3f7e19a](https://github.com/bmadcode/BMAD-METHOD/commit/3f7e19a098155341a2b89796addc47b0623cb87a))
+
+# [4.36.0](https://github.com/bmadcode/BMAD-METHOD/compare/v4.35.3...v4.36.0) (2025-08-09)
+
+### Features
+
+- modularize flattener tool into separate components with improved project root detection ([#417](https://github.com/bmadcode/BMAD-METHOD/issues/417)) ([0fdbca7](https://github.com/bmadcode/BMAD-METHOD/commit/0fdbca73fc60e306109f682f018e105e2b4623a2))
+
+## [4.35.3](https://github.com/bmadcode/BMAD-METHOD/compare/v4.35.2...v4.35.3) (2025-08-06)
+
+### Bug Fixes
+
+- doc location improvement ([1676f51](https://github.com/bmadcode/BMAD-METHOD/commit/1676f5189ed057fa2d7facbd6a771fe67cdb6372))
 
 ## [4.35.2](https://github.com/bmadcode/BMAD-METHOD/compare/v4.35.1...v4.35.2) (2025-08-06)
 
