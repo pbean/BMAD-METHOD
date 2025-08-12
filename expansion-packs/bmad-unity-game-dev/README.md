@@ -67,6 +67,7 @@ The Unity expansion pack uses a multi-phase architecture approach that leverages
 **Game-Architect Commands (use `*help` to see all options):**
 
 1. **Individual Phase Creation:**
+
    - `*create-architecture-foundation` - Unity setup, tech stack, project structure
    - `*create-architecture-systems` - Game mechanics, data models, component design (now includes Unity Gaming Services & multiplayer)
    - `*create-architecture-platform` - Platform optimization, UI, performance
@@ -74,6 +75,7 @@ The Unity expansion pack uses a multi-phase architecture approach that leverages
    - `*create-unity-asset-integration` - Unity Asset Store integration strategy and compliance
 
 2. **Unity Technical Setup (New in v4.32.0+):**
+
    - `*unity-package-setup` - Configure Unity Package Manager dependencies
    - `*unity-package-integration` - Integrate Unity packages into project architecture
    - `*unity-editor-automation` - Set up Unity Editor automation tools
@@ -81,6 +83,7 @@ The Unity expansion pack uses a multi-phase architecture approach that leverages
    - `*unity-setup-all` - Execute all Unity setup tasks in sequence
 
 3. **Document Consolidation:**
+
    - `*consolidate-architecture` - Combines all phase documents into `docs/gamearchitecture.md`
 
 4. **Document Processing:**

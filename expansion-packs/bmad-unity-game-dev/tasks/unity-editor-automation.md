@@ -21,6 +21,7 @@ To create Unity Editor scripts and tools that automate repetitive development ta
 #### 1.1 Inventory Existing Editor Scripts
 
 Scan for existing Editor automation:
+
 - Custom inspectors in `Assets/Scripts/Editor/`
 - Property drawers and decorator drawers
 - Editor windows and utilities
@@ -30,6 +31,7 @@ Scan for existing Editor automation:
 #### 1.2 Identify Automation Opportunities
 
 Based on project analysis, identify areas for automation:
+
 - **Asset Management**: Import settings, naming conventions
 - **Scene Setup**: Standard scene hierarchy, required components
 - **Prefab Workflows**: Prefab validation, variant creation
@@ -49,21 +51,21 @@ using UnityEngine;
 public static class BMadMenu
 {
     private const string MenuRoot = "BMad/";
-    
+
     [MenuItem(MenuRoot + "Setup/Initialize Project")]
     public static void InitializeProject()
     {
         // Project initialization logic
         // Reference: gamearchitecture/unity-project-structure.md
     }
-    
+
     [MenuItem(MenuRoot + "Setup/Validate Configuration")]
     public static void ValidateConfiguration()
     {
         // Configuration validation
         // Reference: config.yaml settings
     }
-    
+
     [MenuItem(MenuRoot + "Tools/Create Story Scene")]
     public static void CreateStoryScene()
     {
@@ -89,7 +91,7 @@ public class AssetImportAutomation : AssetPostprocessor
     void OnPreprocessTexture()
     {
         TextureImporter importer = assetImporter as TextureImporter;
-        
+
         // Apply settings based on path
         if (assetPath.Contains("Sprites"))
         {
@@ -101,7 +103,7 @@ public class AssetImportAutomation : AssetPostprocessor
         }
         // Reference: gamearchitecture/asset-pipeline.md
     }
-    
+
     // Model import settings (3D projects)
     void OnPreprocessModel()
     {
@@ -109,7 +111,7 @@ public class AssetImportAutomation : AssetPostprocessor
         // Configure based on gameDimension
         // Reference: gamearchitecture/3d-assets.md
     }
-    
+
     // Audio import settings
     void OnPreprocessAudio()
     {
@@ -138,36 +140,36 @@ public class SceneSetupTools : EditorWindow
     {
         GetWindow<SceneSetupTools>("Scene Setup");
     }
-    
+
     private void OnGUI()
     {
         GUILayout.Label("Scene Setup Wizard", EditorStyles.boldLabel);
-        
+
         if (GUILayout.Button("Create Gameplay Scene"))
         {
             CreateGameplayScene();
         }
-        
+
         if (GUILayout.Button("Create UI Scene"))
         {
             CreateUIScene();
         }
-        
+
         if (GUILayout.Button("Validate Current Scene"))
         {
             ValidateScene();
         }
     }
-    
+
     private static void CreateGameplayScene()
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects);
-        
+
         // Add required gameplay components
         CreateCameraSystem();
         CreateInputSystem();
         CreateGameManager();
-        
+
         // Reference: gamearchitecture/scene-management.md
     }
 }
@@ -191,35 +193,35 @@ public class PrefabValidator : EditorWindow
     {
         GetWindow<PrefabValidator>("Prefab Validator");
     }
-    
+
     private void OnGUI()
     {
         if (GUILayout.Button("Validate All Prefabs"))
         {
             ValidateAllPrefabs();
         }
-        
+
         if (GUILayout.Button("Fix Common Issues"))
         {
             FixCommonPrefabIssues();
         }
     }
-    
+
     private void ValidateAllPrefabs()
     {
         string[] prefabPaths = AssetDatabase.FindAssets("t:Prefab");
-        
+
         foreach (string guid in prefabPaths)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            
+
             // Validation checks
             ValidatePrefabStructure(prefab);
             ValidateComponents(prefab);
             ValidateNamingConvention(prefab);
         }
-        
+
         // Reference: gamearchitecture/prefab-standards.md
     }
 }
@@ -240,29 +242,29 @@ using UnityEngine;
 public class BuildAutomation : IPreprocessBuildWithReport, IPostprocessBuildWithReport
 {
     public int callbackOrder => 0;
-    
+
     public void OnPreprocessBuild(BuildReport report)
     {
         Debug.Log("BMad: Pre-build validation starting...");
-        
+
         // Validate project settings
         ValidateQualitySettings();
         ValidatePlayerSettings();
         ValidatePackages();
-        
+
         // Platform-specific setup
         ConfigurePlatformSettings(report.summary.platform);
-        
+
         // Reference: gamearchitecture/build-configuration.md
     }
-    
+
     public void OnPostprocessBuild(BuildReport report)
     {
         Debug.Log($"BMad: Build completed - {report.summary.result}");
-        
+
         // Generate build report
         GenerateBuildReport(report);
-        
+
         // Archive build artifacts if needed
         ArchiveBuildArtifacts(report);
     }
@@ -296,29 +298,29 @@ using UnityEngine;
 public class YourComponentEditor : Editor
 {
     private SerializedProperty propertyExample;
-    
+
     private void OnEnable()
     {
         // Cache serialized properties
         propertyExample = serializedObject.FindProperty("propertyName");
     }
-    
+
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
-        
+
         // Custom GUI layout
         EditorGUILayout.LabelField("Custom Inspector", EditorStyles.boldLabel);
-        
+
         EditorGUILayout.PropertyField(propertyExample);
-        
+
         // Add helpful buttons
         if (GUILayout.Button("Perform Action"))
         {
             var component = target as YourComponent;
             component?.PerformAction();
         }
-        
+
         serializedObject.ApplyModifiedProperties();
     }
 }
@@ -342,21 +344,21 @@ public class StoryIntegrationTools : EditorWindow
     {
         // Read story files from devStoryLocation
         string storyPath = GetStoryPath();
-        
+
         if (Directory.Exists(storyPath))
         {
             // Parse story files and create tasks
             ParseStoryFiles(storyPath);
         }
     }
-    
+
     [MenuItem("BMad/Stories/Generate Story Scene")]
     public static void GenerateStoryScene()
     {
         // Create scene based on current story requirements
         // Reference: create-game-story.md task
     }
-    
+
     [MenuItem("BMad/Stories/Validate Story Implementation")]
     public static void ValidateStoryImplementation()
     {
@@ -390,26 +392,26 @@ public class BMadSettingsProvider : SettingsProvider
 {
     public BMadSettingsProvider(string path, SettingsScope scope)
         : base(path, scope) {}
-    
+
     [SettingsProvider]
     public static SettingsProvider CreateBMadSettingsProvider()
     {
         var provider = new BMadSettingsProvider("Project/BMad Settings", SettingsScope.Project);
-        
+
         provider.guiHandler = (searchContext) =>
         {
             EditorGUILayout.LabelField("BMad Method Settings", EditorStyles.boldLabel);
-            
+
             // Editor automation settings
             EditorGUILayout.Toggle("Auto-validate on save", true);
             EditorGUILayout.Toggle("Auto-import story updates", false);
             EditorGUILayout.Toggle("Enable build preprocessing", true);
-            
+
             // Reference paths
             EditorGUILayout.TextField("Story Location", "docs/stories");
             EditorGUILayout.TextField("Architecture Docs", "docs/game-architecture");
         };
-        
+
         return provider;
     }
 }
@@ -420,6 +422,7 @@ public class BMadSettingsProvider : SettingsProvider
 #### 10.1 Update Configuration
 
 Add Editor automation settings to config.yaml:
+
 ```yaml
 # Editor Automation Settings
 editorAutomation:
@@ -439,33 +442,40 @@ Create `docs/unity-editor-automation.md`:
 ## Available Tools
 
 ### BMad Menu
+
 - **Setup**: Project initialization and validation
 - **Tools**: Scene creation, prefab management
 - **Build**: Automated build pipeline
 - **Stories**: Story integration and validation
 
 ### Keyboard Shortcuts
+
 - `Alt+B, I`: Initialize project
 - `Alt+B, V`: Validate configuration
 - `Alt+B, S`: Create story scene
 
 ### Asset Import Automation
+
 Automatic configuration based on asset location:
+
 - Sprites/: Configured for 2D sprites
 - UI/: Optimized for UI usage
 - Models/: 3D model import settings
 
 ### Custom Inspectors
+
 Templates available in: Assets/Scripts/Editor/Templates/
 
 ## Workflow Integration
 
 ### Story Development
+
 1. Import story requirements: BMad > Stories > Import
 2. Generate scene: BMad > Stories > Generate Scene
 3. Validate implementation: BMad > Stories > Validate
 
 ### Build Process
+
 1. Pre-build validation automatic
 2. Platform-specific configuration
 3. Post-build reporting
@@ -492,13 +502,13 @@ public class EditorAutomationTests
         Assert.IsTrue(Menu.GetEnabled("BMad/Setup/Initialize Project"));
         Assert.IsTrue(Menu.GetEnabled("BMad/Tools/Scene Setup Wizard"));
     }
-    
+
     [Test]
     public void AssetImporter_ShouldConfigureCorrectly()
     {
         // Test asset import automation
     }
-    
+
     [Test]
     public void BuildAutomation_ShouldValidateSettings()
     {

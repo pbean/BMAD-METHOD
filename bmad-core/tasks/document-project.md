@@ -27,6 +27,7 @@ Ask the user:
 2. **Provide existing requirements** - Do you have a requirements document, epic, or feature description you can share?
 
 3. **Describe the focus** - Can you briefly describe what enhancement or feature you're planning? For example:
+
    - 'Adding payment processing to the user service'
    - 'Refactoring the authentication module'
    - 'Integrating with a new third-party API'
@@ -62,6 +63,7 @@ Ask the user these elicitation questions to better understand their needs:
 CRITICAL: Before generating documentation, conduct extensive analysis of the existing codebase:
 
 1. **Explore Key Areas**:
+
    - Entry points (main files, index files, app initializers)
    - Configuration files and environment setup
    - Package dependencies and versions
@@ -69,6 +71,7 @@ CRITICAL: Before generating documentation, conduct extensive analysis of the exi
    - Test suites and coverage
 
 2. **Ask Clarifying Questions**:
+
    - "I see you're using [technology X]. Are there any custom patterns or conventions I should document?"
    - "What are the most critical/complex parts of this system that developers struggle with?"
    - "Are there any undocumented 'tribal knowledge' areas I should capture?"
@@ -111,9 +114,9 @@ This document captures the CURRENT STATE of the [Project Name] codebase, includi
 
 ### Change Log
 
-| Date | Version | Description | Author |
-|------|---------|-------------|--------|
-| [Date] | 1.0 | Initial brownfield analysis | [Analyst] |
+| Date   | Version | Description                 | Author    |
+| ------ | ------- | --------------------------- | --------- |
+| [Date] | 1.0     | Initial brownfield analysis | [Analyst] |
 
 ## Quick Reference - Key Files and Entry Points
 
@@ -136,11 +139,11 @@ This document captures the CURRENT STATE of the [Project Name] codebase, includi
 
 ### Actual Tech Stack (from package.json/requirements.txt)
 
-| Category | Technology | Version | Notes |
-|----------|------------|---------|--------|
-| Runtime | Node.js | 16.x | [Any constraints] |
-| Framework | Express | 4.18.2 | [Custom middleware?] |
-| Database | PostgreSQL | 13 | [Connection pooling setup] |
+| Category  | Technology | Version | Notes                      |
+| --------- | ---------- | ------- | -------------------------- |
+| Runtime   | Node.js    | 16.x    | [Any constraints]          |
+| Framework | Express    | 4.18.2  | [Custom middleware?]       |
+| Database  | PostgreSQL | 13      | [Connection pooling setup] |
 
 etc...
 
@@ -179,6 +182,7 @@ project-root/
 ### Data Models
 
 Instead of duplicating, reference actual model files:
+
 - **User Model**: See `src/models/User.js`
 - **Order Model**: See `src/models/Order.js`
 - **Related Types**: TypeScript definitions in `src/types/`
@@ -208,10 +212,10 @@ Instead of duplicating, reference actual model files:
 
 ### External Services
 
-| Service | Purpose | Integration Type | Key Files |
-|---------|---------|------------------|-----------|
-| Stripe | Payments | REST API | `src/integrations/stripe/` |
-| SendGrid | Emails | SDK | `src/services/emailService.js` |
+| Service  | Purpose  | Integration Type | Key Files                      |
+| -------- | -------- | ---------------- | ------------------------------ |
+| Stripe   | Payments | REST API         | `src/integrations/stripe/`     |
+| SendGrid | Emails   | SDK              | `src/services/emailService.js` |
 
 etc...
 
@@ -256,6 +260,7 @@ npm run test:integration  # Runs integration tests (requires local DB)
 ### Files That Will Need Modification
 
 Based on the enhancement requirements, these files will be affected:
+
 - `src/services/userService.js` - Add new user fields
 - `src/models/User.js` - Update schema
 - `src/routes/userRoutes.js` - New endpoints
@@ -293,6 +298,7 @@ npm run seed        # Seed test data
 ### 4. Document Delivery
 
 1. **In Web UI (Gemini, ChatGPT, Claude)**:
+
    - Present the entire document in one response (or multiple if too long)
    - Tell user to copy and save as `docs/brownfield-architecture.md` or `docs/project-architecture.md`
    - Mention it can be sharded later in IDE if needed

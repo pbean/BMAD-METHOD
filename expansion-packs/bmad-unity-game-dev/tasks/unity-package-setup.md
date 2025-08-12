@@ -49,18 +49,21 @@ To automate Unity Package Manager workflows for game projects, including package
 Based on `gameDimension` from config:
 
 **If 2D Project**, check for essential packages:
+
 - `com.unity.2d.sprite` - Sprite Editor
 - `com.unity.2d.tilemap` - Tilemap system
 - `com.unity.2d.animation` - 2D Animation
 - `com.unity.2d.pixel-perfect` - Pixel Perfect Camera
 
 **If 3D Project**, check for essential packages:
+
 - `com.unity.render-pipelines.universal` or `com.unity.render-pipelines.high-definition`
 - `com.unity.cinemachine` - Advanced camera system
 - `com.unity.probuilder` - Level prototyping
 - `com.unity.terrain-tools` - Terrain editing
 
 **For Both 2D/3D**, verify common packages:
+
 - `com.unity.inputsystem` - New Input System
 - `com.unity.textmeshpro` - Advanced text rendering
 - `com.unity.addressables` - Asset management
@@ -89,10 +92,10 @@ Create a package setup script that:
   "dependencies": {
     // Core Unity packages based on project type
     {{core_packages}},
-    
+
     // Architecture-specified packages
     {{architecture_packages}},
-    
+
     // Optional recommended packages
     {{optional_packages}}
   },
@@ -107,21 +110,25 @@ Create a package setup script that:
 For each package requiring configuration:
 
 **Input System Package**:
+
 - Create/update `ProjectSettings/InputSystem.asset`
 - Document action maps location: `Assets/Settings/Input/`
 - Set backend configuration (new/old/both)
 
 **URP/HDRP Package**:
+
 - Create/update pipeline asset: `Assets/Settings/UniversalRenderPipelineAsset.asset`
 - Configure quality settings
 - Set up renderer features
 
 **Addressables Package**:
+
 - Initialize Addressables settings
 - Configure group templates
 - Set build and load paths
 
 **Cinemachine Package**:
+
 - Document virtual camera prefab locations
 - Configure brain settings in main camera
 
@@ -137,40 +144,45 @@ Generate `docs/unity-packages.md` with:
 ## Package Manifest Summary
 
 ### Core Packages
-| Package | Version | Purpose | Configuration |
-|---------|---------|---------|---------------|
+
+| Package               | Version     | Purpose          | Configuration                    |
+| --------------------- | ----------- | ---------------- | -------------------------------- |
 | com.unity.inputsystem | {{version}} | New Input System | Settings/Input/InputSystem.asset |
-| {{other_packages}} | | | |
+| {{other_packages}}    |             |                  |                                  |
 
 ### Package-Specific APIs and Usage
 
 #### Input System
+
 - **Action Assets**: `Assets/Settings/Input/GameControls.inputactions`
 - **Player Input Component**: Required on player prefab
 - **Event System**: Configure in UI scenes
-[Source: Packages/manifest.json]
+  [Source: Packages/manifest.json]
 
 #### {{Other Package Sections}}
 
 ### Integration Points
 
 #### With Game Architecture
+
 - Input handling follows pattern in `gamearchitecture/input-system.md`
 - Rendering pipeline configured per `gamearchitecture/rendering-pipeline.md`
-[Source: gamearchitecture documentation]
+  [Source: gamearchitecture documentation]
 
 ### Version Management
 
 #### Update Strategy
+
 - LTS version packages for production
 - Preview packages only with explicit approval
 - Lock file committed for reproducible builds
 
 #### Compatibility Matrix
-| Unity Version | Package Set | Notes |
-|---------------|-------------|--------|
-| 2022.3 LTS | Current | Recommended |
-| 2023.x | Experimental | Testing only |
+
+| Unity Version | Package Set  | Notes        |
+| ------------- | ------------ | ------------ |
+| 2022.3 LTS    | Current      | Recommended  |
+| 2023.x        | Experimental | Testing only |
 ```
 
 ### 5. Validation and Testing
@@ -202,7 +214,7 @@ public class PackageSetupValidator
         var requiredPackages = new[] {
             {{required_package_list}}
         };
-        
+
         // Validate each package
         // Report missing or misconfigured packages
     }
@@ -216,12 +228,14 @@ public class PackageSetupValidator
 Create standardized workflow for package updates:
 
 1. **Pre-Update Checklist**:
+
    - Backup project or commit current state
    - Review package changelog
    - Check compatibility with Unity version
    - Test in separate branch
 
 2. **Update Execution**:
+
    - Update packages one at a time
    - Test after each update
    - Document any breaking changes
@@ -238,6 +252,7 @@ Create standardized workflow for package updates:
 #### 7.1 Update Story Templates
 
 Enhance story creation to include:
+
 - Package requirements for story features
 - Package API usage examples
 - Configuration prerequisites
@@ -245,6 +260,7 @@ Enhance story creation to include:
 #### 7.2 Architecture Documentation Updates
 
 If new packages added:
+
 - Update tech stack document (find actual filename from `index.md`, e.g., `3-tech-stack.md`)
 - Document in project structure file (find actual filename from `index.md`, e.g., `8-unity-project-structure.md`)
 - Add to `devLoadAlwaysFiles` if critical

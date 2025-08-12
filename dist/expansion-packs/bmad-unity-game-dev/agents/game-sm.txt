@@ -156,10 +156,16 @@ To identify the next logical game story based on project progress and epic defin
 
 #### 4.1 Determine Architecture Reading Strategy
 
-- **If `gamearchitectureVersion: >= v3` and `gamearchitectureSharded: true`**: Read `{gamearchitectureShardedLocation}/index.md` then follow structured reading order below
+- **If `gamearchitectureVersion: >= v3` and `gamearchitectureSharded: true`**:
+  - Read `{gamearchitectureShardedLocation}/index.md` to get actual filenames
+  - Map document names to actual files (e.g., `tech-stack.md` → `3-tech-stack.md`)
+  - Use index.md as source of truth for file locations
+  - Fallback: If file not in index, search directory for `*{document-name}*.md` pattern
 - **Else**: Use monolithic `gamearchitectureFile` for similar sections
 
 #### 4.2 Read Architecture Documents Based on Story Type
+
+**Note**: If files not found by name below, check `{gamearchitectureShardedLocation}/index.md` for actual filenames (e.g., `3-tech-stack.md` instead of `tech-stack.md`)
 
 **For ALL Game Stories:** tech-stack.md, unity-project-structure.md, coding-standards.md, testing-resilience-architecture.md
 
@@ -208,6 +214,12 @@ ALWAYS cite source documents: `[Source: gamearchitecture/{filename}.md#{section}
 - Note any package-specific APIs or components being used
 - List package configuration requirements (e.g., Input System settings, URP/HDRP asset config)
 - Identify any third-party Asset Store packages and their integration points
+- **Unity Editor API Requirements**:
+  - Document any Editor scripts needed (custom inspectors, property drawers)
+  - List required Editor utilities (ScriptableObject creators, menu items)
+  - Identify build preprocessing requirements
+  - Note any Editor-only package dependencies
+  - Reference integration patterns from `docs/package-integration/` if available
 
 #### 5.2 Scene and Prefab Planning
 
@@ -223,6 +235,12 @@ ALWAYS cite source documents: `[Source: gamearchitecture/{filename}.md#{section}
 - Document component dependencies and execution order
 - Identify required Unity Events and UnityActions
 - Note any package-specific components (e.g., Cinemachine VirtualCamera, InputActionAsset)
+- **Unity Editor Integration**:
+  - Custom Editor windows required for workflow
+  - Inspector customizations for component usability
+  - Gizmos and handles for in-scene editing
+  - Editor-time validation and setup scripts
+  - Integration with Unity Package Manager APIs from `unity-package-integration` task
 
 #### 5.4 Asset Requirements
 
@@ -248,7 +266,7 @@ ALWAYS cite source documents: `[Source: gamearchitecture/{filename}.md#{section}
   - CRITICAL: This section MUST contain ONLY information extracted from gamearchitecture documents and GDD. NEVER invent or assume technical details.
   - Include ALL relevant technical details from Steps 3-5, organized by category:
     - **Previous Story Insights**: Key learnings from previous story implementation
-    - **Package Dependencies**: Unity packages required, versions, configurations [with source references]
+    - **Package Dependencies**: Unity packages required, versions, configurations, Editor API requirements [with source references]
     - **Unity Components**: Specific MonoBehaviours, ScriptableObjects, systems [with source references]
     - **Scene & Prefab Specs**: Scene modifications, prefab structures, variants [with source references]
     - **Input Configuration**: Input actions, bindings, control schemes [with source references]

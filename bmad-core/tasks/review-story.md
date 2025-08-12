@@ -11,11 +11,13 @@ When a developer agent marks a story as "Ready for Review", perform a comprehens
 ## Review Process
 
 1. **Read the Complete Story**
+
    - Review all acceptance criteria
    - Understand the dev notes and requirements
    - Note any completion notes from the developer
 
 2. **Verify Implementation Against Dev Notes Guidance**
+
    - Review the "Dev Notes" section for specific technical guidance provided to the developer
    - Verify the developer's implementation follows the architectural patterns specified in Dev Notes
    - Check that file locations match the project structure guidance in Dev Notes
@@ -23,11 +25,13 @@ When a developer agent marks a story as "Ready for Review", perform a comprehens
    - Validate that security considerations mentioned in Dev Notes were implemented
 
 3. **Focus on the File List**
+
    - Verify all files listed were actually created/modified
    - Check for any missing files that should have been updated
    - Ensure file locations align with the project structure guidance from Dev Notes
 
 4. **Senior Developer Code Review**
+
    - Review code with the eye of a senior developer
    - If changes form a cohesive whole, review them together
    - If changes are independent, review incrementally file by file
@@ -40,6 +44,7 @@ When a developer agent marks a story as "Ready for Review", perform a comprehens
      - Best practices and patterns
 
 5. **Active Refactoring**
+
    - As a senior developer, you CAN and SHOULD refactor code where improvements are needed
    - When refactoring:
      - Make the changes directly in the files
@@ -49,17 +54,20 @@ When a developer agent marks a story as "Ready for Review", perform a comprehens
      - Update the File List if you modify additional files
 
 6. **Standards Compliance Check**
+
    - Verify adherence to `docs/coding-standards.md`
    - Check compliance with `docs/unified-project-structure.md`
    - Validate testing approach against `docs/testing-strategy.md`
    - Ensure all guidelines mentioned in the story are followed
 
 7. **Acceptance Criteria Validation**
+
    - Verify each AC is fully implemented
    - Check for any missing functionality
    - Validate edge cases are handled
 
 8. **Test Coverage Review**
+
    - Ensure unit tests cover edge cases
    - Add missing tests if critical coverage is lacking
    - Verify integration tests (if required) are comprehensive
@@ -81,25 +89,31 @@ After review and any refactoring, append your results to the story file in the Q
 ## QA Results
 
 ### Review Date: [Date]
+
 ### Reviewed By: Quinn (Senior Developer QA)
 
 ### Code Quality Assessment
+
 [Overall assessment of implementation quality]
 
 ### Refactoring Performed
+
 [List any refactoring you performed with explanations]
+
 - **File**: [filename]
   - **Change**: [what was changed]
   - **Why**: [reason for change]
   - **How**: [how it improves the code]
 
 ### Compliance Check
+
 - Coding Standards: [✓/✗] [notes if any]
 - Project Structure: [✓/✗] [notes if any]
 - Testing Strategy: [✓/✗] [notes if any]
 - All ACs Met: [✓/✗] [notes if any]
 
 ### Improvements Checklist
+
 [Check off items you handled yourself, leave unchecked for dev to address]
 
 - [x] Refactored user service for better error handling (services/user.service.ts)
@@ -109,12 +123,15 @@ After review and any refactoring, append your results to the story file in the Q
 - [ ] Update API documentation for new error codes
 
 ### Security Review
+
 [Any security concerns found and whether addressed]
 
 ### Performance Considerations
+
 [Any performance issues found and whether addressed]
 
 ### Final Status
+
 [✓ Approved - Ready for Done] / [✗ Changes Required - See unchecked items above]
 ```
 

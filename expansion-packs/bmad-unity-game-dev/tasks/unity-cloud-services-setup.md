@@ -23,6 +23,7 @@ To configure and integrate Unity Gaming Services (UGS) including Analytics, Clou
 #### 1.1 Initialize Project ID
 
 Check Unity project settings:
+
 - Verify Project ID exists in `ProjectSettings/ProjectSettings.asset`
 - If no Project ID:
   - Guide user to Unity Dashboard: https://dashboard.unity3d.com
@@ -43,22 +44,22 @@ using System.Threading.Tasks;
 public class UnityServicesInitializer : MonoBehaviour
 {
     [SerializeField] private string environment = "production";
-    
+
     async void Start()
     {
         await InitializeUnityServices();
     }
-    
+
     async Task InitializeUnityServices()
     {
         try
         {
             var options = new InitializationOptions()
                 .SetEnvironmentName(environment);
-            
+
             await UnityServices.InitializeAsync(options);
             Debug.Log("Unity Services initialized successfully");
-            
+
             // Initialize individual services
             await InitializeAuthentication();
             await InitializeAnalytics();
@@ -88,7 +89,7 @@ using System.Threading.Tasks;
 public class AuthenticationManager : MonoBehaviour
 {
     public static AuthenticationManager Instance { get; private set; }
-    
+
     private void Awake()
     {
         if (Instance == null)
@@ -101,7 +102,7 @@ public class AuthenticationManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
-    
+
     public async Task<bool> SignInAnonymously()
     {
         try
@@ -116,7 +117,7 @@ public class AuthenticationManager : MonoBehaviour
             return false;
         }
     }
-    
+
     public async Task<bool> SignInWithUnity(string username, string password)
     {
         // Unity authentication implementation
@@ -128,6 +129,7 @@ public class AuthenticationManager : MonoBehaviour
 #### 2.2 Session Management
 
 Configure session handling and persistence:
+
 - Token refresh logic
 - Session timeout handling
 - Offline mode fallback
@@ -147,7 +149,7 @@ using UnityEngine;
 public class AnalyticsManager : MonoBehaviour
 {
     public static AnalyticsManager Instance { get; private set; }
-    
+
     private void Awake()
     {
         if (Instance == null)
@@ -156,7 +158,7 @@ public class AnalyticsManager : MonoBehaviour
             DontDestroyOnLoad(gameObject);
         }
     }
-    
+
     public void TrackGameStart()
     {
         var parameters = new Dictionary<string, object>
@@ -165,10 +167,10 @@ public class AnalyticsManager : MonoBehaviour
             { "difficulty", {{difficulty_setting}} },
             { "platform", Application.platform.ToString() }
         };
-        
+
         AnalyticsService.Instance.CustomData("gameStart", parameters);
     }
-    
+
     public void TrackLevelComplete(int level, float time, int score)
     {
         var parameters = new Dictionary<string, object>
@@ -178,10 +180,10 @@ public class AnalyticsManager : MonoBehaviour
             { "score", score },
             { "perfect", score == {{max_score}} }
         };
-        
+
         AnalyticsService.Instance.CustomData("levelComplete", parameters);
     }
-    
+
     // [[LLM: Add project-specific events based on game design]]
 }
 ```
@@ -189,6 +191,7 @@ public class AnalyticsManager : MonoBehaviour
 #### 3.2 Privacy Compliance
 
 Implement GDPR/CCPA compliance:
+
 ```csharp
 public class PrivacyManager : MonoBehaviour
 {
@@ -196,7 +199,7 @@ public class PrivacyManager : MonoBehaviour
     {
         await AnalyticsService.Instance.RequestDataDeletionAsync();
     }
-    
+
     public void SetConsentStatus(bool hasConsent)
     {
         // Configure based on privacy requirements
@@ -220,7 +223,7 @@ using UnityEngine;
 public class CloudSaveManager : MonoBehaviour
 {
     public static CloudSaveManager Instance { get; private set; }
-    
+
     private void Awake()
     {
         if (Instance == null)
@@ -229,11 +232,11 @@ public class CloudSaveManager : MonoBehaviour
             DontDestroyOnLoad(gameObject);
         }
     }
-    
+
     public async Task SaveGameData(string key, object data)
     {
         var dataToSave = new Dictionary<string, object> { { key, data } };
-        
+
         try
         {
             await CloudSaveService.Instance.Data.ForceSaveAsync(dataToSave);
@@ -244,13 +247,13 @@ public class CloudSaveManager : MonoBehaviour
             Debug.LogError($"Failed to save {key}: {e}");
         }
     }
-    
+
     public async Task<T> LoadGameData<T>(string key)
     {
         try
         {
             var data = await CloudSaveService.Instance.Data.LoadAsync(new HashSet<string> { key });
-            
+
             if (data.TryGetValue(key, out var item))
             {
                 return item.Value.GetAs<T>();
@@ -260,7 +263,7 @@ public class CloudSaveManager : MonoBehaviour
         {
             Debug.LogError($"Failed to load {key}: {e}");
         }
-        
+
         return default(T);
     }
 }
@@ -269,6 +272,7 @@ public class CloudSaveManager : MonoBehaviour
 #### 4.2 Define Save Data Structures
 
 Create data models for cloud save:
+
 ```csharp
 [System.Serializable]
 public class PlayerSaveData
@@ -312,15 +316,15 @@ public class RemoteConfigManager : MonoBehaviour
         public string platform;
         public int playerLevel;
     }
-    
+
     public struct AppAttributes
     {
         public string appVersion;
         public string buildNumber;
     }
-    
+
     public static RemoteConfigManager Instance { get; private set; }
-    
+
     private void Awake()
     {
         if (Instance == null)
@@ -329,7 +333,7 @@ public class RemoteConfigManager : MonoBehaviour
             DontDestroyOnLoad(gameObject);
         }
     }
-    
+
     public async Task FetchConfigs()
     {
         var userAttributes = new UserAttributes
@@ -338,24 +342,24 @@ public class RemoteConfigManager : MonoBehaviour
             platform = Application.platform.ToString(),
             playerLevel = {{player_level}}
         };
-        
+
         var appAttributes = new AppAttributes
         {
             appVersion = Application.version,
             buildNumber = {{build_number}}
         };
-        
+
         await RemoteConfigService.Instance.FetchConfigsAsync(userAttributes, appAttributes);
-        
+
         ApplyRemoteSettings();
     }
-    
+
     private void ApplyRemoteSettings()
     {
         // Apply fetched configurations
         var difficulty = RemoteConfigService.Instance.appConfig.GetFloat("gameDifficulty", 1.0f);
         var eventActive = RemoteConfigService.Instance.appConfig.GetBool("specialEventActive", false);
-        
+
         // [[LLM: Apply configurations based on game requirements]]
     }
 }
@@ -364,6 +368,7 @@ public class RemoteConfigManager : MonoBehaviour
 #### 5.2 Define Configuration Parameters
 
 Document remote parameters:
+
 ```yaml
 # Remote Config Parameters
 gameBalance:
@@ -374,7 +379,7 @@ gameBalance:
 features:
   - specialEventActive: bool (default: false)
   - newFeatureEnabled: bool (default: false)
-  
+
 monetization:
   - adFrequency: int (default: 3)
   - iapDiscount: float (default: 0)
@@ -420,42 +425,50 @@ Create `docs/unity-cloud-services.md`:
 # Unity Cloud Services Configuration
 
 ## Service Status
-| Service | Status | Project ID | Environment |
-|---------|--------|------------|-------------|
+
+| Service        | Status        | Project ID     | Environment     |
+| -------------- | ------------- | -------------- | --------------- |
 | Authentication | ✅ Configured | {{project_id}} | {{environment}} |
-| Analytics | ✅ Configured | {{project_id}} | {{environment}} |
-| Cloud Save | ✅ Configured | {{project_id}} | {{environment}} |
-| Remote Config | ✅ Configured | {{project_id}} | {{environment}} |
+| Analytics      | ✅ Configured | {{project_id}} | {{environment}} |
+| Cloud Save     | ✅ Configured | {{project_id}} | {{environment}} |
+| Remote Config  | ✅ Configured | {{project_id}} | {{environment}} |
 
 ## Authentication Flow
+
 1. Anonymous sign-in on first launch
 2. Optional account linking
 3. Session persistence across launches
-[Source: AuthenticationManager.cs]
+   [Source: AuthenticationManager.cs]
 
 ## Analytics Events
+
 ### Core Events
+
 - gameStart: Tracks game session start
 - levelComplete: Tracks level completion
 - {{custom_events}}: {{descriptions}}
-[Source: AnalyticsManager.cs]
+  [Source: AnalyticsManager.cs]
 
 ## Cloud Save Schema
+
 ### Player Data
+
 - Save Key: "playerData"
 - Structure: PlayerSaveData class
 - Sync Frequency: On significant progress
-[Source: CloudSaveManager.cs]
+  [Source: CloudSaveManager.cs]
 
 ## Remote Config Parameters
+
 {{parameter_documentation}}
 [Source: RemoteConfigManager.cs]
 
 ## Privacy Compliance
+
 - GDPR: Data deletion available
 - CCPA: Opt-out supported
 - Consent: Required before data collection
-[Source: PrivacyManager.cs]
+  [Source: PrivacyManager.cs]
 ```
 
 ### 8. Testing and Validation
@@ -478,14 +491,14 @@ public class CloudServicesTests
         // Test authentication flow
         yield return null;
     }
-    
+
     [UnityTest]
     public IEnumerator CloudSave_SaveAndLoad_WorksCorrectly()
     {
         // Test save/load functionality
         yield return null;
     }
-    
+
     [UnityTest]
     public IEnumerator RemoteConfig_Fetch_AppliesSettings()
     {
@@ -512,6 +525,7 @@ public class CloudServicesTests
 #### 9.1 Update Templates
 
 Reference cloud services in architecture templates:
+
 - Add to `game-architecture-systems-tmpl.yaml`
 - Include in story templates where relevant
 - Document in technical requirements
@@ -519,10 +533,11 @@ Reference cloud services in architecture templates:
 #### 9.2 Configuration Updates
 
 Add to `config.yaml`:
+
 ```yaml
 unityCloudServices:
-  projectId: {{project_id}}
-  organizationId: {{org_id}}
+  projectId: { { project_id } }
+  organizationId: { { org_id } }
   environment: production
   services:
     - authentication

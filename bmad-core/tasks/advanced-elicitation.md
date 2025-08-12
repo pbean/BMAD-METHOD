@@ -41,12 +41,14 @@ User can request advanced elicitation on any agent output:
 **Method Selection Strategy**:
 
 1. **Always Include Core Methods** (choose 3-4):
+
    - Expand or Contract for Audience
    - Critique and Refine
    - Identify Potential Risks
    - Assess Alignment with Goals
 
 2. **Context-Specific Methods** (choose 4-5):
+
    - **Technical Content**: Tree of Thoughts, ReWOO, Meta-Prompting
    - **User-Facing Content**: Agile Team Perspective, Stakeholder Roundtable
    - **Creative Content**: Innovation Tournament, Escape Room Challenge

@@ -55,16 +55,19 @@ All architecture phase documents must exist:
 ### Step 3: Consolidate Phase Content
 
 1. **Add Phase 1: Foundation Architecture**
+
    - Copy complete content from `docs/game-architecture-foundation.md`
    - Add phase separator: `---\n\n# Phase 1: Foundation Architecture\n\n`
    - Preserve all original formatting and structure
 
 2. **Add Phase 2: Systems Architecture**
+
    - Copy complete content from `docs/game-architecture-systems.md`
    - Add phase separator: `---\n\n# Phase 2: Systems Architecture\n\n`
    - Preserve all original formatting and structure
 
 3. **Add Phase 3: Platform Architecture**
+
    - Copy complete content from `docs/game-architecture-platform.md`
    - Add phase separator: `---\n\n# Phase 3: Platform Architecture\n\n`
    - Preserve all original formatting and structure
@@ -105,6 +108,7 @@ All architecture phase documents must exist:
 ### Step 5: Format for Markdown-Tree-Parser
 
 1. **Ensure Proper Structure**
+
    - Use consistent heading hierarchy (H1, H2, H3, etc.)
    - Ensure all sections have proper markdown headers
    - Validate code blocks and formatting are correct
@@ -117,6 +121,7 @@ All architecture phase documents must exist:
 ### Step 6: Validate Consolidated Document
 
 1. **Quality Check**
+
    - Verify document completeness and coherence
    - Confirm all phase content is properly integrated
    - Check that internal references work correctly
@@ -144,6 +149,7 @@ All architecture phase documents must exist:
 ## Next Steps
 
 After consolidation:
+
 1. Test document with markdown-tree-parser
 2. Validate sharding produces useful chunks
 3. Begin implementation using consolidated architecture reference

@@ -21,16 +21,19 @@ To guide package-specific configuration and integration for Unity packages, docu
 #### 1.1 Categorize Packages by Integration Complexity
 
 **Simple Packages** (configuration only):
+
 - TextMeshPro
 - ProBuilder
 - 2D Sprite
 
 **Medium Complexity** (configuration + code setup):
+
 - Input System
 - Cinemachine
 - Timeline
 
 **Complex Packages** (architecture impact):
+
 - Addressables
 - URP/HDRP
 - Multiplayer/Netcode
@@ -39,6 +42,7 @@ To guide package-specific configuration and integration for Unity packages, docu
 #### 1.2 Read Architecture Requirements
 
 For each package category, read relevant architecture docs:
+
 - If `gamearchitectureSharded: true`:
   - Read `{gamearchitectureShardedLocation}/index.md` to find correct filenames
   - Look for tech stack file (e.g., `3-tech-stack.md`) - Package versions and rationale
@@ -52,6 +56,7 @@ For each package category, read relevant architecture docs:
 #### 2.1 Configure Input System Settings
 
 **Project Settings Configuration**:
+
 ```json
 // ProjectSettings/InputSystem.asset configuration
 {
@@ -65,6 +70,7 @@ For each package category, read relevant architecture docs:
 #### 2.2 Create Input Action Assets
 
 Generate template structure:
+
 ```text
 Assets/
 ├── Settings/
@@ -80,40 +86,46 @@ Assets/
 
 Create integration guide in `docs/package-integration/input-system.md`:
 
-```markdown
+````markdown
 # Input System Integration Guide
 
 ## Action Maps Configuration
 
 ### Player Controls
+
 - **Movement**: WASD/Left Stick
 - **Jump**: Space/South Button
 - **Interact**: E/West Button
-[Source: Settings/Input/GameControls.inputactions]
+  [Source: Settings/Input/GameControls.inputactions]
 
 ## Component Integration
 
 ### Required Components
+
 ```csharp
 // On Player GameObject
 [RequireComponent(typeof(PlayerInput))]
 public class PlayerController : MonoBehaviour
 {
     private GameControls _controls;
-    
+
     private void Awake()
     {
         _controls = new GameControls();
     }
 }
 ```
+````
+
 [Source: gamearchitecture/input-system.md]
 
 ### Event System Setup
+
 - Add InputSystemUIInputModule to EventSystem
 - Remove StandaloneInputModule
 - Configure UI action references
-```
+
+````
 
 ### 3. Rendering Pipeline Integration
 
@@ -132,9 +144,10 @@ Assets/
 │           ├── Low.asset
 │           ├── Medium.asset
 │           └── High.asset
-```
+````
 
 Configure quality tiers:
+
 ```json
 // Quality configuration per platform
 {
@@ -161,6 +174,7 @@ Configure quality tiers:
 #### 4.1 Initialize Addressables System
 
 **Create Addressable Groups**:
+
 ```text
 Assets/
 ├── AddressableAssetsData/
@@ -187,6 +201,7 @@ RemoteLoadPath: http://[CDN_URL]/[Platform]
 #### 4.3 Create Asset Reference Templates
 
 Generate helper scripts:
+
 ```csharp
 // Assets/Scripts/Addressables/AddressableHelper.cs
 public static class AddressableHelper
@@ -203,6 +218,7 @@ public static class AddressableHelper
 #### 5.1 Virtual Camera Setup
 
 Create camera prefab structure:
+
 ```text
 Assets/
 ├── Prefabs/
@@ -233,16 +249,19 @@ Assets/
 For each Unity Gaming Service planned:
 
 **Analytics**:
+
 - Events to track
 - Custom parameters
 - Privacy compliance requirements
 
 **Cloud Save**:
+
 - Data structures to save
 - Sync strategies
 - Conflict resolution
 
 **Remote Config**:
+
 - Configuration parameters
 - A/B testing setup
 - Update strategies
@@ -250,6 +269,7 @@ For each Unity Gaming Service planned:
 #### 6.2 Create Service Integration Templates
 
 Generate placeholder integration points:
+
 ```csharp
 // Assets/Scripts/Services/UnityServicesManager.cs
 public class UnityServicesManager : MonoBehaviour
@@ -265,29 +285,35 @@ public class UnityServicesManager : MonoBehaviour
 
 For each integrated package, document:
 
-```markdown
+````markdown
 # {{Package Name}} API Reference
 
 ## Commonly Used APIs
 
 ### {{API Category}}
+
 ```csharp
 // Example usage
 {{code_example}}
 ```
+````
+
 [Source: Package documentation]
 
 ## Integration Points
 
 ### With Game Systems
+
 - {{System}}: {{Integration description}}
-[Source: gamearchitecture/{{relevant_doc}}.md]
+  [Source: gamearchitecture/{{relevant_doc}}.md]
 
 ## Best Practices
+
 - {{Practice 1}}
 - {{Practice 2}}
-[Source: Unity documentation]
-```
+  [Source: Unity documentation]
+
+````
 
 #### 7.2 Create Code Snippets Library
 
@@ -313,7 +339,7 @@ public class InputSystemTests
         // Test implementation
     }
 }
-```
+````
 
 #### 8.2 Validation Checklist
 
@@ -329,13 +355,16 @@ public class InputSystemTests
 #### 9.1 Update Story Creation
 
 Enhance story templates to include:
+
 ```markdown
 ## Package Dependencies
+
 - Input System: Required for player controls
 - Cinemachine: Required for camera features
 - [Other packages as needed]
 
 ## Package-Specific Tasks
+
 - [ ] Configure Input Action callbacks
 - [ ] Set up Virtual Camera priorities
 - [ ] [Other package-specific tasks]
@@ -346,16 +375,19 @@ Enhance story templates to include:
 #### 10.1 Generate Integration Summary
 
 Create `docs/package-integration-summary.md`:
+
 ```markdown
 # Package Integration Summary
 
 ## Integrated Packages
-| Package | Version | Status | Documentation |
-|---------|---------|--------|---------------|
-| Input System | {{version}} | ✅ Configured | docs/package-integration/input-system.md |
-| {{other_packages}} | | | |
+
+| Package            | Version     | Status        | Documentation                            |
+| ------------------ | ----------- | ------------- | ---------------------------------------- |
+| Input System       | {{version}} | ✅ Configured | docs/package-integration/input-system.md |
+| {{other_packages}} |             |               |                                          |
 
 ## Integration Checklist
+
 - [x] Input System configured and tested
 - [x] Rendering pipeline set up
 - [ ] Addressables initialized (if needed)
@@ -363,6 +395,7 @@ Create `docs/package-integration-summary.md`:
 - [ ] Gaming Services prepared for integration
 
 ## Next Steps
+
 1. Review generated configurations
 2. Test integrated systems
 3. Run validation suite

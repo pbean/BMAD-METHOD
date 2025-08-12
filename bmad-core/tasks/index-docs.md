@@ -88,7 +88,6 @@ Documents within the `another-folder/` directory:
 ### [Nested Document](./another-folder/document.md)
 
 Description of nested document.
-
 ```
 
 ### Index Entry Format

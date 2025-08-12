@@ -3658,7 +3658,7 @@ devLoadAlwaysFiles:
 1. **Game Concept Brainstorming**: `/bmadu/game-designer` - Use `*game-design-brainstorming` task
 2. **Game Brief**: Create foundation game document using `game-brief-tmpl`
 3. **Game Design Document Creation**: `/bmadu/game-designer` - Use `game-design-doc-tmpl` for comprehensive game requirements
-4. **Game Architecture Design**: `/bmadu/game-architect` - Use `game-architecture-tmpl` for Unity technical foundation
+4. **Game Architecture Design**: `/bmadu/game-architect` - Use split architecture templates (foundation, systems, platform, advanced) for modular Unity technical foundation
 5. **Level Design Framework**: `/bmadu/game-designer` - Use `level-design-doc-tmpl` for level structure planning
 6. **Document Preparation**: Copy final documents to Unity project as `docs/game-design-doc.md`, `docs/game-brief.md`, `docs/level-design.md` and `docs/game-architecture.md`
 
@@ -3784,7 +3784,7 @@ Since this expansion pack doesn't include specific brownfield templates, you'll 
 
 3. **Game Architecture Planning**:
 
-   - Use `/bmadu/game-architect` with `game-architecture-tmpl`
+   - Use `/bmadu/game-architect` with split architecture templates
    - Focus on how new features integrate with existing Unity systems
    - Plan for gradual rollout and testing
 
