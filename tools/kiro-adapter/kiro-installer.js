@@ -117,8 +117,25 @@ class KiroInstaller {
       // Phase 1: Run main installer for BMad core + expansion packs + all IDE setup
       spinner.text = "Installing BMad Method components...";
       
-      const Installer = require("../installer/lib/installer");
-      const mainInstaller = new Installer();
+      // Handle both execution contexts (from root via npx or from installer directory)
+      let mainInstaller;
+      try {
+        // Try kiro-adapter context first (when run from tools/kiro-adapter/)
+        mainInstaller = require("../installer/lib/installer");
+      } catch (e) {
+        // Fall back to root context (when run via npx from GitHub)
+        try {
+          mainInstaller = require("../../tools/installer/lib/installer");
+        } catch (e2) {
+          console.error('Error: Could not load Installer module.');
+          console.error('Debug info:', {
+            __dirname,
+            cwd: process.cwd(),
+            error: e2.message
+          });
+          throw new Error('Installer module not found');
+        }
+      }
       
       // Create configuration for main installer (remove Kiro from IDEs for main installer)
       const mainInstallerConfig = {
@@ -1276,17 +1293,35 @@ action:
       );
     }
 
+    // Show IDE-specific next steps
+    const ides = config.ides || ['kiro'];
+    const hasMultipleIdes = ides.length > 1;
+    const otherIdes = ides.filter(ide => ide !== 'kiro');
+    
     console.log(chalk.green.bold("\n🚀 Next Steps:"));
     console.log(chalk.green("1. Open your project in Kiro IDE"));
     console.log(
       chalk.green("2. Access BMad agents through Kiro's agent system"),
     );
-    console.log(
-      chalk.green("3. Use spec-driven development for complex features"),
-    );
-    console.log(
-      chalk.green("4. Leverage automatic context awareness in all agents"),
-    );
+    if (hasMultipleIdes && otherIdes.length > 0) {
+      const ideNames = otherIdes.join(', ');
+      console.log(
+        chalk.green(`3. Also available in your other configured IDEs: ${ideNames}`),
+      );
+      console.log(
+        chalk.green("4. Use spec-driven development for complex features"),
+      );
+      console.log(
+        chalk.green("5. Leverage automatic context awareness in all agents"),
+      );
+    } else {
+      console.log(
+        chalk.green("3. Use spec-driven development for complex features"),
+      );
+      console.log(
+        chalk.green("4. Leverage automatic context awareness in all agents"),
+      );
+    }
 
     console.log(chalk.yellow.bold("\n💡 Pro Tips:"));
     console.log(
@@ -1326,8 +1361,25 @@ action:
     spinner.text = "Installing expansion packs for Kiro...";
 
     // First install expansion packs using traditional method
-    const Installer = require("../installer/lib/installer");
-    const installer = new Installer();
+    // Handle both execution contexts (from root via npx or from installer directory)
+    let installer;
+    try {
+      // Try kiro-adapter context first (when run from tools/kiro-adapter/)
+      installer = require("../installer/lib/installer");
+    } catch (e) {
+      // Fall back to root context (when run via npx from GitHub)
+      try {
+        installer = require("../../tools/installer/lib/installer");
+      } catch (e2) {
+        console.error('Error: Could not load Installer module.');
+        console.error('Debug info:', {
+          __dirname,
+          cwd: process.cwd(),
+          error: e2.message
+        });
+        throw new Error('Installer module not found');
+      }
+    }
 
     const expansionFiles = await installer.installExpansionPacks(
       installDir,

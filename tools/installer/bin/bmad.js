@@ -52,16 +52,16 @@ program
 
 program
   .command('install')
-  .description('Install BMad Method agents and tools')
+  .description('Install BMad Method agents and tools with support for multiple IDEs simultaneously')
   .option('-f, --full', 'Install complete BMad Method')
   .option('-x, --expansion-only', 'Install only expansion packs (no bmad-core)')
   .option('-d, --directory <path>', 'Installation directory')
-  .option('-i, --ide <ide...>', 'Configure for specific IDE(s) - can specify multiple (cursor, claude-code, windsurf, trae, roo, kilo, cline, gemini, qwen-code, github-copilot, kiro, other)')
+  .option('-i, --ide <ide...>', 'Configure for specific IDE(s) - supports multiple IDEs simultaneously. Kiro creates .kiro/ folder with agent transformations. Examples: --ide cursor kiro, --ide kiro github-copilot (cursor, claude-code, windsurf, trae, roo, kilo, cline, gemini, qwen-code, github-copilot, kiro, other)')
   .option('-e, --expansion-packs <packs...>', 'Install specific expansion packs (can specify multiple)')
   .option('--upgrade', 'Upgrade existing installation (preserves customizations)')
   .action(async (options) => {
     try {
-      if (!options.full && !options.expansionOnly) {
+      if (!options.full && !options.expansionOnly && !options.ide && !options.directory) {
         // Interactive mode
         const answers = await promptInstallation();
         if (!answers._alreadyInstalled) {
@@ -140,7 +140,7 @@ program
   .description('Update existing BMad installation')
   .option('--force', 'Force update, overwriting modified files')
   .option('--dry-run', 'Show what would be updated without making changes')
-  .option('--ide <ide>', 'Update for specific IDE (kiro, cursor, etc.)')
+  .option('--ide <ide>', 'Update for specific IDE - supports kiro (creates .kiro/ structure), cursor, github-copilot, etc.')
   .action(async (options) => {
     try {
       // Handle Kiro-specific updates
@@ -210,7 +210,26 @@ program
  * @returns {Promise<void>}
  */
 async function handleKiroInstallation(config) {
-  const KiroInstaller = require('../../kiro-adapter/kiro-installer');
+  // Handle both execution contexts (from root via npx or from installer directory)
+  let KiroInstaller;
+  try {
+    // Try installer context first (when run from tools/installer/)
+    KiroInstaller = require('../../kiro-adapter/kiro-installer');
+  } catch (e) {
+    // Fall back to root context (when run via npx from GitHub)
+    try {
+      KiroInstaller = require('../../../tools/kiro-adapter/kiro-installer');
+    } catch (e2) {
+      console.error('Error: Could not load KiroInstaller module.');
+      console.error('Debug info:', {
+        __dirname,
+        cwd: process.cwd(),
+        error: e2.message
+      });
+      throw new Error('KiroInstaller module not found');
+    }
+  }
+  
   const kiroInstaller = new KiroInstaller();
   const ora = require('ora');
   const spinner = ora('Initializing Kiro installation...').start();
@@ -476,13 +495,15 @@ async function promptInstallation() {
     console.log(chalk.bold.yellow.bgRed(' ⚠️  IMPORTANT: This is a MULTISELECT! Use SPACEBAR to toggle each IDE! '));
     console.log(chalk.bold.magenta('🔸 Use arrow keys to navigate'));
     console.log(chalk.bold.magenta('🔸 Use SPACEBAR to select/deselect IDEs'));
-    console.log(chalk.bold.magenta('🔸 Press ENTER when finished selecting\n'));
+    console.log(chalk.bold.magenta('🔸 Press ENTER when finished selecting'));
+    console.log(chalk.bold.cyan('🔸 You can select MULTIPLE IDEs (e.g., Kiro + Cursor + GitHub Copilot)'));
+    console.log(chalk.bold.green('🔸 Kiro IDE creates .kiro/ folder with agent transformations and hooks\n'));
     
     const ideResponse = await inquirer.prompt([
       {
         type: 'checkbox',
         name: 'ides',
-        message: 'Which IDE(s) do you want to configure? (Select with SPACEBAR, confirm with ENTER):',
+        message: 'Which IDE(s) do you want to configure? You can select multiple! (SPACEBAR to select, ENTER to confirm):',
         choices: [
           { name: 'Cursor', value: 'cursor' },
           { name: 'Claude Code', value: 'claude-code' },
@@ -494,7 +515,7 @@ async function promptInstallation() {
           { name: 'Gemini CLI', value: 'gemini' },
           { name: 'Qwen Code', value: 'qwen-code' },
           { name: 'Github Copilot', value: 'github-copilot' },
-          { name: 'Kiro IDE', value: 'kiro' }
+          { name: 'Kiro IDE (creates .kiro/ folder with agent transformations)', value: 'kiro' }
         ]
       }
     ]);
