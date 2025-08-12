@@ -46,42 +46,17 @@ program
   .option('--upgrade', 'Upgrade existing installation (preserves customizations)')
   .action(async (options) => {
     try {
-      // Check for Kiro-specific installation
-      if (options.ide && options.ide.includes('kiro')) {
-        const KiroInstaller = require('../../kiro-adapter/kiro-installer');
-        const kiroInstaller = new KiroInstaller();
-        const ora = require('ora');
-        const spinner = ora('Initializing Kiro installation...').start();
-        
-        try {
-          const config = {
-            installType: options.expansionOnly ? 'expansion-only' : (options.full ? 'full' : 'interactive'),
-            directory: options.directory || '.',
-            ides: options.ide || ['kiro'],
-            expansionPacks: options.expansionPacks || [],
-            generateHooks: true, // Enable hooks by default for Kiro
-            upgrade: options.upgrade || false
-          };
-
-          if (config.upgrade) {
-            await kiroInstaller.upgradeKiroInstallation(config, path.resolve(config.directory), spinner);
-          } else {
-            await kiroInstaller.installForKiro(config, path.resolve(config.directory), spinner);
-          }
-          
-          spinner.succeed('Kiro installation completed successfully!');
-          process.exit(0);
-        } catch (error) {
-          spinner.fail('Kiro installation failed');
-          throw error;
-        }
-      }
-
       if (!options.full && !options.expansionOnly) {
         // Interactive mode
         const answers = await promptInstallation();
         if (!answers._alreadyInstalled) {
-          await installer.install(answers);
+          // Check if Kiro is selected and route to appropriate installer
+          if (requiresSpecialIdeHandling(answers.ides)) {
+            await handleKiroInstallation(answers);
+          } else {
+            // Use regular installer for non-Kiro installations
+            await installer.install(answers);
+          }
           process.exit(0);
         }
       } else {
@@ -93,9 +68,17 @@ program
           installType,
           directory: options.directory || '.',
           ides: (options.ide || []).filter(ide => ide !== 'other'),
-          expansionPacks: options.expansionPacks || []
+          expansionPacks: options.expansionPacks || [],
+          upgrade: options.upgrade || false
         };
-        await installer.install(config);
+
+        // Check if Kiro is selected and route to appropriate installer
+        if (requiresSpecialIdeHandling(config.ides)) {
+          await handleKiroInstallation(config);
+        } else {
+          // Use regular installer for non-Kiro installations
+          await installer.install(config);
+        }
         process.exit(0);
       }
     } catch (error) {
@@ -114,30 +97,18 @@ program
     try {
       // Handle Kiro-specific updates
       if (options.ide === 'kiro') {
-        const KiroInstaller = require('../../kiro-adapter/kiro-installer');
-        const kiroInstaller = new KiroInstaller();
-        const ora = require('ora');
-        const spinner = ora('Updating Kiro BMad installation...').start();
-        
-        try {
-          const config = {
-            installType: 'full',
-            directory: '.',
-            ides: ['kiro'],
-            expansionPacks: [],
-            generateHooks: true,
-            upgrade: true,
-            force: options.force,
-            dryRun: options.dryRun
-          };
+        const config = {
+          installType: 'full',
+          directory: '.',
+          ides: ['kiro'],
+          expansionPacks: [],
+          upgrade: true,
+          force: options.force,
+          dryRun: options.dryRun
+        };
 
-          await kiroInstaller.upgradeKiroInstallation(config, process.cwd(), spinner);
-          spinner.succeed('Kiro BMad installation updated successfully!');
-          process.exit(0);
-        } catch (error) {
-          spinner.fail('Kiro update failed');
-          throw error;
-        }
+        await handleKiroInstallation(config);
+        process.exit(0);
       }
 
       await installer.update();
@@ -184,6 +155,59 @@ program
       process.exit(1);
     }
   });
+
+/**
+ * Handles Kiro installation logic for both command-line and interactive modes
+ * @param {Object} config - Installation configuration
+ * @returns {Promise<void>}
+ */
+async function handleKiroInstallation(config) {
+  const KiroInstaller = require('../../kiro-adapter/kiro-installer');
+  const kiroInstaller = new KiroInstaller();
+  const ora = require('ora');
+  const spinner = ora('Initializing Kiro installation...').start();
+
+  try {
+    // Ensure consistent configuration object format
+    const kiroConfig = {
+      installType: config.installType || 'full',
+      directory: config.directory || '.',
+      ides: Array.isArray(config.ides) ? config.ides : ['kiro'],
+      expansionPacks: Array.isArray(config.expansionPacks) ? config.expansionPacks : [],
+      generateHooks: true, // Enable hooks by default for Kiro
+      upgrade: config.upgrade || false,
+      // Pass through other configuration options
+      prdSharded: config.prdSharded,
+      architectureSharded: config.architectureSharded,
+      githubCopilotConfig: config.githubCopilotConfig,
+      includeWebBundles: config.includeWebBundles,
+      webBundleType: config.webBundleType,
+      selectedWebBundleTeams: config.selectedWebBundleTeams,
+      includeIndividualAgents: config.includeIndividualAgents,
+      webBundlesDirectory: config.webBundlesDirectory
+    };
+
+    if (kiroConfig.upgrade) {
+      await kiroInstaller.upgradeKiroInstallation(kiroConfig, path.resolve(kiroConfig.directory), spinner);
+    } else {
+      await kiroInstaller.installForKiro(kiroConfig, path.resolve(kiroConfig.directory), spinner);
+    }
+
+    spinner.succeed('Kiro installation completed successfully!');
+  } catch (error) {
+    spinner.fail('Kiro installation failed');
+    throw error;
+  }
+}
+
+/**
+ * Checks if the IDE array requires special handling (e.g., Kiro)
+ * @param {string[]} ides - Array of IDE names
+ * @returns {boolean} True if special IDE handling is required
+ */
+function requiresSpecialIdeHandling(ides) {
+  return ides && Array.isArray(ides) && ides.length > 0 && ides.includes('kiro');
+}
 
 async function promptInstallation() {
   
