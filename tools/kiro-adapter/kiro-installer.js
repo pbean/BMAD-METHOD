@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs-extra');
 const chalk = require('chalk');
+const yaml = require('js-yaml');
 const KiroDetector = require('./kiro-detector');
 const AgentTransformer = require('./agent-transformer');
 const KiroValidator = require('./kiro-validator');
@@ -31,8 +32,8 @@ class KiroInstaller {
       console.log(chalk.green('✓ Created Kiro workspace structure'));
     }
 
-    const validation = await this.detector.validateKiroWorkspace(installDir);
-    if (!validation.isValid) {
+    const workspaceValidation = await this.detector.validateKiroWorkspace(installDir);
+    if (!workspaceValidation.isValid) {
       spinner.text = 'Ensuring Kiro workspace structure...';
       await this.detector.ensureKiroWorkspaceStructure(installDir);
     }
@@ -57,17 +58,17 @@ class KiroInstaller {
 
     // Validate installation
     spinner.text = 'Validating Kiro installation...';
-    const validation = await this.validator.validateKiroInstallation(installDir);
+    const installValidation = await this.validator.validateKiroInstallation(installDir);
     
-    if (validation.isValid) {
+    if (installValidation.isValid) {
       console.log(chalk.green('✓ Kiro integration complete!'));
       console.log(chalk.green('✓ Installation validation passed'));
     } else {
       console.log(chalk.yellow('⚠ Kiro integration complete with warnings'));
-      this.validator.displayValidationResults(validation, 'Kiro BMad Installation');
+      this.validator.displayValidationResults(installValidation, 'Kiro BMad Installation');
     }
     
-    this.showKiroSuccessMessage(config, installDir, validation.summary);
+    this.showKiroSuccessMessage(config, installDir, installValidation.summary);
   }
 
   /**
@@ -234,7 +235,6 @@ class KiroInstaller {
    */
   async transformTemplateForKiro(sourcePath, destPath, packId) {
     try {
-      const yaml = require('js-yaml');
       const templateContent = await fs.readFile(sourcePath, 'utf8');
       const template = yaml.load(templateContent);
       
@@ -273,7 +273,6 @@ class KiroInstaller {
    */
   async createSpecTemplateFromWorkflow(workflowPath, workflowName, packId, installDir) {
     try {
-      const yaml = require('js-yaml');
       const workflowContent = await fs.readFile(workflowPath, 'utf8');
       const workflow = yaml.load(workflowContent);
       
@@ -328,7 +327,6 @@ class KiroInstaller {
     
     if (await fs.pathExists(configPath)) {
       try {
-        const yaml = require('js-yaml');
         const configContent = await fs.readFile(configPath, 'utf8');
         packConfig = yaml.load(configContent);
       } catch (error) {
@@ -342,7 +340,6 @@ class KiroInstaller {
     for (const hook of hooks) {
       const hookPath = path.join(hooksDir, `${packId}-${hook.name}.yaml`);
       if (!await fs.pathExists(hookPath)) {
-        const yaml = require('js-yaml');
         const hookContent = yaml.dump(hook.config, { lineWidth: -1 });
         await fs.writeFile(hookPath, hookContent);
         console.log(chalk.green(`✓ Created ${packId} hook: ${hook.name}`));
@@ -832,7 +829,6 @@ action:
         const packConfigPath = path.join(packDir, 'config.yaml');
         
         if (await fs.pathExists(packConfigPath)) {
-          const yaml = require('js-yaml');
           const configContent = await fs.readFile(packConfigPath, 'utf8');
           const packConfig = yaml.load(configContent);
           
@@ -937,17 +933,17 @@ Expansion pack agents inherit full Kiro context awareness:
     await this.restoreCustomizations(preservedCustomizations, installDir, spinner);
 
     // Validate upgrade
-    const validation = await this.validator.validateKiroInstallation(installDir);
+    const upgradeValidation = await this.validator.validateKiroInstallation(installDir);
     
-    if (validation.isValid) {
+    if (upgradeValidation.isValid) {
       console.log(chalk.green('\n✅ Kiro BMad installation upgraded successfully!'));
     } else {
       console.log(chalk.yellow('\n⚠️  Upgrade completed with warnings'));
-      this.validator.displayValidationResults(validation, 'Upgrade Validation');
+      this.validator.displayValidationResults(upgradeValidation, 'Upgrade Validation');
     }
 
     // Show upgrade summary
-    this.showUpgradeSummary(backupInfo, customizations, validation.summary);
+    this.showUpgradeSummary(backupInfo, customizations, upgradeValidation.summary);
   }
 
   /**
@@ -965,7 +961,7 @@ Expansion pack agents inherit full Kiro context awareness:
     
     await fs.ensureDir(backupDir);
     
-    const backupInfo = {
+    const backupData = {
       timestamp,
       backupDir,
       backedUpItems: []
@@ -976,7 +972,7 @@ Expansion pack agents inherit full Kiro context awareness:
     if (await fs.pathExists(agentsDir)) {
       const agentsBackupDir = path.join(backupDir, 'agents');
       await fs.copy(agentsDir, agentsBackupDir);
-      backupInfo.backedUpItems.push('agents');
+      backupData.backedUpItems.push('agents');
     }
 
     // Backup steering rules
@@ -984,7 +980,7 @@ Expansion pack agents inherit full Kiro context awareness:
     if (await fs.pathExists(steeringDir)) {
       const steeringBackupDir = path.join(backupDir, 'steering');
       await fs.copy(steeringDir, steeringBackupDir);
-      backupInfo.backedUpItems.push('steering');
+      backupData.backedUpItems.push('steering');
     }
 
     // Backup hooks
@@ -992,7 +988,7 @@ Expansion pack agents inherit full Kiro context awareness:
     if (await fs.pathExists(hooksDir)) {
       const hooksBackupDir = path.join(backupDir, 'hooks');
       await fs.copy(hooksDir, hooksBackupDir);
-      backupInfo.backedUpItems.push('hooks');
+      backupData.backedUpItems.push('hooks');
     }
 
     // Backup specs
@@ -1000,21 +996,21 @@ Expansion pack agents inherit full Kiro context awareness:
     if (await fs.pathExists(specsDir)) {
       const specsBackupDir = path.join(backupDir, 'specs');
       await fs.copy(specsDir, specsBackupDir);
-      backupInfo.backedUpItems.push('specs');
+      backupData.backedUpItems.push('specs');
     }
 
     // Create backup manifest
     const backupManifest = {
       timestamp,
       bmadVersion: require('../../package.json').version,
-      backedUpItems: backupInfo.backedUpItems,
+      backedUpItems: backupData.backedUpItems,
       installDir: installDir
     };
     
     await fs.writeJson(path.join(backupDir, 'backup-manifest.json'), backupManifest, { spaces: 2 });
     
     console.log(chalk.green(`✓ Created backup: ${path.basename(backupDir)}`));
-    return backupInfo;
+    return backupData;
   }
 
   /**
@@ -1026,7 +1022,7 @@ Expansion pack agents inherit full Kiro context awareness:
   async analyzeCustomizations(installDir, spinner) {
     spinner.text = 'Analyzing customizations...';
     
-    const customizations = {
+    const customizationData = {
       hasCustomizations: false,
       customSteeringFiles: [],
       customHookFiles: [],
@@ -1041,8 +1037,7 @@ Expansion pack agents inherit full Kiro context awareness:
       const steeringFiles = await fs.readdir(steeringDir);
       const defaultSteeringFiles = ['bmad-method.md', 'tech-preferences.md'];
       
-      customizations.customSteeringFiles = steeringFiles.filter(file => 
-        file.endsWith('.md') && !defaultSteeringFiles.includes(file)
+      customizationData.customSteeringFiles = steeringFiles.filter(file => file.endsWith('.md') && !defaultSteeringFiles.includes(file)
       );
     }
 
@@ -1052,8 +1047,7 @@ Expansion pack agents inherit full Kiro context awareness:
       const hookFiles = await fs.readdir(hooksDir);
       const defaultHookFiles = ['bmad-story-progression.yaml', 'bmad-code-review.yaml'];
       
-      customizations.customHookFiles = hookFiles.filter(file => 
-        (file.endsWith('.yaml') || file.endsWith('.yml')) && !defaultHookFiles.includes(file)
+      customizationData.customHookFiles = hookFiles.filter(file => (file.endsWith('.yaml') || file.endsWith('.yml')) && !defaultHookFiles.includes(file)
       );
     }
 
@@ -1061,7 +1055,7 @@ Expansion pack agents inherit full Kiro context awareness:
     const specsDir = path.join(installDir, '.kiro', 'specs');
     if (await fs.pathExists(specsDir)) {
       const specDirs = await fs.readdir(specsDir);
-      customizations.customSpecs = specDirs.filter(async (dir) => {
+      customizationData.customSpecs = specDirs.filter(async (dir) => {
         const specPath = path.join(specsDir, dir);
         const stat = await fs.stat(specPath);
         return stat.isDirectory();
@@ -1074,16 +1068,16 @@ Expansion pack agents inherit full Kiro context awareness:
       const agentFiles = await fs.readdir(agentsDir);
       // For now, assume all agents might be modified - in a real implementation,
       // we could compare with known templates or check modification dates
-      customizations.modifiedAgents = agentFiles.filter(file => file.endsWith('.md'));
+      customizationData.modifiedAgents = agentFiles.filter(file => file.endsWith('.md'));
     }
 
-    customizations.hasCustomizations = 
-      customizations.customSteeringFiles.length > 0 ||
-      customizations.customHookFiles.length > 0 ||
-      customizations.customSpecs.length > 0 ||
-      customizations.modifiedAgents.length > 0;
+    customizationData.hasCustomizations =
+      customizationData.customSteeringFiles.length > 0 ||
+      customizationData.customHookFiles.length > 0 ||
+      customizationData.customSpecs.length > 0 ||
+      customizationData.modifiedAgents.length > 0;
 
-    return customizations;
+    return customizationData;
   }
 
   /**
