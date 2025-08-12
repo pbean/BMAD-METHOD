@@ -7,6 +7,21 @@ const yaml = require('js-yaml');
 const chalk = require('chalk');
 const inquirer = require('inquirer');
 
+// Import IDE validator and error reporter
+let IdeValidator, ErrorReporter;
+try {
+  IdeValidator = require('../lib/ide-validator');
+  ErrorReporter = require('../lib/error-reporter');
+} catch (e) {
+  try {
+    IdeValidator = require('../../../tools/installer/lib/ide-validator');
+    ErrorReporter = require('../../../tools/installer/lib/error-reporter');
+  } catch (e2) {
+    console.error('Error: Could not load required modules.');
+    process.exit(1);
+  }
+}
+
 // Handle both execution contexts (from root via npx or from installer directory)
 let version;
 let installer;
@@ -50,6 +65,20 @@ program
         // Interactive mode
         const answers = await promptInstallation();
         if (!answers._alreadyInstalled) {
+          // Validate IDE selection from interactive mode
+          const ideValidator = new IdeValidator();
+          const errorReporter = new ErrorReporter();
+          try {
+            answers.ides = ideValidator.validateAndSanitizeIdes(answers.ides);
+          } catch (error) {
+            errorReporter.reportError(error, errorReporter.errorTypes.IDE_VALIDATION, {
+              source: 'interactive',
+              invalidIdes: answers.ides,
+              supportedIdes: ideValidator.getSupportedIdes()
+            });
+            process.exit(1);
+          }
+
           // Check if Kiro is selected and route to appropriate installer
           if (requiresSpecialIdeHandling(answers.ides)) {
             await handleKiroInstallation(answers);
@@ -64,10 +93,27 @@ program
         let installType = 'full';
         if (options.expansionOnly) installType = 'expansion-only';
 
+        // Validate IDE array input
+        const ideValidator = new IdeValidator();
+        const errorReporter = new ErrorReporter();
+        let validatedIdes = [];
+        
+        try {
+          const rawIdes = options.ide || [];
+          validatedIdes = ideValidator.validateAndSanitizeIdes(rawIdes);
+        } catch (error) {
+          errorReporter.reportError(error, errorReporter.errorTypes.IDE_VALIDATION, {
+            source: 'command-line',
+            invalidIdes: rawIdes,
+            supportedIdes: ideValidator.getSupportedIdes()
+          });
+          process.exit(1);
+        }
+
         const config = {
           installType,
           directory: options.directory || '.',
-          ides: (options.ide || []).filter(ide => ide !== 'other'),
+          ides: validatedIdes,
           expansionPacks: options.expansionPacks || [],
           upgrade: options.upgrade || false
         };
@@ -82,7 +128,9 @@ program
         process.exit(0);
       }
     } catch (error) {
-      console.error(chalk.red('Installation failed:'), error.message);
+      const errorReporter = new ErrorReporter();
+      const errorType = errorReporter.determineErrorType(error, { operation: 'installation' });
+      errorReporter.reportError(error, errorType, { operation: 'installation' });
       process.exit(1);
     }
   });
@@ -168,11 +216,35 @@ async function handleKiroInstallation(config) {
   const spinner = ora('Initializing Kiro installation...').start();
 
   try {
+    // Validate IDE array input
+    const ideValidator = new IdeValidator();
+    const errorReporter = new ErrorReporter();
+    let validatedIdes = ['kiro']; // Default to kiro if no IDEs provided
+    
+    if (config.ides) {
+      try {
+        validatedIdes = ideValidator.validateAndSanitizeIdes(config.ides);
+        // Ensure kiro is included if not already present
+        if (!validatedIdes.includes('kiro')) {
+          validatedIdes.push('kiro');
+        }
+      } catch (error) {
+        spinner.fail('IDE validation failed');
+        errorReporter.reportError(error, errorReporter.errorTypes.IDE_VALIDATION, {
+          source: 'kiro-installation',
+          invalidIdes: config.ides,
+          supportedIdes: ideValidator.getSupportedIdes(),
+          phase: 'validation'
+        });
+        throw error;
+      }
+    }
+
     // Ensure consistent configuration object format
     const kiroConfig = {
       installType: config.installType || 'full',
       directory: config.directory || '.',
-      ides: Array.isArray(config.ides) ? config.ides : ['kiro'],
+      ides: validatedIdes,
       expansionPacks: Array.isArray(config.expansionPacks) ? config.expansionPacks : [],
       generateHooks: true, // Enable hooks by default for Kiro
       upgrade: config.upgrade || false,
@@ -196,6 +268,18 @@ async function handleKiroInstallation(config) {
     spinner.succeed('Kiro installation completed successfully!');
   } catch (error) {
     spinner.fail('Kiro installation failed');
+    
+    // Don't double-report IDE validation errors
+    if (!error.message.includes('IDE validation')) {
+      const errorReporter = new ErrorReporter();
+      const errorType = errorReporter.determineErrorType(error, { component: 'kiro' });
+      errorReporter.reportError(error, errorType, {
+        component: 'kiro',
+        operation: 'installation',
+        directory: config.directory
+      });
+    }
+    
     throw error;
   }
 }
@@ -206,7 +290,16 @@ async function handleKiroInstallation(config) {
  * @returns {boolean} True if special IDE handling is required
  */
 function requiresSpecialIdeHandling(ides) {
-  return ides && Array.isArray(ides) && ides.length > 0 && ides.includes('kiro');
+  const ideValidator = new IdeValidator();
+  
+  try {
+    // Validate and sanitize the IDE array first
+    const sanitizedIdes = ideValidator.validateAndSanitizeIdes(ides);
+    return ideValidator.requiresSpecialIdeHandling(sanitizedIdes);
+  } catch (error) {
+    console.error(chalk.red('IDE validation error:'), error.message);
+    return false;
+  }
 }
 
 async function promptInstallation() {

@@ -6,11 +6,33 @@ const KiroDetector = require("./kiro-detector");
 const AgentTransformer = require("./agent-transformer");
 const KiroValidator = require("./kiro-validator");
 
+// Import error reporter
+let ErrorReporter;
+try {
+  ErrorReporter = require("../installer/lib/error-reporter");
+} catch (e) {
+  // Fallback if error reporter not available
+  ErrorReporter = class {
+    reportError(error, type, context) {
+      console.error(chalk.red(`Error (${type}):`, error.message));
+    }
+    get errorTypes() {
+      return {
+        KIRO_SETUP: 'KIRO_SETUP',
+        BMAD_INSTALLATION: 'BMAD_INSTALLATION',
+        EXPANSION_PACK: 'EXPANSION_PACK',
+        STANDARD_IDE: 'STANDARD_IDE'
+      };
+    }
+  };
+}
+
 class KiroInstaller {
   constructor() {
     this.detector = new KiroDetector();
     this.agentTransformer = new AgentTransformer();
     this.validator = new KiroValidator();
+    this.errorReporter = new ErrorReporter();
   }
 
   /**
@@ -104,22 +126,49 @@ class KiroInstaller {
         ides: (config.ides || []).filter(ide => ide !== 'kiro') // Let main installer handle other IDEs
       };
       
-      // Run main installer to handle BMad core, expansion packs, and other IDE setup
-      await mainInstaller.install(mainInstallerConfig);
-      
-      console.log(chalk.green("✓ BMad Method components installed successfully"));
+      try {
+        // Run main installer to handle BMad core, expansion packs, and other IDE setup
+        await mainInstaller.install(mainInstallerConfig);
+        console.log(chalk.green("✓ BMad Method components installed successfully"));
+      } catch (error) {
+        spinner.fail("BMad Method installation failed");
+        this.errorReporter.reportError(error, this.errorReporter.errorTypes.BMAD_INSTALLATION, {
+          phase: 'Phase 1 - BMad Installation',
+          component: 'bmad-core',
+          operation: 'install',
+          directory: installDir,
+          installType: config.installType
+        });
+        throw new Error(`BMad Method installation failed: ${error.message}`);
+      }
 
       // Phase 2: Add Kiro-specific enhancements on top of the installation
       spinner.text = "Adding Kiro enhancements...";
       
-      const enhancementValidation = await this.addKiroEnhancements(config, installDir, spinner);
-      
-      // Show final success message
-      this.showKiroSuccessMessage(config, installDir, enhancementValidation.summary);
+      try {
+        const enhancementValidation = await this.addKiroEnhancements(config, installDir, spinner);
+        
+        // Show final success message
+        this.showKiroSuccessMessage(config, installDir, enhancementValidation.summary);
+      } catch (error) {
+        spinner.fail("Kiro enhancements failed");
+        this.errorReporter.reportError(error, this.errorReporter.errorTypes.KIRO_SETUP, {
+          phase: 'Phase 2 - Kiro Enhancements',
+          component: 'kiro',
+          operation: 'enhance',
+          directory: installDir,
+          bmadInstalled: true
+        });
+        console.log(chalk.yellow("Note: BMad Method components were installed successfully, but Kiro enhancements failed."));
+        throw new Error(`Kiro enhancements failed: ${error.message}`);
+      }
       
     } catch (error) {
-      spinner.fail("Kiro installation failed");
-      console.error(chalk.red("Installation error:"), error.message);
+      // Re-throw with context if not already handled
+      if (!error.message.includes("Phase")) {
+        spinner.fail("Kiro installation failed");
+        console.error(chalk.red("Installation error:"), error.message);
+      }
       throw error;
     }
   }
@@ -219,11 +268,11 @@ class KiroInstaller {
           }
         }
       } catch (error) {
-        console.log(
-          chalk.red(
-            `✗ Failed to transform expansion pack ${packId}: ${error.message}`
-          )
-        );
+        this.errorReporter.reportError(error, this.errorReporter.errorTypes.EXPANSION_PACK, {
+          packId: packId,
+          operation: 'transform-agents',
+          phase: 'agent-transformation'
+        });
       }
     }
   }
@@ -247,11 +296,11 @@ class KiroInstaller {
         
         console.log(chalk.green(`✓ Converted ${packId} templates to Kiro specs`));
       } catch (error) {
-        console.log(
-          chalk.red(
-            `✗ Failed to convert ${packId} templates: ${error.message}`
-          )
-        );
+        this.errorReporter.reportError(error, this.errorReporter.errorTypes.EXPANSION_PACK, {
+          packId: packId,
+          operation: 'convert-templates',
+          phase: 'template-conversion'
+        });
       }
     }
   }
@@ -273,11 +322,11 @@ class KiroInstaller {
         
         console.log(chalk.green(`✓ Generated ${packId} hooks`));
       } catch (error) {
-        console.log(
-          chalk.red(
-            `✗ Failed to generate ${packId} hooks: ${error.message}`
-          )
-        );
+        this.errorReporter.reportError(error, this.errorReporter.errorTypes.EXPANSION_PACK, {
+          packId: packId,
+          operation: 'generate-hooks',
+          phase: 'hook-generation'
+        });
       }
     }
   }
@@ -317,11 +366,11 @@ class KiroInstaller {
           console.log(chalk.green(`✓ Created ${packId} steering rule`));
         }
       } catch (error) {
-        console.log(
-          chalk.red(
-            `✗ Failed to create ${packId} steering rule: ${error.message}`
-          )
-        );
+        this.errorReporter.reportError(error, this.errorReporter.errorTypes.EXPANSION_PACK, {
+          packId: packId,
+          operation: 'create-steering-rules',
+          phase: 'steering-rule-creation'
+        });
       }
     }
   }
