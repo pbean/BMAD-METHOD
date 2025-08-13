@@ -5638,9 +5638,9 @@ sections:
 
 ==================== START: .bmad-unity-game-dev/templates/unity-asset-integration-tmpl.yaml ====================
 template:
-  id: unity-asset-integration-template-v1
-  name: Unity Asset Store Integration Document
-  version: 1.0
+  id: unity-asset-integration-template-v2
+  name: Unity Asset Store Integration Document  
+  version: 2.0
   output:
     format: markdown
     filename: docs/unity-asset-integration.md
@@ -5653,47 +5653,156 @@ workflow:
 sections:
   - id: introduction
     title: Unity Asset Store Integration Overview
-    content: |
-      This document defines the Unity Asset Store integration strategy for {{project_name}}. It covers third-party asset dependencies, licensing, version management, and integration patterns for external Unity packages.
-
-      All asset integrations must be carefully evaluated for performance impact, licensing compliance, and long-term maintenance considerations.
-
-  - id: asset-requirements
-    title: Asset Store Requirements Analysis
     instruction: |
-      Analyze the project's requirements for third-party Unity assets:
+      [[LLM: Project Context Analysis]]
+      Before beginning asset integration planning, analyze the project context to provide intelligent recommendations:
+      
+      1. **Project Dimension Detection:**
+         - Review GDD and architecture documents to determine 2D/3D/2.5D project type
+         - Identify rendering pipeline (Built-in, URP, HDRP) from foundation architecture
+         - Note target platforms and performance requirements
+      
+      2. **Unity Version Analysis:**
+         - Extract Unity version from architecture foundation document
+         - Check asset compatibility requirements for the specific Unity version
+         - Note any LTS vs Tech Stream implications for asset selection
+      
+      3. **Team and Timeline Context:**
+         - Assess team technical expertise level for asset integration complexity
+         - Consider project timeline constraints affecting build-vs-buy decisions
+         - Evaluate maintenance bandwidth for asset management
+      
+      Generate an intelligent introduction that adapts to the detected project characteristics.
+    content: |
+      This document defines the Unity Asset Store integration strategy for {{project_name}}. It provides an intelligent, adaptive framework for third-party asset evaluation, integration, and lifecycle management optimized for {{project_type}} development.
 
-      1. Review GDD and architecture documents for feature gaps
-      2. Identify areas where third-party assets would accelerate development
-      3. Evaluate build vs. buy decisions for each requirement
-      4. Consider licensing implications and budget constraints
-      5. Assess long-term maintenance and update requirements
+      All asset integrations undergo comprehensive compatibility analysis, security assessment, performance profiling, and license compliance validation to ensure optimal project outcomes with minimal risk.
 
-      Focus on strategic asset selection that provides maximum value with minimal risk.
+  - id: project-analysis
+    title: Project Asset Requirements Analysis
+    instruction: |
+      [[LLM: Intelligent Asset Requirements Detection]]
+      Perform comprehensive project analysis to identify asset integration opportunities:
+      
+      1. **GDD Feature Gap Analysis:**
+         - Parse GDD for features that would benefit from third-party assets
+         - Identify complex systems where mature solutions exist (dialogue, inventory, etc.)
+         - Detect specialized needs (shaders, effects, tools) mentioned in design documents
+      
+      2. **Development Acceleration Opportunities:**
+         - Analyze project timeline against feature complexity
+         - Identify areas where assets could provide 80/20 value proposition
+         - Consider team expertise gaps that assets could fill
+      
+      3. **Platform-Specific Asset Needs:**
+         - Mobile projects: Performance optimization assets, mobile-specific UI
+         - Console projects: Platform SDK integrations, certification helpers
+         - VR/AR projects: Specialized input systems, optimization tools
+         - PC projects: Advanced graphics assets, modding framework support
+      
+      4. **Technical Debt Prevention:**
+         - Identify areas where poor custom implementation could create future maintenance burden
+         - Consider asset licensing that aligns with project commercial goals
+      
+      Generate intelligent asset requirements based on project characteristics analysis.
     elicit: true
     sections:
       - id: requirements-matrix
         title: Asset Requirements Matrix
         type: table
-        columns: [Requirement, Priority, Build/Buy, Rationale, Budget Range]
-        instruction: List all potential third-party asset needs
+        columns: [Feature Area, Priority, Build/Buy Recommendation, Technical Rationale, Budget Range, Risk Assessment]
+        instruction: |
+          [[LLM: Build vs Buy Intelligence]]
+          For each identified requirement, apply intelligent decision logic:
+          
+          **Build Recommendation Criteria:**
+          - Simple implementation (< 1 week development)
+          - Unique requirements not met by existing assets
+          - Core competitive differentiator for the game
+          - Team has specific expertise in the area
+          
+          **Buy Recommendation Criteria:**
+          - Complex system with proven solutions available
+          - Non-core functionality that would distract from main development
+          - Mature ecosystem with good community support
+          - Time-to-market pressure outweighs custom development benefits
+          
+          Include risk assessment considering vendor lock-in, maintenance burden, and compatibility.
         examples:
-          - "| Dialogue System | High | Buy | Complex system, mature solutions available | $50-150 |"
-          - "| Shader Library | Medium | Buy | Specialized effects needed quickly | $30-100 |"
-          - "| AI Navigation | Low | Build | Custom requirements, simple needs | N/A |"
+          - "| Dialogue System | High | Buy | Complex branching logic, mature solutions available | $75-200 | Low - Multiple vendors, good Unity integration |"
+          - "| Mobile Performance Optimization | Medium | Buy | Specialized mobile profiling needed | $50-150 | Medium - Platform-specific, requires updates |"
+          - "| Custom Player Controls | High | Build | Core gameplay differentiator, unique feel required | Dev Time | Low - Full control, no dependencies |"
+
+  - id: asset-compatibility-analysis
+    title: Asset Compatibility & Security Assessment
+    instruction: |
+      [[LLM: Asset Compatibility Intelligence]]
+      Perform comprehensive compatibility and security analysis for asset integration:
+      
+      1. **Unity Version Compatibility:**
+         - Validate asset compatibility with project Unity version from foundation architecture
+         - Check for deprecated API usage that could cause future issues
+         - Assess upgrade path compatibility with planned Unity version migrations
+      
+      2. **Platform Compatibility Analysis:**
+         - Verify asset support for all target platforms from tech stack
+         - Check for platform-specific limitations or optimizations
+         - Assess mobile performance implications and memory usage
+      
+      3. **Dependency Chain Analysis:**
+         - Map asset dependencies and potential conflicts
+         - Check for circular dependencies or version conflicts
+         - Assess impact on build size and loading performance
+      
+      4. **Security Assessment Framework:**
+         - Evaluate asset source code access and review history
+         - Check for network access, file system access, or permission requirements
+         - Assess vendor security practices and incident history
+         - Consider data privacy implications for user data handling
+      
+      Generate intelligent compatibility recommendations with risk mitigation strategies.
+    elicit: true
+    sections:
+      - id: compatibility-matrix
+        title: Compatibility Assessment Matrix
+        type: table
+        columns: [Asset Name, Unity Version, Platform Support, Dependencies, Security Rating, Compatibility Score]
+        instruction: |
+          [[LLM: Compatibility Scoring Intelligence]]
+          Rate each asset on a 1-10 compatibility scale considering:
+          - Unity version alignment (3 points)
+          - Platform support completeness (2 points)
+          - Dependency cleanliness (2 points)  
+          - Security assessment (2 points)
+          - Community/vendor support (1 point)
+          
+          Provide specific recommendations for scores below 7.
+        examples:
+          - "| ProBuilder | 2022.3 LTS Compatible | All Desktop/Mobile | Unity Mathematics | 9/10 | 9 - Excellent Unity integration, official support |"
+          - "| Third Party Analytics | 2021.3+ | Mobile Only | Native SDKs | 6/10 | 7 - Limited platform support, requires careful data handling |"
 
   - id: selected-assets
     title: Selected Unity Assets
     instruction: |
-      Document the third-party Unity assets selected for the project:
-
-      1. List each selected asset with its purpose and justification
-      2. Include version numbers and compatibility requirements
-      3. Document licensing terms and restrictions
-      4. Note any dependencies or conflicts with other assets
-      5. Include fallback plans if assets become unavailable
-
-      Maintain a clear inventory of all third-party dependencies.
+      [[LLM: Asset Integration Planning Intelligence]]
+      For each selected asset, provide comprehensive integration planning:
+      
+      1. **Integration Complexity Assessment:**
+         - Evaluate API integration complexity and learning curve
+         - Assess customization and extension requirements
+         - Plan for wrapper/adapter layer development
+      
+      2. **Performance Impact Prediction:**
+         - Estimate memory footprint and runtime performance impact
+         - Plan profiling approach and optimization strategies
+         - Consider mobile battery life implications
+      
+      3. **Maintenance Planning:**
+         - Assess vendor update frequency and quality
+         - Plan for version migration and compatibility testing
+         - Consider long-term support and community health
+      
+      Generate detailed integration plans with fallback strategies for each asset.
     elicit: true
     repeatable: true
     sections:
@@ -5703,51 +5812,82 @@ sections:
           **Asset Details:**
           - **Publisher:** {{publisher_name}}
           - **Version:** {{asset_version}}
-          - **Unity Version:** {{unity_compatibility}}
+          - **Unity Compatibility:** {{unity_compatibility}}
           - **License Type:** {{license_type}}
           - **Cost:** {{asset_cost}}
+          - **Security Rating:** {{security_rating}}/10
 
-          **Purpose & Justification:**
+          **Purpose & Integration Rationale:**
           {{asset_purpose}}
 
-          **Key Features Used:**
+          **[[LLM: Performance Impact Analysis]]**
+          **Performance Metrics:**
+          - **Estimated Memory Impact:** {{memory_impact}}
+          - **Runtime Performance Cost:** {{performance_cost}}
+          - **Build Size Impact:** {{build_size_impact}}
+          - **Mobile Battery Impact:** {{battery_impact}}
+
+          **Key Features Utilized:**
           - {{feature_1}}
           - {{feature_2}}
           - {{feature_3}}
 
-          **Dependencies:**
+          **Integration Strategy:**
+          - **Wrapper Pattern:** {{wrapper_approach}}
+          - **API Abstraction:** {{abstraction_strategy}}
+          - **Customization Plan:** {{customization_approach}}
+
+          **Dependencies & Conflicts:**
           - {{dependency_1}}
-          - {{dependency_2}}
+          - {{potential_conflict_1}}
 
-          **Integration Complexity:** {{complexity_level}}
+          **[[LLM: Risk Assessment & Mitigation]]**
+          **Risk Analysis:**
+          - **Vendor Lock-in Risk:** {{vendor_risk}} - Mitigation: {{vendor_mitigation}}
+          - **Compatibility Risk:** {{compatibility_risk}} - Mitigation: {{compatibility_mitigation}}
+          - **Performance Risk:** {{performance_risk}} - Mitigation: {{performance_mitigation}}
 
-          **Known Issues:**
-          - {{issue_1}}
-          - {{issue_2}}
+          **Fallback Strategy:**
+          {{fallback_plan}}
 
-          **Update Policy:**
-          {{update_strategy}}
+          **Update Management:**
+          - **Update Schedule:** {{update_schedule}}
+          - **Testing Protocol:** {{testing_protocol}}
+          - **Rollback Strategy:** {{rollback_strategy}}
 
-  - id: integration-patterns
-    title: Asset Integration Patterns
+  - id: integration-architecture
+    title: Asset Integration Architecture
     instruction: |
-      Define standard patterns for integrating third-party assets:
-
-      1. Establish wrapper/adapter patterns for asset APIs
-      2. Define namespace and folder organization conventions
-      3. Plan for asset customization and extension
-      4. Design abstraction layers for replaceable assets
-      5. Consider performance profiling and optimization
-
-      Create maintainable integration patterns that isolate third-party dependencies.
+      [[LLM: Unity Integration Patterns Intelligence]]
+      Design Unity-specific integration patterns optimized for the project architecture:
+      
+      1. **Project Type Optimization:**
+         - 2D Projects: Focus on sprite-based asset integration, 2D physics compatibility
+         - 3D Projects: Emphasize 3D rendering pipeline integration, complex scene management
+         - Mobile Projects: Prioritize performance wrappers, memory management patterns
+         - Desktop Projects: Enable advanced features, development productivity integration
+      
+      2. **Unity Architecture Alignment:**
+         - Align with component-based architecture from foundation document
+         - Integrate with ScriptableObject data patterns
+         - Leverage Unity Events vs C# Events decisions from architecture
+      
+      3. **Scalability Patterns:**
+         - Design for easy asset replacement or removal
+         - Plan for multiple similar assets (A/B testing, platform variants)
+         - Consider runtime asset loading and unloading
+      
+      Generate integration architecture that follows Unity best practices and project architecture decisions.
     elicit: true
     sections:
-      - id: wrapper-patterns
-        title: Wrapper & Adapter Patterns
+      - id: wrapper-architecture
+        title: Wrapper & Adapter Architecture
         template: |
-          **Wrapper Strategy:**
-          - {{wrapper_approach}}
-          - {{abstraction_level}}
+          **[[LLM: Unity Component Integration]]**
+          **Component Integration Strategy:**
+          - **MonoBehaviour Wrappers:** {{monobehaviour_wrapper_approach}}
+          - **ScriptableObject Configuration:** {{scriptableobject_config}}
+          - **Unity Event Integration:** {{unity_event_approach}}
 
           **Namespace Organization:**
           ```csharp
@@ -5756,307 +5896,400 @@ sections:
 
           **Folder Structure:**
           ```
-          {{folder_hierarchy}}
+          Assets/_Project/
+          ├── Scripts/ThirdParty/
+          │   ├── {{asset_name}}/
+          │   │   ├── Wrappers/
+          │   │   ├── Adapters/
+          │   │   └── Configuration/
+          └── Data/AssetConfigurations/
+              └── {{asset_name}}/
           ```
 
-          **Extension Points:**
-          - {{extension_point_1}}
-          - {{extension_point_2}}
-
-      - id: api-abstraction
-        title: API Abstraction Layers
-        template: |
-          **Abstraction Interfaces:**
+          **Interface Abstraction:**
           ```csharp
           {{interface_definitions}}
           ```
 
-          **Implementation Mapping:**
-          - {{mapping_1}}
-          - {{mapping_2}}
+      - id: performance-integration
+        title: Performance-Aware Integration
+        template: |
+          **[[LLM: Performance Optimization Intelligence]]**
+          **Memory Management:**
+          - {{memory_strategy_1}}
+          - {{memory_strategy_2}}
 
-          **Fallback Implementations:**
-          - {{fallback_1}}
-          - {{fallback_2}}
+          **Runtime Optimization:**
+          - {{runtime_optimization_1}}
+          - {{runtime_optimization_2}}
 
-  - id: version-management
-    title: Asset Version Management
+          **Mobile-Specific Optimizations:**
+          - {{mobile_optimization_1}}
+          - {{mobile_optimization_2}}
+
+          **Profiling Integration:**
+          - **Baseline Measurements:** {{baseline_approach}}
+          - **Automated Profiling:** {{automated_profiling}}
+          - **Performance Budgets:** {{performance_budgets}}
+
+
+  - id: performance-profiling
+    title: Asset Performance Profiling Framework
     instruction: |
-      Establish version management and update procedures for third-party assets:
-
-      1. Define version tracking and documentation requirements
-      2. Plan update testing and validation procedures
-      3. Create rollback strategies for failed updates
-      4. Document breaking changes and migration paths
-      5. Consider automated compatibility testing
-
-      Ensure stable, predictable asset version management throughout development.
+      [[LLM: Performance Profiling Intelligence]]
+      Establish comprehensive performance profiling for asset integration:
+      
+      1. **Baseline Establishment:**
+         - Profile project performance before asset integration
+         - Document memory usage, frame rate, and build size baselines
+         - Establish platform-specific performance targets
+      
+      2. **Asset Impact Measurement:**
+         - Automated profiling pipeline for asset integration
+         - Memory allocation tracking and leak detection
+         - Runtime performance impact measurement
+         - Build size and loading time analysis
+      
+      3. **Performance Budget Management:**
+         - Establish per-asset performance budgets
+         - Automated budget enforcement in CI/CD pipeline
+         - Performance regression detection and alerts
+      
+      Generate automated profiling framework with intelligent optimization recommendations.
     elicit: true
     sections:
-      - id: version-tracking
-        title: Version Tracking System
+      - id: profiling-framework
+        title: Automated Profiling Framework
         template: |
-          **Version Documentation:**
-          - {{tracking_location}}
-          - {{documentation_format}}
+          **[[LLM: Performance Measurement Intelligence]]**
+          **Baseline Metrics:**
+          ```yaml
+          performance_baseline:
+            frame_rate:
+              target: "{{target_fps}}"
+              minimum: "{{minimum_fps}}"
+            memory:
+              heap_size: "{{baseline_heap}}MB"
+              texture_memory: "{{baseline_textures}}MB"
+            build_size:
+              total: "{{baseline_build_size}}MB"
+              code: "{{baseline_code_size}}MB"
+          ```
 
-          **Update Schedule:**
-          - {{update_frequency}}
-          - {{update_criteria}}
+          **Asset Performance Budgets:**
+          | Asset Category | FPS Impact | Memory Budget | Size Budget | Priority |
+          |---------------|------------|---------------|-------------|----------|
+          | {{asset_category_1}} | {{fps_budget_1}} | {{memory_budget_1}} | {{size_budget_1}} | {{priority_1}} |
+          | {{asset_category_2}} | {{fps_budget_2}} | {{memory_budget_2}} | {{size_budget_2}} | {{priority_2}} |
 
-          **Testing Requirements:**
-          - {{test_requirement_1}}
-          - {{test_requirement_2}}
+          **Automated Profiling Pipeline:**
+          - **Pre-Integration Baseline:** {{baseline_automation}}
+          - **Post-Integration Measurement:** {{measurement_automation}}
+          - **Performance Regression Detection:** {{regression_detection}}
+          - **Optimization Recommendations:** {{optimization_automation}}
 
-          **Compatibility Matrix:**
-          | Asset | Current Version | Unity Version | Last Updated |
-          | ----- | -------------- | ------------- | ------------ |
-          | {{asset_1}} | {{version_1}} | {{unity_1}} | {{date_1}} |
-          | {{asset_2}} | {{version_2}} | {{unity_2}} | {{date_2}} |
-
-      - id: update-procedures
-        title: Update Procedures
+      - id: mobile-optimization
+        title: Mobile Performance Optimization
         template: |
-          **Pre-Update Checklist:**
-          - [ ] {{checklist_item_1}}
-          - [ ] {{checklist_item_2}}
-          - [ ] {{checklist_item_3}}
-
-          **Update Process:**
-          1. {{update_step_1}}
-          2. {{update_step_2}}
-          3. {{update_step_3}}
-
-          **Rollback Strategy:**
-          - {{rollback_trigger}}
-          - {{rollback_procedure}}
-
-          **Migration Paths:**
-          - {{migration_scenario_1}}: {{migration_approach_1}}
-          - {{migration_scenario_2}}: {{migration_approach_2}}
-
-  - id: license-compliance
-    title: License Compliance & Management
-    instruction: |
-      Document license compliance requirements and management procedures:
-
-      1. Catalog all asset licenses and their terms
-      2. Identify distribution restrictions and requirements
-      3. Plan for license renewals and seat management
-      4. Document attribution requirements
-      5. Consider open-source license compatibility
-
-      Ensure full compliance with all third-party asset licenses.
-    elicit: true
-    sections:
-      - id: license-inventory
-        title: License Inventory
-        type: table
-        columns: [Asset, License Type, Seats/Users, Restrictions, Attribution Required]
-        instruction: Document all asset licenses
-        examples:
-          - "| Dialogue System Pro | Per-Seat | 5 seats | No source distribution | Yes, in credits |"
-          - "| Mobile Shaders | Single License | Unlimited | Commercial use allowed | No |"
-
-      - id: compliance-procedures
-        title: Compliance Procedures
-        template: |
-          **Distribution Restrictions:**
-          - {{restriction_1}}
-          - {{restriction_2}}
-
-          **Attribution Requirements:**
-          - {{attribution_1}}
-          - {{attribution_2}}
-
-          **License Renewal Schedule:**
-          - {{renewal_1}}: {{renewal_date_1}}
-          - {{renewal_2}}: {{renewal_date_2}}
-
-          **Compliance Checklist:**
-          - [ ] {{compliance_check_1}}
-          - [ ] {{compliance_check_2}}
-          - [ ] {{compliance_check_3}}
-
-  - id: performance-impact
-    title: Asset Performance Impact
-    instruction: |
-      Analyze and document the performance impact of third-party assets:
-
-      1. Profile baseline performance metrics
-      2. Measure impact of each major asset
-      3. Identify optimization opportunities
-      4. Document performance budgets per asset
-      5. Plan for mobile/low-end platform considerations
-
-      Maintain performance awareness throughout asset integration.
-    elicit: true
-    sections:
-      - id: performance-metrics
-        title: Performance Metrics
-        template: |
-          **Baseline Metrics (without assets):**
-          - Frame Rate: {{baseline_fps}}
-          - Memory Usage: {{baseline_memory}}
-          - Build Size: {{baseline_size}}
-          - Load Time: {{baseline_load}}
-
-          **Asset Impact Analysis:**
-          | Asset | FPS Impact | Memory Impact | Size Impact | Load Impact |
-          | ----- | ---------- | ------------- | ----------- | ----------- |
-          | {{asset_1}} | {{fps_1}} | {{mem_1}} | {{size_1}} | {{load_1}} |
-          | {{asset_2}} | {{fps_2}} | {{mem_2}} | {{size_2}} | {{load_2}} |
+          **[[LLM: Mobile Performance Intelligence]]**
+          **Mobile-Specific Metrics:**
+          - **Battery Impact Assessment:** {{battery_assessment}}
+          - **Thermal Management:** {{thermal_management}}
+          - **Memory Pressure Handling:** {{memory_pressure}}
+          - **Platform-Specific Optimizations:** {{platform_optimizations}}
 
           **Optimization Strategies:**
-          - {{optimization_1}}
-          - {{optimization_2}}
+          - {{mobile_strategy_1}}
+          - {{mobile_strategy_2}}
+          - {{mobile_strategy_3}}
 
-          **Performance Budgets:**
-          - {{budget_category_1}}: {{budget_limit_1}}
-          - {{budget_category_2}}: {{budget_limit_2}}
+  - id: security-assessment
+    title: Third-Party Asset Security Framework
+    instruction: |
+      [[LLM: Security Assessment Intelligence]]
+      Implement comprehensive security assessment for third-party assets:
+      
+      1. **Code Security Analysis:**
+         - Source code availability and review procedures
+         - Known vulnerability scanning and tracking
+         - Dependency chain security assessment
+         - Network access and permission analysis
+      
+      2. **Data Privacy Compliance:**
+         - User data collection and handling practices
+         - GDPR, CCPA, and regional privacy law compliance
+         - Data transmission and storage security
+         - Third-party service integration security
+      
+      3. **Supply Chain Security:**
+         - Vendor security practices and certification
+         - Asset distribution integrity verification
+         - Update mechanism security validation
+         - Incident response and vulnerability disclosure
+      
+      Generate automated security assessment framework with risk scoring.
+    elicit: true
+    sections:
+      - id: security-matrix
+        title: Security Assessment Matrix
+        type: table
+        columns: [Asset, Source Access, Network Access, Data Collection, Privacy Compliance, Vulnerability History, Security Score]
+        instruction: |
+          [[LLM: Security Scoring Intelligence]]
+          Rate security on 1-10 scale considering:
+          - Source code transparency (2 points)
+          - Network access scope (2 points)
+          - Data handling practices (2 points)
+          - Privacy law compliance (2 points)
+          - Vulnerability response history (2 points)
+          
+          Assets scoring below 6 require additional security measures.
+        examples:
+          - "| Unity Analytics | No source access | Analytics only | Anonymous gameplay data | GDPR compliant | No known issues | 7/10 |"
+          - "| Custom Networking | Full source | Full network access | User account data | Requires review | Recent patches | 5/10 |"
+
+      - id: security-mitigation
+        title: Security Mitigation Strategies
+        template: |
+          **[[LLM: Security Mitigation Intelligence]]**
+          **Code Review Process:**
+          - {{code_review_process}}
+          - {{security_audit_schedule}}
+
+          **Network Security:**
+          - {{network_restriction_strategy}}
+          - {{data_encryption_requirements}}
+
+          **Privacy Protection:**
+          - {{privacy_safeguards}}
+          - {{user_consent_management}}
+
+          **Incident Response:**
+          - {{vulnerability_response_plan}}
+          - {{security_update_protocol}}
+
+  - id: update-risk-assessment
+    title: Asset Update Risk Management
+    instruction: |
+      [[LLM: Update Risk Intelligence]]
+      Develop intelligent update risk assessment and management:
+      
+      1. **Risk Classification System:**
+         - Breaking change probability assessment
+         - API stability history analysis
+         - Vendor release quality tracking
+         - Project impact severity scoring
+      
+      2. **Automated Update Pipeline:**
+         - Staging environment testing automation
+         - Regression test execution
+         - Performance impact validation
+         - Rollback mechanism verification
+      
+      3. **Update Strategy Optimization:**
+         - Update timing optimization for project milestones
+         - Batch update risk assessment
+         - Emergency update procedures
+         - Long-term maintenance planning
+      
+      Generate adaptive update management framework.
+    elicit: true
+    sections:
+      - id: update-risk-matrix
+        title: Update Risk Assessment Matrix
+        type: table
+        columns: [Asset, Update Frequency, Breaking Change Risk, Test Coverage, Rollback Complexity, Update Strategy]
+        instruction: |
+          [[LLM: Update Strategy Intelligence]]
+          Classify update strategies:
+          - **Conservative:** Manual updates, extensive testing, stable releases only
+          - **Balanced:** Automated minor updates, manual major updates, good test coverage
+          - **Aggressive:** Automated updates, rapid deployment, comprehensive rollback
+          
+          Base strategy on project phase, asset criticality, and risk tolerance.
+        examples:
+          - "| Core Gameplay Asset | Monthly | High | 90% coverage | Complex | Conservative - Manual updates only |"
+          - "| Development Tool | Weekly | Low | 60% coverage | Simple | Balanced - Auto minor, manual major |"
+
+      - id: automated-testing
+        title: Automated Update Testing
+        template: |
+          **[[LLM: Test Automation Intelligence]]**
+          **Test Automation Framework:**
+          ```yaml
+          asset_update_testing:
+            pre_update:
+              - baseline_performance_capture
+              - integration_test_execution
+              - compatibility_verification
+            post_update:
+              - regression_test_suite
+              - performance_comparison
+              - functionality_validation
+            rollback_triggers:
+              - {{rollback_condition_1}}
+              - {{rollback_condition_2}}
+          ```
+
+          **Quality Gates:**
+          - {{quality_gate_1}}
+          - {{quality_gate_2}}
+          - {{quality_gate_3}}
 
   - id: fallback-strategies
-    title: Fallback & Contingency Planning
+    title: Intelligent Fallback & Contingency Planning
     instruction: |
-      Create fallback strategies for critical third-party dependencies:
-
-      1. Identify single points of failure in asset dependencies
-      2. Plan alternatives for each critical asset
-      3. Document switching costs and procedures
-      4. Consider in-house development fallbacks
-      5. Maintain vendor relationships and support channels
-
-      Ensure project continuity regardless of third-party asset availability.
+      [[LLM: Fallback Strategy Intelligence]]
+      Design comprehensive fallback strategies with intelligent risk mitigation:
+      
+      1. **Critical Path Analysis:**
+         - Identify single points of failure in asset dependencies
+         - Assess business impact of asset unavailability
+         - Plan graceful degradation strategies
+         - Consider competitive implications of asset loss
+      
+      2. **Alternative Solution Matrix:**
+         - Multiple vendor options for critical functionality
+         - Open-source alternatives evaluation
+         - In-house development fallback planning
+         - Hybrid solution approaches
+      
+      3. **Transition Planning:**
+         - Automated failover mechanisms
+         - Data migration procedures
+         - User experience continuity planning
+         - Timeline and resource estimation
+      
+      Generate intelligent contingency plans with automated decision trees.
     elicit: true
     sections:
-      - id: critical-dependencies
-        title: Critical Dependencies
+      - id: contingency-matrix
+        title: Intelligent Contingency Matrix
+        type: table
+        columns: [Asset, Criticality, Primary Fallback, Secondary Fallback, Transition Time, Automation Level]
+        instruction: |
+          [[LLM: Contingency Planning Intelligence]]
+          Rate criticality (1-5) and plan fallbacks:
+          - **Level 5 (Critical):** Project-blocking, immediate alternatives required
+          - **Level 4 (High):** Major feature impact, planned alternatives required
+          - **Level 3 (Medium):** Feature degradation acceptable, alternatives preferred
+          - **Level 2 (Low):** Minor impact, alternatives optional
+          - **Level 1 (Minimal):** Cosmetic impact, removal acceptable
+          
+          Automate fallback decisions where possible.
+        examples:
+          - "| Authentication System | 5 | Unity Gaming Services | Custom OAuth | 2 weeks | Semi-automated |"
+          - "| Particle Effects | 3 | Unity VFX Graph | Simplified effects | 3 days | Fully automated |"
+
+      - id: automated-fallback
+        title: Automated Fallback Framework
         template: |
-          **Critical Assets:**
-          - {{critical_asset_1}}: {{criticality_reason_1}}
-          - {{critical_asset_2}}: {{criticality_reason_2}}
+          **[[LLM: Fallback Automation Intelligence]]**
+          **Automated Decision Trees:**
+          ```yaml
+          fallback_automation:
+            triggers:
+              - asset_unavailable
+              - license_expired
+              - critical_bug_detected
+              - performance_threshold_exceeded
+            responses:
+              level_5_critical:
+                action: "immediate_fallback"
+                notification: "emergency_alert"
+                automation: "{{level_5_automation}}"
+              level_3_medium:
+                action: "staged_transition"
+                notification: "planned_alert"
+                automation: "{{level_3_automation}}"
+          ```
 
-          **Fallback Options:**
-          - {{asset_1_fallback}}: {{fallback_details_1}}
-          - {{asset_2_fallback}}: {{fallback_details_2}}
+          **Graceful Degradation:**
+          - {{degradation_strategy_1}}
+          - {{degradation_strategy_2}}
 
-          **Switching Costs:**
-          - {{switch_cost_1}}
-          - {{switch_cost_2}}
-
-          **Risk Mitigation:**
-          - {{mitigation_1}}
-          - {{mitigation_2}}
-
-  - id: asset-workflow
-    title: Asset Integration Workflow
+  - id: asset-lifecycle
+    title: Asset Lifecycle Management
     instruction: |
-      Define the workflow for evaluating and integrating new assets:
-
-      1. Establish evaluation criteria and approval process
-      2. Define integration testing requirements
-      3. Plan documentation and training needs
-      4. Create asset onboarding procedures
-      5. Document deprecation and removal processes
-
-      Create a repeatable, efficient asset integration workflow.
+      [[LLM: Lifecycle Management Intelligence]]
+      Implement comprehensive asset lifecycle management with predictive analytics:
+      
+      1. **Lifecycle Stage Tracking:**
+         - Asset maturity assessment and tracking
+         - Vendor health monitoring and analysis
+         - Community support trend analysis
+         - Technology obsolescence prediction
+      
+      2. **Proactive Management:**
+         - End-of-life prediction and planning
+         - Migration timeline optimization
+         - Budget planning for asset evolution
+         - Strategic replacement planning
+      
+      3. **Knowledge Management:**
+         - Asset expertise documentation and transfer
+         - Integration knowledge preservation
+         - Tribal knowledge capture and documentation
+         - Onboarding procedures for new team members
+      
+      Generate predictive lifecycle management framework.
     elicit: true
     sections:
-      - id: evaluation-process
-        title: Asset Evaluation Process
+      - id: lifecycle-tracking
+        title: Predictive Lifecycle Tracking
         template: |
-          **Evaluation Criteria:**
-          - [ ] {{criteria_1}}
-          - [ ] {{criteria_2}}
-          - [ ] {{criteria_3}}
+          **[[LLM: Lifecycle Prediction Intelligence]]**
+          **Asset Health Metrics:**
+          ```yaml
+          asset_health_monitoring:
+            vendor_indicators:
+              - release_frequency: "{{release_frequency}}"
+              - community_activity: "{{community_activity}}"
+              - support_responsiveness: "{{support_responsiveness}}"
+            technology_indicators:
+              - unity_version_compatibility: "{{unity_compatibility}}"
+              - industry_adoption: "{{industry_adoption}}"
+              - competitive_alternatives: "{{competitive_alternatives}}"
+          ```
 
-          **Approval Workflow:**
-          1. {{approval_step_1}}
-          2. {{approval_step_2}}
-          3. {{approval_step_3}}
+          **Predictive Analytics:**
+          - **End-of-Life Prediction:** {{eol_prediction}}
+          - **Migration Timeline:** {{migration_timeline}}
+          - **Budget Planning:** {{budget_planning}}
 
-          **Integration Checklist:**
-          - [ ] {{integration_check_1}}
-          - [ ] {{integration_check_2}}
-          - [ ] {{integration_check_3}}
-
-          **Documentation Requirements:**
-          - {{doc_requirement_1}}
-          - {{doc_requirement_2}}
-
-  - id: best-practices
-    title: Asset Integration Best Practices
-    content: |
-      **Recommended Practices:**
-
-      1. **Isolation:** Always wrap third-party APIs in project-specific interfaces
-      2. **Documentation:** Maintain detailed documentation of asset usage and customizations
-      3. **Version Control:** Use Git LFS for large asset files, exclude unnecessary files
-      4. **Testing:** Create automated tests for critical asset functionality
-      5. **Performance:** Profile before and after asset integration
-      6. **Updates:** Test updates in isolation before full integration
-      7. **Licensing:** Maintain a central license documentation repository
-      8. **Communication:** Keep team informed of new assets and changes
-
-      **Common Pitfalls to Avoid:**
-
-      - Over-reliance on single vendor solutions
-      - Ignoring license restrictions until release
-      - Updating assets without proper testing
-      - Not planning for asset deprecation
-      - Mixing incompatible asset versions
-      - Ignoring performance impacts on target platforms
-
-  - id: maintenance-plan
-    title: Long-term Maintenance Plan
-    instruction: |
-      Create a long-term maintenance strategy for third-party assets:
-
-      1. Plan for asset lifecycle management
-      2. Budget for license renewals and updates
-      3. Document knowledge transfer requirements
-      4. Consider technical debt from outdated assets
-      5. Plan for Unity version migrations
-
-      Ensure sustainable asset management throughout the project lifecycle.
-    elicit: true
-    sections:
-      - id: lifecycle-management
-        title: Asset Lifecycle Management
+      - id: knowledge-management
+        title: Knowledge Management Framework
         template: |
-          **Lifecycle Phases:**
-          - Evaluation → Integration → Production → Maintenance → Deprecation
+          **[[LLM: Knowledge Preservation Intelligence]]**
+          **Documentation Strategy:**
+          - {{documentation_strategy_1}}
+          - {{documentation_strategy_2}}
 
-          **Maintenance Schedule:**
-          - {{maintenance_task_1}}: {{frequency_1}}
-          - {{maintenance_task_2}}: {{frequency_2}}
+          **Knowledge Transfer:**
+          - {{transfer_strategy_1}}
+          - {{transfer_strategy_2}}
 
-          **Budget Allocation:**
-          - License Renewals: {{renewal_budget}}
-          - Update Testing: {{testing_budget}}
-          - Emergency Replacements: {{contingency_budget}}
-
-          **Knowledge Documentation:**
-          - {{knowledge_item_1}}
-          - {{knowledge_item_2}}
-
-          **Technical Debt Management:**
-          - {{debt_item_1}}: {{mitigation_plan_1}}
-          - {{debt_item_2}}: {{mitigation_plan_2}}
+          **Onboarding Procedures:**
+          - {{onboarding_procedure_1}}
+          - {{onboarding_procedure_2}}
 
   - id: conclusion
-    title: Integration Summary
+    title: Integration Summary & Next Steps
     content: |
-      This Unity Asset Store Integration document provides a comprehensive framework for managing third-party asset dependencies in {{project_name}}. Regular review and updates of this document ensure effective asset management throughout development.
+      This enhanced Unity Asset Store Integration document provides a comprehensive, intelligent framework for managing third-party asset dependencies in {{project_name}}. The embedded intelligence systems adapt to project characteristics, automate compliance and security assessment, and provide predictive management capabilities.
 
-      **Key Success Factors:**
-      - Strategic asset selection aligned with project goals
-      - Robust integration patterns with proper abstractions
-      - Proactive version and license management
-      - Performance-aware integration practices
-      - Comprehensive fallback strategies
+      **Key Intelligence Features:**
+      - Adaptive asset recommendations based on project type and constraints
+      - Automated compatibility, security, and performance assessment
+      - Intelligent fallback strategies with automated decision trees
+      - Predictive lifecycle management and risk mitigation
+      - Comprehensive compliance automation and enforcement
 
-      The strategies defined here should be reviewed quarterly and updated as the project evolves and new assets become available or deprecated.
+      **Continuous Improvement:**
+      This framework should be regularly updated based on asset performance data, security intelligence feeds, and project evolution. The embedded LLM intelligence will adapt recommendations as project requirements and constraints change.
+
+      **Integration with Development Workflow:**
+      These strategies integrate with the Unity development pipeline established in the Architecture Foundation document and should be referenced during all asset evaluation and integration decisions.
 ==================== END: .bmad-unity-game-dev/templates/unity-asset-integration-tmpl.yaml ====================
 
 ==================== START: .bmad-unity-game-dev/checklists/game-architect-checklist-2d.md ====================

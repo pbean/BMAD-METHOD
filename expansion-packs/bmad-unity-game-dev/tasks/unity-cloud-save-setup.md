@@ -31,16 +31,16 @@ namespace {{project_namespace}}.CloudSave
     /// Core save data models with versioning support
     /// Reference: https://docs.unity.com/cloud-save/
     /// </summary>
-    
+
     [Serializable]
     public class SaveDataVersion
     {
         public int major = 1;
         public int minor = 0;
         public int patch = 0;
-        
+
         public string GetVersionString() => $"{major}.{minor}.{patch}";
-        
+
         public bool IsCompatible(SaveDataVersion other)
         {
             // Major version must match for compatibility
@@ -61,13 +61,13 @@ namespace {{project_namespace}}.CloudSave
         public SettingsData settings;
         public StatisticsData statistics;
         public Dictionary<string, object> customData;
-        
+
         // Compression metadata
         public bool isCompressed;
         public string compressionMethod;
         public int uncompressedSize;
         public int compressedSize;
-        
+
         // Sync metadata
         public string syncId;
         public int syncVersion;
@@ -102,7 +102,7 @@ namespace {{project_namespace}}.CloudSave
         public Dictionary<string, float> bestTimes;
         public Dictionary<string, int> bestScores;
         public Dictionary<string, int> starRatings;
-        
+
         [Serializable]
         public class LevelProgress
         {
@@ -128,7 +128,7 @@ namespace {{project_namespace}}.CloudSave
         public Dictionary<string, int> consumables;
         public List<string> unlockedSkins;
         public List<string> unlockedCharacters;
-        
+
         [Serializable]
         public class InventoryItem
         {
@@ -208,7 +208,7 @@ namespace {{project_namespace}}.CloudSave
         public PlayerSaveData cloudData;
         public DateTime conflictDetectedTime;
         public ConflictResolutionStrategy strategy;
-        
+
         public enum ConflictResolutionStrategy
         {
             UseLocal,
@@ -251,31 +251,31 @@ namespace {{project_namespace}}.CloudSave
         [SerializeField] private int maxSaveSlots = 3;
         [SerializeField] private bool useCompression = true;
         [SerializeField] private bool useEncryption = false;
-        [SerializeField] private ConflictData.ConflictResolutionStrategy defaultConflictStrategy = 
+        [SerializeField] private ConflictData.ConflictResolutionStrategy defaultConflictStrategy =
             ConflictData.ConflictResolutionStrategy.UseNewest;
-        
+
         [Header("Performance")]
         [SerializeField] private int maxRetries = 3;
         [SerializeField] private float retryDelay = 2f;
         [SerializeField] private int compressionLevel = 6; // 1-9
         [SerializeField] private long maxSaveSize = 10485760; // 10MB
-        
+
         // Save data cache
         private PlayerSaveData _currentSaveData;
         private Dictionary<int, SaveSlotMetadata> _saveSlots;
         private Queue<PlayerSaveData> _saveHistory;
         private const int MaxHistorySize = 10;
-        
+
         // Sync state
         private bool _isSyncing;
         private bool _hasUnsyncedChanges;
         private DateTime _lastSyncTime;
         private DateTime _lastAutoSaveTime;
-        
+
         // Offline queue
         private Queue<SaveOperation> _offlineQueue;
         private bool _isOnline;
-        
+
         // Events
         public event Action<PlayerSaveData> OnSaveCompleted;
         public event Action<PlayerSaveData> OnLoadCompleted;
@@ -320,16 +320,16 @@ namespace {{project_namespace}}.CloudSave
             _saveHistory = new Queue<PlayerSaveData>();
             _offlineQueue = new Queue<SaveOperation>();
             _isOnline = Application.internetReachability != NetworkReachability.NotReachable;
-            
+
             // Load local cache
             LoadLocalCache();
-            
+
             // Start auto-save
             if (autoSaveEnabled)
             {
                 InvokeRepeating(nameof(AutoSave), autoSaveInterval, autoSaveInterval);
             }
-            
+
             // Monitor connectivity
             InvokeRepeating(nameof(CheckConnectivity), 5f, 5f);
         }
@@ -351,37 +351,37 @@ namespace {{project_namespace}}.CloudSave
             {
                 // Prepare save data
                 var saveData = PrepareSaveData();
-                
+
                 // Validate save data
                 if (!ValidateSaveData(saveData))
                 {
                     throw new Exception("Save data validation failed");
                 }
-                
+
                 // Add to history
                 AddToHistory(saveData);
-                
+
                 // Compress if enabled
                 if (useCompression)
                 {
                     saveData = await CompressSaveData(saveData);
                 }
-                
+
                 OnSyncProgress?.Invoke(0.3f);
-                
+
                 // Encrypt if enabled
                 if (useEncryption)
                 {
                     saveData = await EncryptSaveData(saveData);
                 }
-                
+
                 OnSyncProgress?.Invoke(0.5f);
-                
+
                 // Save locally first
                 SaveToLocalCache(saveData, slotNumber);
-                
+
                 OnSyncProgress?.Invoke(0.7f);
-                
+
                 // Save to cloud
                 if (_isOnline)
                 {
@@ -392,17 +392,17 @@ namespace {{project_namespace}}.CloudSave
                     QueueOfflineSave(saveData, slotNumber, priority);
                     Debug.Log("CloudSave: Offline - save queued for later sync");
                 }
-                
+
                 OnSyncProgress?.Invoke(1f);
-                
+
                 // Update metadata
                 UpdateSlotMetadata(slotNumber, saveData);
-                
+
                 _lastSyncTime = DateTime.UtcNow;
                 _hasUnsyncedChanges = false;
-                
+
                 OnSaveCompleted?.Invoke(saveData);
-                
+
                 Debug.Log($"CloudSave: Game saved successfully to slot {slotNumber}");
                 return true;
             }
@@ -424,23 +424,23 @@ namespace {{project_namespace}}.CloudSave
             {
                 _currentSaveData = new PlayerSaveData();
             }
-            
+
             // Update metadata
             _currentSaveData.playerId = AuthenticationService.Instance.PlayerId;
             _currentSaveData.lastSaved = DateTime.UtcNow;
             _currentSaveData.deviceId = SystemInfo.deviceUniqueIdentifier;
             _currentSaveData.localTimestamp = DateTime.UtcNow;
             _currentSaveData.syncVersion++;
-            
+
             // Collect game data
             _currentSaveData.profile = CollectProfileData();
             _currentSaveData.progression = CollectProgressionData();
             _currentSaveData.inventory = CollectInventoryData();
             _currentSaveData.settings = CollectSettingsData();
             _currentSaveData.statistics = CollectStatisticsData();
-            
+
             // [[LLM: Implement data collection methods based on game systems]]
-            
+
             return _currentSaveData;
         }
 
@@ -448,32 +448,32 @@ namespace {{project_namespace}}.CloudSave
         {
             var json = JsonConvert.SerializeObject(data);
             var uncompressedBytes = Encoding.UTF8.GetBytes(json);
-            
+
             using (var output = new MemoryStream())
             {
                 using (var gzip = new GZipStream(output, (CompressionLevel)compressionLevel))
                 {
                     await gzip.WriteAsync(uncompressedBytes, 0, uncompressedBytes.Length);
                 }
-                
+
                 var compressedBytes = output.ToArray();
-                
+
                 // Update compression metadata
                 data.isCompressed = true;
                 data.compressionMethod = "gzip";
                 data.uncompressedSize = uncompressedBytes.Length;
                 data.compressedSize = compressedBytes.Length;
-                
+
                 float compressionRatio = 1f - ((float)compressedBytes.Length / uncompressedBytes.Length);
                 Debug.Log($"CloudSave: Compressed {uncompressedBytes.Length} bytes to {compressedBytes.Length} bytes (ratio: {compressionRatio:P})");
-                
+
                 // Store compressed data in custom data field
                 data.customData = new Dictionary<string, object>
                 {
                     { "compressed_data", Convert.ToBase64String(compressedBytes) }
                 };
             }
-            
+
             return data;
         }
 
@@ -493,10 +493,10 @@ namespace {{project_namespace}}.CloudSave
                 { $"{saveKey}_metadata", GetSlotMetadata(slotNumber) },
                 { "last_sync", DateTime.UtcNow.ToString("O") }
             };
-            
+
             int retryCount = 0;
             Exception lastException = null;
-            
+
             while (retryCount < maxRetries)
             {
                 try
@@ -507,10 +507,10 @@ namespace {{project_namespace}}.CloudSave
                     {
                         data = await ResolveConflict(data, cloudData);
                     }
-                    
+
                     // Save to cloud
                     await CloudSaveService.Instance.Data.Player.SaveAsync(saveData);
-                    
+
                     Debug.Log($"CloudSave: Successfully saved to cloud (slot {slotNumber})");
                     return;
                 }
@@ -531,21 +531,21 @@ namespace {{project_namespace}}.CloudSave
                     lastException = ex;
                     Debug.LogError($"CloudSave: Save attempt {retryCount + 1} failed - {ex.Message}");
                     retryCount++;
-                    
+
                     if (retryCount < maxRetries)
                     {
                         await Task.Delay((int)(retryDelay * 1000));
                     }
                 }
             }
-            
+
             // All retries failed
             if (priority == SavePriority.Critical)
             {
                 // Queue for later retry if critical
                 QueueOfflineSave(data, slotNumber, priority);
             }
-            
+
             throw lastException ?? new Exception("CloudSave: Failed to save after maximum retries");
         }
 
@@ -567,7 +567,7 @@ namespace {{project_namespace}}.CloudSave
             try
             {
                 PlayerSaveData loadedData = null;
-                
+
                 // Try to load from cloud first
                 if (_isOnline)
                 {
@@ -581,52 +581,52 @@ namespace {{project_namespace}}.CloudSave
                         Debug.LogWarning($"CloudSave: Failed to load from cloud - {ex.Message}");
                     }
                 }
-                
+
                 // Fall back to local cache if cloud load failed
                 if (loadedData == null)
                 {
                     loadedData = LoadFromLocalCache(slotNumber);
                     Debug.Log("CloudSave: Loaded from local cache");
                 }
-                
+
                 OnSyncProgress?.Invoke(0.7f);
-                
+
                 if (loadedData == null)
                 {
                     Debug.LogWarning($"CloudSave: No save data found for slot {slotNumber}");
                     return null;
                 }
-                
+
                 // Decompress if needed
                 if (loadedData.isCompressed)
                 {
                     loadedData = await DecompressSaveData(loadedData);
                 }
-                
+
                 // Decrypt if needed
                 if (useEncryption)
                 {
                     loadedData = await DecryptSaveData(loadedData);
                 }
-                
+
                 OnSyncProgress?.Invoke(0.9f);
-                
+
                 // Validate loaded data
                 if (!ValidateSaveData(loadedData))
                 {
                     throw new Exception("Loaded save data is corrupted");
                 }
-                
+
                 // Migrate if needed
                 loadedData = await MigrateSaveData(loadedData);
-                
+
                 OnSyncProgress?.Invoke(1f);
-                
+
                 _currentSaveData = loadedData;
                 _lastSyncTime = DateTime.UtcNow;
-                
+
                 OnLoadCompleted?.Invoke(loadedData);
-                
+
                 Debug.Log($"CloudSave: Game loaded successfully from slot {slotNumber}");
                 return loadedData;
             }
@@ -646,16 +646,16 @@ namespace {{project_namespace}}.CloudSave
         {
             var saveKey = GetSaveKey(slotNumber);
             var keys = new HashSet<string> { saveKey, $"{saveKey}_metadata" };
-            
+
             var response = await CloudSaveService.Instance.Data.Player.LoadAsync(keys);
-            
+
             if (response.TryGetValue(saveKey, out var saveItem))
             {
                 var data = saveItem.Value.GetAs<PlayerSaveData>();
                 data.cloudTimestamp = DateTime.UtcNow;
                 return data;
             }
-            
+
             return null;
         }
 
@@ -663,11 +663,11 @@ namespace {{project_namespace}}.CloudSave
         {
             if (!data.isCompressed || data.customData == null)
                 return data;
-            
+
             if (data.customData.TryGetValue("compressed_data", out var compressedBase64))
             {
                 var compressedBytes = Convert.FromBase64String(compressedBase64.ToString());
-                
+
                 using (var input = new MemoryStream(compressedBytes))
                 using (var gzip = new GZipStream(input, CompressionMode.Decompress))
                 using (var output = new MemoryStream())
@@ -677,7 +677,7 @@ namespace {{project_namespace}}.CloudSave
                     return JsonConvert.DeserializeObject<PlayerSaveData>(json);
                 }
             }
-            
+
             return data;
         }
 
@@ -697,15 +697,15 @@ namespace {{project_namespace}}.CloudSave
             // No conflict if cloud data is older
             if (cloudData.lastSaved < localData.lastSaved)
                 return false;
-            
+
             // Check sync versions
             if (cloudData.syncVersion != localData.syncVersion)
                 return true;
-            
+
             // Check device ID to detect multi-device conflicts
             if (cloudData.deviceId != localData.deviceId)
                 return true;
-            
+
             return false;
         }
 
@@ -718,32 +718,32 @@ namespace {{project_namespace}}.CloudSave
                 conflictDetectedTime = DateTime.UtcNow,
                 strategy = defaultConflictStrategy
             };
-            
+
             OnConflictDetected?.Invoke(conflict);
-            
+
             switch (conflict.strategy)
             {
                 case ConflictData.ConflictResolutionStrategy.UseLocal:
                     Debug.Log("CloudSave: Conflict resolved - using local data");
                     return localData;
-                    
+
                 case ConflictData.ConflictResolutionStrategy.UseCloud:
                     Debug.Log("CloudSave: Conflict resolved - using cloud data");
                     return cloudData;
-                    
+
                 case ConflictData.ConflictResolutionStrategy.UseNewest:
                     var newest = localData.lastSaved > cloudData.lastSaved ? localData : cloudData;
                     Debug.Log($"CloudSave: Conflict resolved - using newest ({newest.lastSaved})");
                     return newest;
-                    
+
                 case ConflictData.ConflictResolutionStrategy.UseMerged:
                     Debug.Log("CloudSave: Conflict resolved - merging data");
                     return await MergeSaveData(localData, cloudData);
-                    
+
                 case ConflictData.ConflictResolutionStrategy.AskUser:
                     Debug.Log("CloudSave: Conflict detected - waiting for user decision");
                     return await ShowConflictDialog(localData, cloudData);
-                    
+
                 default:
                     return localData;
             }
@@ -758,23 +758,23 @@ namespace {{project_namespace}}.CloudSave
                 lastSaved = DateTime.UtcNow,
                 deviceId = SystemInfo.deviceUniqueIdentifier
             };
-            
+
             // Merge profile - use most recent
-            merged.profile = localData.profile.lastPlayDate > cloudData.profile.lastPlayDate ? 
+            merged.profile = localData.profile.lastPlayDate > cloudData.profile.lastPlayDate ?
                 localData.profile : cloudData.profile;
-            
+
             // Merge progression - use highest progress
             merged.progression = MergeProgression(localData.progression, cloudData.progression);
-            
+
             // Merge inventory - combine items
             merged.inventory = MergeInventory(localData.inventory, cloudData.inventory);
-            
+
             // Merge settings - use most recent
             merged.settings = localData.settings;
-            
+
             // Merge statistics - use highest values
             merged.statistics = MergeStatistics(localData.statistics, cloudData.statistics);
-            
+
             Debug.Log("CloudSave: Data merged successfully");
             return merged;
         }
@@ -792,13 +792,13 @@ namespace {{project_namespace}}.CloudSave
                 bestScores = new Dictionary<string, int>(),
                 starRatings = new Dictionary<string, int>()
             };
-            
+
             // Merge level progress
             foreach (var level in local.levelProgress)
             {
                 merged.levelProgress[level.Key] = level.Value;
             }
-            
+
             foreach (var level in cloud.levelProgress)
             {
                 if (!merged.levelProgress.ContainsKey(level.Key))
@@ -817,14 +817,14 @@ namespace {{project_namespace}}.CloudSave
                         localProg.stars = level.Value.stars;
                 }
             }
-            
+
             // Merge unlocked levels
             merged.unlockedLevels.AddRange(local.unlockedLevels);
             merged.unlockedLevels.AddRange(cloud.unlockedLevels);
             merged.unlockedLevels = new List<string>(new HashSet<string>(merged.unlockedLevels));
-            
+
             // [[LLM: Complete merge logic for other progression fields]]
-            
+
             return merged;
         }
 
@@ -838,13 +838,13 @@ namespace {{project_namespace}}.CloudSave
                 unlockedSkins = new List<string>(),
                 unlockedCharacters = new List<string>()
             };
-            
+
             // Merge currencies - use higher values
             foreach (var currency in local.currencies)
             {
                 merged.currencies[currency.Key] = currency.Value;
             }
-            
+
             foreach (var currency in cloud.currencies)
             {
                 if (!merged.currencies.ContainsKey(currency.Key))
@@ -852,9 +852,9 @@ namespace {{project_namespace}}.CloudSave
                 else
                     merged.currencies[currency.Key] = Math.Max(merged.currencies[currency.Key], currency.Value);
             }
-            
+
             // [[LLM: Complete inventory merge logic]]
-            
+
             return merged;
         }
 
@@ -878,7 +878,7 @@ namespace {{project_namespace}}.CloudSave
             // - Last save time for each
             // - Key differences (level, progress, etc.)
             // - Options: Keep Local, Keep Cloud, or Cancel
-            
+
             await Task.CompletedTask;
             return localData; // Default to local for now
         }
@@ -890,7 +890,7 @@ namespace {{project_namespace}}.CloudSave
         private async Task<PlayerSaveData> MigrateSaveData(PlayerSaveData data)
         {
             var currentVersion = new SaveDataVersion { major = 1, minor = 0, patch = 0 };
-            
+
             if (data.version == null)
             {
                 // Very old save without versioning
@@ -907,16 +907,16 @@ namespace {{project_namespace}}.CloudSave
                 // Minor version upgrade
                 data = await MigrateMinorVersion(data, currentVersion);
             }
-            
+
             return data;
         }
 
         private async Task<PlayerSaveData> MigrateFromLegacy(PlayerSaveData data)
         {
             Debug.Log("CloudSave: Migrating from legacy save format");
-            
+
             // [[LLM: Implement legacy migration based on old save structure]]
-            
+
             await Task.CompletedTask;
             return data;
         }
@@ -924,9 +924,9 @@ namespace {{project_namespace}}.CloudSave
         private async Task<PlayerSaveData> MigrateMinorVersion(PlayerSaveData data, SaveDataVersion targetVersion)
         {
             Debug.Log($"CloudSave: Migrating from {data.version.GetVersionString()} to {targetVersion.GetVersionString()}");
-            
+
             // [[LLM: Implement minor version migrations]]
-            
+
             data.version = targetVersion;
             await Task.CompletedTask;
             return data;
@@ -945,7 +945,7 @@ namespace {{project_namespace}}.CloudSave
                 PlayerPrefs.SetString(key, json);
                 PlayerPrefs.SetString($"{key}_backup", json); // Keep backup
                 PlayerPrefs.Save();
-                
+
                 Debug.Log($"CloudSave: Saved to local cache (slot {slotNumber})");
             }
             catch (Exception ex)
@@ -960,13 +960,13 @@ namespace {{project_namespace}}.CloudSave
             {
                 var key = $"save_slot_{slotNumber}";
                 var json = PlayerPrefs.GetString(key, "");
-                
+
                 if (string.IsNullOrEmpty(json))
                 {
                     // Try backup
                     json = PlayerPrefs.GetString($"{key}_backup", "");
                 }
-                
+
                 if (!string.IsNullOrEmpty(json))
                 {
                     return JsonConvert.DeserializeObject<PlayerSaveData>(json);
@@ -976,7 +976,7 @@ namespace {{project_namespace}}.CloudSave
             {
                 Debug.LogError($"CloudSave: Failed to load from local cache - {ex.Message}");
             }
-            
+
             return null;
         }
 
@@ -1006,7 +1006,7 @@ namespace {{project_namespace}}.CloudSave
                 Priority = priority,
                 RetryCount = 0
             };
-            
+
             _offlineQueue.Enqueue(operation);
             Debug.Log($"CloudSave: Queued offline save (queue size: {_offlineQueue.Count})");
         }
@@ -1015,13 +1015,13 @@ namespace {{project_namespace}}.CloudSave
         {
             if (!_isOnline || _offlineQueue.Count == 0)
                 return;
-            
+
             Debug.Log($"CloudSave: Processing {_offlineQueue.Count} offline saves");
-            
+
             while (_offlineQueue.Count > 0)
             {
                 var operation = _offlineQueue.Dequeue();
-                
+
                 try
                 {
                     var saveData = new Dictionary<string, object>
@@ -1030,14 +1030,14 @@ namespace {{project_namespace}}.CloudSave
                         { "offline_save", true },
                         { "queued_time", operation.Timestamp.ToString("O") }
                     };
-                    
+
                     await CloudSaveService.Instance.Data.Player.SaveAsync(saveData);
                     Debug.Log($"CloudSave: Offline save synced successfully");
                 }
                 catch (Exception ex)
                 {
                     Debug.LogError($"CloudSave: Failed to sync offline save - {ex.Message}");
-                    
+
                     operation.RetryCount++;
                     if (operation.RetryCount < maxRetries)
                     {
@@ -1051,7 +1051,7 @@ namespace {{project_namespace}}.CloudSave
         {
             bool wasOnline = _isOnline;
             _isOnline = Application.internetReachability != NetworkReachability.NotReachable;
-            
+
             if (!wasOnline && _isOnline)
             {
                 Debug.Log("CloudSave: Connection restored, processing offline queue");
@@ -1072,7 +1072,7 @@ namespace {{project_namespace}}.CloudSave
         {
             if (_saveSlots.TryGetValue(slotNumber, out var metadata))
                 return metadata;
-            
+
             return new SaveSlotMetadata
             {
                 slotNumber = slotNumber,
@@ -1085,28 +1085,28 @@ namespace {{project_namespace}}.CloudSave
         {
             var key = $"save_slot_{slotNumber}_metadata";
             var json = PlayerPrefs.GetString(key, "");
-            
+
             if (!string.IsNullOrEmpty(json))
             {
                 return JsonConvert.DeserializeObject<SaveSlotMetadata>(json);
             }
-            
+
             return null;
         }
 
         private void UpdateSlotMetadata(int slotNumber, PlayerSaveData data)
         {
             var metadata = GetSlotMetadata(slotNumber);
-            
+
             metadata.inUse = true;
             metadata.modifiedDate = DateTime.UtcNow;
             metadata.playerLevel = data.profile?.playerLevel ?? 0;
             metadata.progressPercentage = CalculateProgressPercentage(data);
             metadata.isCloudSynced = _isOnline;
             metadata.saveSize = EstimateSaveSize(data);
-            
+
             _saveSlots[slotNumber] = metadata;
-            
+
             // Save metadata locally
             var key = $"save_slot_{slotNumber}_metadata";
             PlayerPrefs.SetString(key, JsonConvert.SerializeObject(metadata));
@@ -1115,11 +1115,11 @@ namespace {{project_namespace}}.CloudSave
         private float CalculateProgressPercentage(PlayerSaveData data)
         {
             if (data.progression == null) return 0f;
-            
+
             // [[LLM: Calculate actual progress based on game structure]]
             int totalLevels = 100; // Example
             int completedLevels = data.progression.completedLevels?.Count ?? 0;
-            
+
             return (float)completedLevels / totalLevels * 100f;
         }
 
@@ -1132,19 +1132,19 @@ namespace {{project_namespace}}.CloudSave
         private bool ValidateSaveData(PlayerSaveData data)
         {
             if (data == null) return false;
-            
+
             // Check required fields
             if (string.IsNullOrEmpty(data.playerId)) return false;
             if (data.version == null) return false;
-            
+
             // Check data integrity
             if (data.profile == null) return false;
             if (data.progression == null) return false;
-            
+
             // Check for corruption
             if (data.lastSaved > DateTime.UtcNow.AddDays(1)) return false; // Future date
             if (data.lastSaved < DateTime.UtcNow.AddYears(-10)) return false; // Too old
-            
+
             // Check size limits
             var size = EstimateSaveSize(data);
             if (size > maxSaveSize)
@@ -1152,14 +1152,14 @@ namespace {{project_namespace}}.CloudSave
                 Debug.LogWarning($"CloudSave: Save data exceeds size limit ({size} > {maxSaveSize})");
                 return false;
             }
-            
+
             return true;
         }
 
         private void AddToHistory(PlayerSaveData data)
         {
             _saveHistory.Enqueue(data);
-            
+
             while (_saveHistory.Count > MaxHistorySize)
             {
                 _saveHistory.Dequeue();
@@ -1174,10 +1174,10 @@ namespace {{project_namespace}}.CloudSave
         {
             if (!autoSaveEnabled || _isSyncing)
                 return;
-            
+
             if ((DateTime.UtcNow - _lastAutoSaveTime).TotalSeconds < autoSaveInterval)
                 return;
-            
+
             if (_hasUnsyncedChanges)
             {
                 Debug.Log("CloudSave: Auto-saving...");
@@ -1230,17 +1230,17 @@ namespace {{project_namespace}}.CloudSave
         #region Public API
 
         public PlayerSaveData GetCurrentSaveData() => _currentSaveData;
-        
+
         public bool IsSyncing() => _isSyncing;
-        
+
         public bool HasUnsyncedChanges() => _hasUnsyncedChanges;
-        
+
         public DateTime GetLastSyncTime() => _lastSyncTime;
-        
+
         public int GetOfflineQueueSize() => _offlineQueue.Count;
-        
+
         public Dictionary<int, SaveSlotMetadata> GetSaveSlots() => new Dictionary<int, SaveSlotMetadata>(_saveSlots);
-        
+
         public async Task<bool> DeleteSaveSlot(int slotNumber)
         {
             try
@@ -1248,23 +1248,23 @@ namespace {{project_namespace}}.CloudSave
                 // Delete from cloud
                 if (_isOnline)
                 {
-                    var keys = new HashSet<string> 
-                    { 
-                        GetSaveKey(slotNumber), 
-                        $"{GetSaveKey(slotNumber)}_metadata" 
+                    var keys = new HashSet<string>
+                    {
+                        GetSaveKey(slotNumber),
+                        $"{GetSaveKey(slotNumber)}_metadata"
                     };
                     await CloudSaveService.Instance.Data.Player.DeleteAsync(keys);
                 }
-                
+
                 // Delete from local cache
                 PlayerPrefs.DeleteKey($"save_slot_{slotNumber}");
                 PlayerPrefs.DeleteKey($"save_slot_{slotNumber}_backup");
                 PlayerPrefs.DeleteKey($"save_slot_{slotNumber}_metadata");
                 PlayerPrefs.Save();
-                
+
                 // Update metadata
                 _saveSlots.Remove(slotNumber);
-                
+
                 Debug.Log($"CloudSave: Deleted save slot {slotNumber}");
                 return true;
             }
@@ -1298,7 +1298,7 @@ namespace {{project_namespace}}.CloudSave
             {
                 var json = await File.ReadAllTextAsync(filePath);
                 var data = JsonConvert.DeserializeObject<PlayerSaveData>(json);
-                
+
                 if (ValidateSaveData(data))
                 {
                     _currentSaveData = data;
@@ -1306,7 +1306,7 @@ namespace {{project_namespace}}.CloudSave
                     Debug.Log($"CloudSave: Imported save data from {filePath}");
                     return true;
                 }
-                
+
                 Debug.LogError("CloudSave: Imported save data validation failed");
                 return false;
             }
@@ -1344,7 +1344,7 @@ namespace {{project_namespace}}.CloudSave
             if (_instance == this)
             {
                 CancelInvoke();
-                
+
                 // Final save attempt
                 if (_hasUnsyncedChanges)
                 {

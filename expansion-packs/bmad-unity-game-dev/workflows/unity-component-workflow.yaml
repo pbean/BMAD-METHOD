@@ -1,0 +1,139 @@
+workflow:
+  id: unity-component-workflow
+  name: Unity Component-Based Development Workflow
+  description: >-
+    Universal workflow for Unity development focusing on component-based architecture patterns.
+    Guides teams through component design, MonoBehaviour implementation, and testing phases.
+    Applicable to both 2D and 3D Unity projects with emphasis on modular, testable code architecture.
+  type: development
+  project_types:
+    - unity-2d-game
+    - unity-3d-game
+    - unity-mobile
+    - unity-vr
+    - unity-ar
+    - unity-enterprise
+    - unity-simulation
+
+  sequence:
+    - agent: game-architect
+      collaborates_with: game-designer
+      phase: component-design
+      creates: component-architecture.md
+      tasks:
+        - component-architecture
+        - interface-design
+      optional_steps:
+        - dependency_injection_planning
+        - component_communication_design
+      notes: "Design component-based architecture with clear interfaces and separation of concerns. TODO: Create tasks component-architecture, interface-design. SAVE OUTPUT: Copy architecture to docs/architecture/"
+
+    - agent: game-developer
+      phase: component-implementation
+      creates: component-implementations.md
+      requires: component-architecture.md
+      tasks:
+        - monobehaviour-creation
+        - scriptableobject-setup
+      optional_steps:
+        - custom_property_drawers
+        - component_lifecycle_management
+      notes: "Implement Unity components following MonoBehaviour patterns and ScriptableObject data architecture. TODO: Create tasks monobehaviour-creation, scriptableobject-setup. SAVE OUTPUT: Copy implementation docs to docs/components/"
+
+    - agent: game-developer
+      phase: component-testing
+      creates: component-test-suite.md
+      requires: component-implementations.md
+      tasks:
+        - playmode-tests
+        - integration-tests
+      optional_steps:
+        - edit_mode_tests
+        - performance_tests
+      notes: "Create comprehensive test suite for component behavior and integration. TODO: Create tasks playmode-tests, integration-tests. SAVE OUTPUT: Copy test documentation to docs/testing/"
+
+  flow_diagram: |
+    ```mermaid
+    graph TD
+        A[Start: Unity Component Project] --> B[game-architect + game-designer: Component Design]
+        B --> C[Define Component Architecture]
+        C --> D[Design Component Interfaces]
+        D --> E[game-developer: Component Implementation]
+        E --> F[Create MonoBehaviour Components]
+        F --> G[Setup ScriptableObject Data]
+        G --> H[game-developer: Component Testing]
+        H --> I[Implement Play Mode Tests]
+        I --> J[Create Integration Tests]
+        J --> K[Component Development Complete]
+
+        B -.-> B1[Optional: Dependency Injection Planning]
+        B -.-> B2[Optional: Component Communication Design]
+        E -.-> E1[Optional: Custom Property Drawers]
+        E -.-> E2[Optional: Component Lifecycle Management]
+        H -.-> H1[Optional: Edit Mode Tests]
+        H -.-> H2[Optional: Performance Tests]
+
+        style K fill:#90EE90
+        style B fill:#FFE4B5
+        style E fill:#87CEEB
+        style H fill:#DDA0DD
+    ```
+
+  decision_guidance:
+    when_to_use:
+      - Building modular Unity systems for any game type
+      - Projects requiring clean component architecture
+      - Teams emphasizing code reusability and maintainability
+      - Unity projects with complex gameplay systems
+      - Enterprise Unity applications requiring robust testing
+      - Educational projects teaching Unity best practices
+      - Projects needing component-based design patterns
+
+  handoff_prompts:
+    design_to_implementation: "Component architecture designed with clear interfaces and patterns. Save as docs/architecture/, then implement MonoBehaviour components and ScriptableObject data."
+    implementation_to_testing: "Component implementations complete with MonoBehaviour and ScriptableObject systems. Save as docs/components/, then create comprehensive test suite."
+    testing_complete: "Component test suite implemented with play mode and integration tests. Save as docs/testing/. Component-based development workflow complete."
+
+  unity_component_patterns:
+    monobehaviour_best_practices:
+      - Single Responsibility Principle for each component
+      - Proper Unity lifecycle method usage (Awake, Start, Update, etc.)
+      - Efficient Update/FixedUpdate implementations
+      - Component dependency management through [RequireComponent]
+    scriptableobject_patterns:
+      - Data-only ScriptableObjects for configuration
+      - Event-based ScriptableObjects for decoupled communication
+      - Runtime sets for dynamic object management
+      - Scriptable architecture for modular systems
+    testing_strategies:
+      - Play Mode tests for runtime behavior validation
+      - Integration tests for component interaction
+      - Mock objects for isolated component testing
+      - Performance tests for critical component operations
+
+  architecture_principles:
+    separation_of_concerns:
+      - Clear division between data, logic, and presentation
+      - Component composition over inheritance
+      - Interface-based programming for testability
+      - Event-driven communication patterns
+    scalability:
+      - Modular component design for easy extension
+      - Performance-conscious component architecture
+      - Memory-efficient component lifecycle management
+      - Reusable component libraries
+
+  success_criteria:
+    design_complete:
+      - Component architecture clearly defined and documented
+      - Interface contracts established for all major systems
+      - Component communication patterns documented
+    implementation_complete:
+      - MonoBehaviour components follow Unity best practices
+      - ScriptableObject data architecture implemented
+      - Component interactions working as designed
+    testing_complete:
+      - Play mode tests validate runtime component behavior
+      - Integration tests verify component interactions
+      - Test coverage adequate for critical component functionality
+      - Component architecture proven through testing

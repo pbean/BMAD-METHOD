@@ -1,0 +1,144 @@
+workflow:
+  id: unity-editor-workflow
+  name: Unity Editor-Integrated Development Workflow
+  description: >-
+    Workflow focused on visual development within Unity Editor using built-in tools and custom editor extensions.
+    Emphasizes Unity's visual scripting, animator systems, custom inspectors, and editor-native development.
+    Ideal for teams preferring visual development and rapid iteration within Unity Editor.
+  type: development
+  project_types:
+    - unity-visual-game
+    - unity-prototype
+    - unity-educational
+    - unity-vr
+    - unity-ar
+    - unity-mobile
+    - unity-indie
+
+  sequence:
+    - agent: game-developer
+      phase: editor-setup
+      creates: editor-integration.md
+      tasks:
+        - unity-editor-integration
+        - custom-inspector-creation
+      optional_steps:
+        - editor_window_development
+        - custom_gizmos_setup
+      notes: "Set up Unity Editor integration with custom inspectors and editor tools for visual development. SAVE OUTPUT: Copy setup docs to docs/editor/"
+
+    - agent: game-designer
+      collaborates_with: game-developer
+      phase: visual-development
+      creates: visual-systems.md
+      requires: editor-integration.md
+      tasks:
+        - unity-visual-scripting-setup
+        - animator-setup
+      optional_steps:
+        - timeline_integration
+        - cinemachine_setup
+      notes: "Implement visual development systems using Unity's Visual Scripting, Animator, and other visual tools. TODO: Create task animator-setup. SAVE OUTPUT: Copy visual system docs to docs/visual/"
+
+    - agent: game-developer
+      phase: in-editor-testing
+      creates: editor-testing-framework.md
+      requires: visual-systems.md
+      tasks:
+        - editor-validation
+        - play-mode-testing
+      optional_steps:
+        - automated_editor_testing
+        - visual_validation_tools
+      notes: "Create editor-based testing and validation systems for visual development workflow. TODO: Create tasks editor-validation, play-mode-testing. SAVE OUTPUT: Copy testing docs to docs/testing/"
+
+  flow_diagram: |
+    ```mermaid
+    graph TD
+        A[Start: Unity Editor Project] --> B[game-developer: Editor Setup]
+        B --> C[Setup Unity Editor Integration]
+        C --> D[Create Custom Inspectors]
+        D --> E[game-designer + game-developer: Visual Development]
+        E --> F[Configure Visual Scripting]
+        F --> G[Setup Animator Systems]
+        G --> H[game-developer: In-Editor Testing]
+        H --> I[Implement Editor Validation]
+        I --> J[Setup Play Mode Testing]
+        J --> K[Editor Development Complete]
+
+        B -.-> B1[Optional: Editor Window Development]
+        B -.-> B2[Optional: Custom Gizmos Setup]
+        E -.-> E1[Optional: Timeline Integration]
+        E -.-> E2[Optional: Cinemachine Setup]
+        H -.-> H1[Optional: Automated Editor Testing]
+        H -.-> H2[Optional: Visual Validation Tools]
+
+        style K fill:#90EE90
+        style B fill:#FFE4B5
+        style E fill:#FFB6C1
+        style H fill:#87CEEB
+    ```
+
+  decision_guidance:
+    when_to_use:
+      - Teams preferring visual development over coding
+      - Rapid prototyping and iteration workflows
+      - Educational projects teaching Unity concepts
+      - Projects with non-programmer team members
+      - VR/AR development requiring visual tools
+      - Game jams and time-constrained development
+      - Projects emphasizing Unity's native visual tools
+
+  handoff_prompts:
+    setup_to_visual: "Editor integration complete with custom inspectors and tools. Save as docs/editor/, then implement visual development systems using Unity's visual tools."
+    visual_to_testing: "Visual development systems implemented with Visual Scripting and Animator. Save as docs/visual/, then create editor-based testing and validation."
+    testing_complete: "Editor testing framework implemented with validation and play mode testing. Save as docs/testing/. Editor-integrated development workflow complete."
+
+  unity_editor_features:
+    visual_scripting:
+      - Flow graphs for visual logic implementation
+      - State graphs for behavior state machines
+      - Custom units for project-specific functionality
+      - Debugging and profiling visual scripts
+    animator_systems:
+      - Animation state machines with visual transitions
+      - Animation blending and layering
+      - Parameter-driven animation control
+      - Animation events and callbacks
+    custom_editor_tools:
+      - Custom property drawers for enhanced Inspector
+      - Editor windows for workflow-specific tools
+      - Scene view extensions with custom handles
+      - Automated validation and testing tools
+
+  visual_development_patterns:
+    inspector_customization:
+      - Custom property drawers for complex data types
+      - Conditional property display with PropertyAttribute
+      - Reorderable lists for array/list management
+      - Custom editor layouts for improved workflow
+    visual_scripting_architecture:
+      - Modular flow graphs for reusable logic
+      - Data flow patterns for visual programming
+      - Event-driven visual script communication
+      - Integration between visual scripts and C# code
+    animator_best_practices:
+      - State machine organization and naming conventions
+      - Parameter management for animation control
+      - Animation clip optimization and compression
+      - Animator controller debugging and profiling
+
+  success_criteria:
+    setup_complete:
+      - Unity Editor integration configured and functional
+      - Custom inspectors enhancing development workflow
+      - Editor tools accessible and intuitive for team use
+    visual_development_complete:
+      - Visual Scripting systems implemented and working
+      - Animator systems configured with proper state machines
+      - Visual development tools integrated seamlessly
+    testing_complete:
+      - Editor validation ensuring visual system quality
+      - Play mode testing validating runtime behavior
+      - Visual development workflow proven through testing
+      - Team can efficiently develop using Unity Editor tools

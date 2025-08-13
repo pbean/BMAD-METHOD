@@ -1,0 +1,149 @@
+workflow:
+  id: unity-2d-workflow
+  name: Unity 2D Game Development Workflow
+  description: >-
+    Specialized workflow for Unity 2D game development focusing on 2D-specific Unity systems
+    including tilemaps, 2D lighting, sprite animation, 2D physics, and performance optimization.
+    Guides teams through 2D-specific setup, animation pipeline, implementation, and optimization phases.
+  type: development
+  project_types:
+    - unity-2d-game
+    - mobile-2d-game
+    - pixel-art-game
+    - platformer
+    - indie-2d
+    - 2d-puzzle-game
+    - side-scroller
+
+  sequence:
+    - agent: game-architect
+      phase: 2d-setup
+      creates: 2d-setup-architecture.md
+      tasks:
+        - unity-tilemap-setup
+        - unity-2d-lighting-setup
+      optional_steps:
+        - 2d_rendering_pipeline_analysis
+        - tilemap_performance_planning
+      notes: "Set up Unity 2D foundation: tilemap systems, 2D rendering pipeline, and lighting. SAVE OUTPUT: Copy setup documentation to docs/2d-setup/"
+
+    - agent: game-developer
+      collaborates_with: game-designer
+      phase: 2d-animation
+      creates: 2d-animation-system.md
+      requires: 2d-setup-architecture.md
+      tasks:
+        - unity-2d-animation-setup
+        - sprite-library-creation
+      optional_steps:
+        - animation_timeline_setup
+        - sprite_skin_configuration
+      notes: "Implement 2D animation pipeline with Unity's 2D Animation package, sprite libraries, and bone-based animation. TODO: Create task sprite-library-creation. SAVE OUTPUT: Copy animation documentation to docs/animation/"
+
+    - agent: game-developer
+      phase: 2d-implementation
+      creates: 2d-core-systems.md
+      requires: 2d-animation-system.md
+      tasks:
+        - 2d-physics-setup
+        - pixel-perfect-camera
+      optional_steps:
+        - 2d_effector_integration
+        - composite_collider_optimization
+      notes: "Implement core 2D gameplay systems: 2D Physics, pixel-perfect rendering, and camera systems. TODO: Create tasks 2d-physics-setup, pixel-perfect-camera. SAVE OUTPUT: Copy implementation docs to docs/systems/"
+
+    - agent: game-developer
+      phase: 2d-optimization
+      creates: 2d-optimization-report.md
+      requires: 2d-core-systems.md
+      tasks:
+        - sprite-atlasing
+        - 2d-performance-profiling
+      optional_steps:
+        - texture_streaming_setup
+        - 2d_batching_optimization
+      notes: "Optimize 2D game performance: sprite atlasing, texture optimization, and 2D-specific profiling. TODO: Create tasks sprite-atlasing, 2d-performance-profiling. SAVE OUTPUT: Copy optimization report to docs/optimization/"
+
+  flow_diagram: |
+    ```mermaid
+    graph TD
+        A[Start: Unity 2D Game Project] --> B[game-architect: 2D Setup Phase]
+        B --> C[Configure Tilemap Systems]
+        C --> D[Setup 2D Lighting Pipeline]
+        D --> E[game-developer + game-designer: 2D Animation Phase]
+        E --> F[Configure 2D Animation Package]
+        F --> G[Create Sprite Libraries & Bone Rigs]
+        G --> H[game-developer: 2D Implementation Phase]
+        H --> I[Setup 2D Physics Systems]
+        I --> J[Configure Pixel-Perfect Camera]
+        J --> K[game-developer: 2D Optimization Phase]
+        K --> L[Implement Sprite Atlasing]
+        L --> M[2D Performance Profiling & Tuning]
+        M --> N[2D Development Complete]
+
+        B -.-> B1[Optional: 2D Rendering Analysis]
+        B -.-> B2[Optional: Tilemap Performance Planning]
+        E -.-> E1[Optional: Animation Timeline Setup]
+        E -.-> E2[Optional: Sprite Skin Configuration]
+        H -.-> H1[Optional: 2D Effector Integration]
+        H -.-> H2[Optional: Composite Collider Optimization]
+        K -.-> K1[Optional: Texture Streaming Setup]
+        K -.-> K2[Optional: 2D Batching Optimization]
+
+        style N fill:#90EE90
+        style B fill:#FFE4B5
+        style E fill:#FFB6C1
+        style H fill:#87CEEB
+        style K fill:#DDA0DD
+    ```
+
+  decision_guidance:
+    when_to_use:
+      - Developing Unity 2D games with tile-based environments
+      - Projects requiring 2D animation and sprite management
+      - Mobile 2D games needing performance optimization
+      - Pixel art games requiring pixel-perfect rendering
+      - 2D platformers or side-scrolling games
+      - Games using Unity's 2D rendering pipeline
+      - Projects with complex 2D lighting requirements
+
+  handoff_prompts:
+    architect_to_animation: "2D setup complete with tilemap and lighting systems configured. Save documentation as docs/2d-setup/, then implement 2D animation pipeline."
+    animation_to_implementation: "2D animation systems ready with sprite libraries and bone rigs. Save as docs/animation/, then implement core 2D physics and camera systems."
+    implementation_to_optimization: "Core 2D systems implemented with physics and pixel-perfect camera. Save as docs/systems/, then optimize performance with atlasing and profiling."
+    optimization_complete: "2D optimization complete with sprite atlasing and performance tuning. Save report as docs/optimization/. 2D development workflow finished."
+
+  unity_2d_best_practices:
+    rendering:
+      - Use Unity's 2D Renderer for optimal 2D performance
+      - Configure Pixel Perfect Camera for crisp pixel art
+      - Implement proper sprite sorting layers and order
+      - Optimize texture import settings for 2D sprites
+    animation:
+      - Use 2D Animation package for bone-based animation
+      - Create reusable sprite libraries for character variants
+      - Implement efficient animation state machines
+      - Optimize animation clip compression
+    performance:
+      - Implement sprite atlasing to reduce draw calls
+      - Use object pooling for frequently spawned 2D objects
+      - Profile 2D-specific performance metrics
+      - Optimize 2D physics calculations and collision detection
+
+  success_criteria:
+    setup_complete:
+      - Tilemap systems configured and working
+      - 2D lighting pipeline established
+      - 2D rendering pipeline optimized for project needs
+    animation_complete:
+      - 2D Animation package integrated and configured
+      - Sprite libraries created for all character assets
+      - Bone-based animation system working smoothly
+    implementation_complete:
+      - 2D physics systems responding correctly
+      - Pixel-perfect camera rendering crisp visuals
+      - Core 2D gameplay mechanics functional
+    optimization_complete:
+      - Sprite atlasing reducing draw calls effectively
+      - Performance profiling shows stable frame rates
+      - 2D-specific optimizations applied and validated

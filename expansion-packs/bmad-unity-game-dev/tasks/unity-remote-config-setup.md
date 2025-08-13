@@ -32,7 +32,7 @@ namespace {{project_namespace}}.RemoteConfig
     /// Comprehensive configuration schema with type safety and validation
     /// Reference: https://docs.unity.com/remote-config/
     /// </summary>
-    
+
     [Serializable]
     public class ConfigurationSchema
     {
@@ -42,32 +42,32 @@ namespace {{project_namespace}}.RemoteConfig
         {
             [Range(0.1f, 10f)]
             public float difficultyMultiplier = 1.0f;
-            
+
             [Range(1, 1000)]
             public int playerStartHealth = 100;
-            
+
             [Range(1, 100)]
             public int playerBaseDamage = 10;
-            
+
             [Range(0.5f, 5f)]
             public float enemyHealthScaling = 1.0f;
-            
+
             [Range(0.5f, 5f)]
             public float enemyDamageScaling = 1.0f;
-            
+
             [Range(0.1f, 10f)]
             public float experienceMultiplier = 1.0f;
-            
+
             [Range(0.1f, 10f)]
             public float goldMultiplier = 1.0f;
-            
+
             [Range(0.01f, 1f)]
             public float dropRateMultiplier = 1.0f;
-            
+
             public Dictionary<string, float> weaponDamageModifiers;
             public Dictionary<string, float> enemyTypeModifiers;
             public Dictionary<int, LevelBalanceConfig> levelSpecificBalance;
-            
+
             [Serializable]
             public class LevelBalanceConfig
             {
@@ -78,7 +78,7 @@ namespace {{project_namespace}}.RemoteConfig
                 public Dictionary<string, float> specificModifiers;
             }
         }
-        
+
         // Feature Flags Configuration
         [Serializable]
         public class FeatureFlags
@@ -93,26 +93,26 @@ namespace {{project_namespace}}.RemoteConfig
             public bool cloudSaveEnabled = true;
             public bool analyticsEnabled = true;
             public bool adsEnabled = true;
-            
+
             // Feature rollout percentages (0-100)
             public int newFeatureRolloutPercentage = 0;
             public int experimentalFeaturePercentage = 0;
-            
+
             // Feature variant flags
             public string uiVariant = "default"; // default, modern, classic
             public string tutorialVariant = "guided"; // guided, hints, none
             public string progressionSystem = "linear"; // linear, branching, open
-            
+
             // Platform-specific flags
             public bool mobileSpecificFeatures = true;
             public bool consoleSpecificFeatures = true;
             public bool pcSpecificFeatures = true;
-            
+
             // Time-gated features
             public DateTime featureUnlockDate;
             public DateTime featureExpireDate;
         }
-        
+
         // Monetization Configuration
         [Serializable]
         public class MonetizationConfig
@@ -124,20 +124,20 @@ namespace {{project_namespace}}.RemoteConfig
             public int rewardedAdCooldown = 300; // Seconds
             public bool showBannerAds = false;
             public string adProvider = "unity"; // unity, admob, ironsource
-            
+
             // IAP configuration
             public bool inAppPurchasesEnabled = true;
             public float globalPriceMultiplier = 1.0f;
             public Dictionary<string, float> productPriceOverrides;
             public Dictionary<string, bool> productAvailability;
             public List<SpecialOffer> activeOffers;
-            
+
             // Economy configuration
             public int dailyBonusAmount = 100;
             public int levelCompletionReward = 50;
             public float watchAdRewardMultiplier = 2.0f;
             public Dictionary<string, int> currencyExchangeRates;
-            
+
             [Serializable]
             public class SpecialOffer
             {
@@ -150,7 +150,7 @@ namespace {{project_namespace}}.RemoteConfig
                 public string targetSegment;
             }
         }
-        
+
         // A/B Testing Configuration
         [Serializable]
         public class ABTestConfig
@@ -158,7 +158,7 @@ namespace {{project_namespace}}.RemoteConfig
             public string activeExperiment = "none";
             public string experimentGroup = "control";
             public Dictionary<string, ExperimentConfig> experiments;
-            
+
             [Serializable]
             public class ExperimentConfig
             {
@@ -173,7 +173,7 @@ namespace {{project_namespace}}.RemoteConfig
                 public float minimumSampleSize;
                 public float confidenceLevel;
             }
-            
+
             [Serializable]
             public class ExperimentVariant
             {
@@ -183,7 +183,7 @@ namespace {{project_namespace}}.RemoteConfig
                 public Dictionary<string, object> parameters;
             }
         }
-        
+
         // Live Ops Configuration
         [Serializable]
         public class LiveOpsConfig
@@ -192,19 +192,19 @@ namespace {{project_namespace}}.RemoteConfig
             public List<LiveEvent> activeEvents;
             public string currentSeason = "default";
             public int seasonPassLevel = 1;
-            
+
             // Messages
             public List<InGameMessage> messages;
             public string maintenanceMessage = "";
             public bool isMaintenanceMode = false;
             public DateTime nextMaintenanceWindow;
-            
+
             // Content updates
             public List<ContentUpdate> availableUpdates;
             public bool forceUpdate = false;
             public string minimumVersion = "1.0.0";
             public string recommendedVersion = "1.0.0";
-            
+
             [Serializable]
             public class LiveEvent
             {
@@ -217,7 +217,7 @@ namespace {{project_namespace}}.RemoteConfig
                 public List<string> rewards;
                 public bool isActive;
             }
-            
+
             [Serializable]
             public class InGameMessage
             {
@@ -231,7 +231,7 @@ namespace {{project_namespace}}.RemoteConfig
                 public int displayDuration;
                 public string targetSegment;
             }
-            
+
             public enum MessagePriority
             {
                 Low,
@@ -239,7 +239,7 @@ namespace {{project_namespace}}.RemoteConfig
                 High,
                 Critical
             }
-            
+
             [Serializable]
             public class ContentUpdate
             {
@@ -251,7 +251,7 @@ namespace {{project_namespace}}.RemoteConfig
                 public bool isRequired;
             }
         }
-        
+
         // Performance Configuration
         [Serializable]
         public class PerformanceConfig
@@ -261,25 +261,25 @@ namespace {{project_namespace}}.RemoteConfig
             public bool autoAdjustQuality = true;
             public int targetFrameRate = 60;
             public float renderScale = 1.0f;
-            
+
             // LOD settings
             public float[] lodDistances = { 50f, 100f, 200f };
             public float lodBias = 1.0f;
-            
+
             // Memory management
             public int maxMemoryUsageMB = 512;
             public bool aggressiveGC = false;
             public int textureStreamingBudgetMB = 256;
-            
+
             // Network settings
             public int maxConcurrentDownloads = 3;
             public int downloadTimeoutSeconds = 30;
             public int apiCallTimeoutSeconds = 10;
             public int maxRetries = 3;
-            
+
             // Platform-specific overrides
             public Dictionary<string, PlatformPerformanceConfig> platformOverrides;
-            
+
             [Serializable]
             public class PlatformPerformanceConfig
             {
@@ -290,7 +290,7 @@ namespace {{project_namespace}}.RemoteConfig
                 public int memoryBudgetMB;
             }
         }
-        
+
         // Debug Configuration
         [Serializable]
         public class DebugConfig
@@ -336,37 +336,37 @@ namespace {{project_namespace}}.RemoteConfig
         [SerializeField] private float fetchInterval = 300f; // 5 minutes
         [SerializeField] private bool cacheEnabled = true;
         [SerializeField] private int cacheExpirationMinutes = 60;
-        
+
         [Header("Fallback Settings")]
         [SerializeField] private TextAsset defaultConfigJson;
         [SerializeField] private bool useHardcodedFallback = true;
-        
+
         // Current configuration
         private ConfigurationSchema _currentConfig;
         private ConfigurationSchema _fallbackConfig;
         private ConfigurationSchema _cachedConfig;
-        
+
         // Feature flags cache
         private Dictionary<string, bool> _featureFlags;
         private Dictionary<string, string> _featureVariants;
-        
+
         // A/B testing
         private string _currentExperiment;
         private string _experimentGroup;
         private Dictionary<string, object> _experimentParameters;
-        
+
         // Configuration state
         private bool _isInitialized;
         private bool _isFetching;
         private DateTime _lastFetchTime;
         private DateTime _cacheTimestamp;
-        
+
         // Events
         public event Action<ConfigurationSchema> OnConfigUpdated;
         public event Action<string, bool> OnFeatureFlagChanged;
         public event Action<string> OnConfigFetchFailed;
         public event Action<Dictionary<string, object>> OnExperimentAssigned;
-        
+
         // Real-time updates
         private bool _realtimeUpdatesEnabled;
         private WebSocketConnection _webSocketConnection;
@@ -390,25 +390,25 @@ namespace {{project_namespace}}.RemoteConfig
             _featureFlags = new Dictionary<string, bool>();
             _featureVariants = new Dictionary<string, string>();
             _experimentParameters = new Dictionary<string, object>();
-            
+
             // Load fallback configuration
             LoadFallbackConfig();
-            
+
             // Load cached configuration
             LoadCachedConfig();
-            
+
             // Apply initial configuration
             ApplyConfiguration(_cachedConfig ?? _fallbackConfig);
-            
+
             // Setup Remote Config
             await SetupRemoteConfig();
-            
+
             // Start auto-fetch if enabled
             if (autoFetch)
             {
                 InvokeRepeating(nameof(FetchConfigPeriodically), fetchInterval, fetchInterval);
             }
-            
+
             _isInitialized = true;
         }
 
@@ -423,25 +423,25 @@ namespace {{project_namespace}}.RemoteConfig
                 {
                     await UnityServices.InitializeAsync();
                 }
-                
+
                 // Wait for authentication
                 if (!AuthenticationService.Instance.IsSignedIn)
                 {
                     await AuthenticationService.Instance.SignInAnonymouslyAsync();
                 }
-                
+
                 // Subscribe to fetch completion
                 RemoteConfigService.Instance.FetchCompleted += OnFetchCompleted;
-                
+
                 // Set user attributes
                 SetUserAttributes();
-                
+
                 // Set app attributes
                 SetAppAttributes();
-                
+
                 // Initial fetch
                 await FetchConfiguration();
-                
+
                 Debug.Log("RemoteConfig: Setup completed successfully");
             }
             catch (Exception ex)
@@ -465,10 +465,10 @@ namespace {{project_namespace}}.RemoteConfig
                 { "screenResolution", $"{Screen.width}x{Screen.height}" },
                 { "graphicsDevice", SystemInfo.graphicsDeviceName }
             };
-            
+
             // Add custom user attributes
             AddCustomUserAttributes(userAttributes);
-            
+
             // [[LLM: Add game-specific user attributes like player level, segment, etc.]]
         }
 
@@ -484,7 +484,7 @@ namespace {{project_namespace}}.RemoteConfig
                 { "sessionCount", GetSessionCount() },
                 { "crashCount", GetCrashCount() }
             };
-            
+
             // [[LLM: Add additional app attributes]]
         }
 
@@ -494,20 +494,20 @@ namespace {{project_namespace}}.RemoteConfig
             attributes["playerLevel"] = GetPlayerLevel();
             attributes["daysPlayed"] = GetDaysPlayed();
             attributes["totalPlaytime"] = GetTotalPlaytime();
-            
+
             // Monetization
             attributes["isPayer"] = IsPayingPlayer();
             attributes["totalSpent"] = GetTotalSpent();
             attributes["lastPurchaseDate"] = GetLastPurchaseDate();
-            
+
             // Engagement
             attributes["sessionLength"] = GetAverageSessionLength();
             attributes["retentionDays"] = GetRetentionDays();
-            
+
             // Segmentation
             attributes["playerSegment"] = GetPlayerSegment();
             attributes["cohort"] = GetPlayerCohort();
-            
+
             // [[LLM: Implement getter methods based on game systems]]
         }
 
@@ -536,22 +536,22 @@ namespace {{project_namespace}}.RemoteConfig
             try
             {
                 Debug.Log("RemoteConfig: Fetching configuration...");
-                
+
                 // Create fetch options
                 var options = new FetchOptions
                 {
                     EnvironmentID = {{environment_id}}, // Set in Unity Dashboard
                     SetEnvironmentID = true
                 };
-                
+
                 // Fetch with attributes
                 await RemoteConfigService.Instance.FetchConfigsAsync(
                     GetUserAttributes(),
                     GetAppAttributes()
                 );
-                
+
                 _lastFetchTime = DateTime.UtcNow;
-                
+
                 Debug.Log("RemoteConfig: Fetch completed successfully");
                 return true;
             }
@@ -559,7 +559,7 @@ namespace {{project_namespace}}.RemoteConfig
             {
                 Debug.LogError($"RemoteConfig: Fetch failed - {ex.Message}");
                 OnConfigFetchFailed?.Invoke(ex.Message);
-                
+
                 // Fall back to cached or default config
                 ApplyConfiguration(_cachedConfig ?? _fallbackConfig);
                 return false;
@@ -575,23 +575,23 @@ namespace {{project_namespace}}.RemoteConfig
             if (response.status == ConfigRequestStatus.Success)
             {
                 Debug.Log($"RemoteConfig: Config fetched - Origin: {response.requestOrigin}");
-                
+
                 // Parse configuration
                 var newConfig = ParseConfiguration(response.config);
-                
+
                 // Check for changes
                 if (HasConfigurationChanged(newConfig))
                 {
                     // Apply new configuration
                     ApplyConfiguration(newConfig);
-                    
+
                     // Save to cache
                     SaveToCache(newConfig);
-                    
+
                     // Notify listeners
                     OnConfigUpdated?.Invoke(newConfig);
                 }
-                
+
                 // Handle experiments
                 ProcessExperiments(response.config);
             }
@@ -605,28 +605,28 @@ namespace {{project_namespace}}.RemoteConfig
         private ConfigurationSchema ParseConfiguration(RuntimeConfig config)
         {
             var schema = new ConfigurationSchema();
-            
+
             // Parse game balance
             schema.GameBalance = ParseGameBalance(config);
-            
+
             // Parse feature flags
             schema.FeatureFlags = ParseFeatureFlags(config);
-            
+
             // Parse monetization
             schema.Monetization = ParseMonetization(config);
-            
+
             // Parse A/B testing
             schema.ABTesting = ParseABTesting(config);
-            
+
             // Parse live ops
             schema.LiveOps = ParseLiveOps(config);
-            
+
             // Parse performance
             schema.Performance = ParsePerformance(config);
-            
+
             // Parse debug
             schema.Debug = ParseDebug(config);
-            
+
             return schema;
         }
 
@@ -659,20 +659,20 @@ namespace {{project_namespace}}.RemoteConfig
                 cloudSaveEnabled = config.GetBool("feature_cloud_save", true),
                 analyticsEnabled = config.GetBool("feature_analytics", true),
                 adsEnabled = config.GetBool("feature_ads", true),
-                
+
                 // Rollout percentages
                 newFeatureRolloutPercentage = config.GetInt("rollout_new_feature", 0),
                 experimentalFeaturePercentage = config.GetInt("rollout_experimental", 0),
-                
+
                 // Variants
                 uiVariant = config.GetString("variant_ui", "default"),
                 tutorialVariant = config.GetString("variant_tutorial", "guided"),
                 progressionSystem = config.GetString("variant_progression", "linear")
             };
-            
+
             // Cache feature flags for quick access
             CacheFeatureFlags(flags);
-            
+
             return flags;
         }
 
@@ -680,7 +680,7 @@ namespace {{project_namespace}}.RemoteConfig
         {
             _featureFlags.Clear();
             _featureVariants.Clear();
-            
+
             // Cache boolean flags
             _featureFlags["new_tutorial"] = flags.newTutorialEnabled;
             _featureFlags["advanced_graphics"] = flags.advancedGraphicsEnabled;
@@ -692,7 +692,7 @@ namespace {{project_namespace}}.RemoteConfig
             _featureFlags["cloud_save"] = flags.cloudSaveEnabled;
             _featureFlags["analytics"] = flags.analyticsEnabled;
             _featureFlags["ads"] = flags.adsEnabled;
-            
+
             // Cache variants
             _featureVariants["ui"] = flags.uiVariant;
             _featureVariants["tutorial"] = flags.tutorialVariant;
@@ -709,7 +709,7 @@ namespace {{project_namespace}}.RemoteConfig
             {
                 return enabled;
             }
-            
+
             // Check rollout percentage
             return IsInRollout(featureName);
         }
@@ -717,7 +717,7 @@ namespace {{project_namespace}}.RemoteConfig
         private bool IsInRollout(string featureName)
         {
             int rolloutPercentage = 0;
-            
+
             switch (featureName)
             {
                 case "new_feature":
@@ -727,21 +727,21 @@ namespace {{project_namespace}}.RemoteConfig
                     rolloutPercentage = _currentConfig?.FeatureFlags?.experimentalFeaturePercentage ?? 0;
                     break;
             }
-            
+
             if (rolloutPercentage <= 0) return false;
             if (rolloutPercentage >= 100) return true;
-            
+
             // Use stable hash of user ID for consistent rollout
             var userId = AuthenticationService.Instance.PlayerId;
             var hash = GetStableHash(userId + featureName);
             var userPercentage = hash % 100;
-            
+
             return userPercentage < rolloutPercentage;
         }
 
         public string GetFeatureVariant(string featureName)
         {
-            return _featureVariants.TryGetValue(featureName, out string variant) ? 
+            return _featureVariants.TryGetValue(featureName, out string variant) ?
                 variant : "default";
         }
 
@@ -749,7 +749,7 @@ namespace {{project_namespace}}.RemoteConfig
         {
             _featureFlags[featureName] = enabled;
             OnFeatureFlagChanged?.Invoke(featureName, enabled);
-            
+
             Debug.Log($"RemoteConfig: Feature '{featureName}' overridden to {enabled}");
         }
 
@@ -772,17 +772,17 @@ namespace {{project_namespace}}.RemoteConfig
         {
             _currentExperiment = config.GetString("experiment_id", "none");
             _experimentGroup = config.GetString("experiment_group", "control");
-            
+
             if (_currentExperiment != "none")
             {
                 Debug.Log($"RemoteConfig: Assigned to experiment '{_currentExperiment}' group '{_experimentGroup}'");
-                
+
                 // Load experiment parameters
                 LoadExperimentParameters(config);
-                
+
                 // Notify listeners
                 OnExperimentAssigned?.Invoke(_experimentParameters);
-                
+
                 // Track assignment in analytics
                 TrackExperimentAssignment();
             }
@@ -791,12 +791,12 @@ namespace {{project_namespace}}.RemoteConfig
         private void LoadExperimentParameters(RuntimeConfig config)
         {
             _experimentParameters.Clear();
-            
+
             // Load all parameters prefixed with experiment group
             var prefix = $"exp_{_experimentGroup}_";
-            
+
             // [[LLM: Parse experiment-specific parameters based on experiment design]]
-            
+
             // Example parameters
             _experimentParameters["button_color"] = config.GetString($"{prefix}button_color", "blue");
             _experimentParameters["reward_multiplier"] = config.GetFloat($"{prefix}reward_multiplier", 1.0f);
@@ -812,12 +812,12 @@ namespace {{project_namespace}}.RemoteConfig
                 { "experiment_group", _experimentGroup },
                 { "assignment_time", DateTime.UtcNow.ToString("O") }
             };
-            
+
             // Track via analytics manager if available
         }
 
         public string GetExperimentGroup() => _experimentGroup;
-        
+
         public T GetExperimentParameter<T>(string parameterName, T defaultValue = default)
         {
             if (_experimentParameters.TryGetValue(parameterName, out object value))
@@ -831,7 +831,7 @@ namespace {{project_namespace}}.RemoteConfig
                     Debug.LogWarning($"RemoteConfig: Failed to convert experiment parameter '{parameterName}' to type {typeof(T)}");
                 }
             }
-            
+
             return defaultValue;
         }
 
@@ -842,7 +842,7 @@ namespace {{project_namespace}}.RemoteConfig
         public List<ConfigurationSchema.LiveOpsConfig.LiveEvent> GetActiveEvents()
         {
             var activeEvents = new List<ConfigurationSchema.LiveOpsConfig.LiveEvent>();
-            
+
             if (_currentConfig?.LiveOps?.activeEvents != null)
             {
                 var now = DateTime.UtcNow;
@@ -854,7 +854,7 @@ namespace {{project_namespace}}.RemoteConfig
                     }
                 }
             }
-            
+
             return activeEvents;
         }
 
@@ -868,16 +868,16 @@ namespace {{project_namespace}}.RemoteConfig
         {
             if (_currentConfig?.LiveOps?.messages == null || _currentConfig.LiveOps.messages.Count == 0)
                 return null;
-            
+
             var now = DateTime.UtcNow;
-            var eligibleMessages = _currentConfig.LiveOps.messages.FindAll(m => 
-                m.displayTime <= now && 
+            var eligibleMessages = _currentConfig.LiveOps.messages.FindAll(m =>
+                m.displayTime <= now &&
                 IsInTargetSegment(m.targetSegment)
             );
-            
+
             if (eligibleMessages.Count == 0)
                 return null;
-            
+
             // Sort by priority and return highest
             eligibleMessages.Sort((a, b) => b.priority.CompareTo(a.priority));
             return eligibleMessages[0];
@@ -887,7 +887,7 @@ namespace {{project_namespace}}.RemoteConfig
         {
             if (string.IsNullOrEmpty(segment) || segment == "all")
                 return true;
-            
+
             // [[LLM: Implement segment matching based on player data]]
             return GetPlayerSegment() == segment;
         }
@@ -911,9 +911,9 @@ namespace {{project_namespace}}.RemoteConfig
             // Immediate feature disable
             _featureFlags[feature] = false;
             OnFeatureFlagChanged?.Invoke(feature, false);
-            
+
             Debug.LogWarning($"RemoteConfig: Kill switch activated for feature '{feature}'");
-            
+
             // Disable related systems
             switch (feature)
             {
@@ -959,31 +959,31 @@ namespace {{project_namespace}}.RemoteConfig
                 Debug.LogError("RemoteConfig: Cannot apply null configuration");
                 return;
             }
-            
+
             _currentConfig = config;
-            
+
             // Apply game balance
             ApplyGameBalance(config.GameBalance);
-            
+
             // Apply feature flags
             ApplyFeatureFlags(config.FeatureFlags);
-            
+
             // Apply monetization
             ApplyMonetization(config.Monetization);
-            
+
             // Apply performance settings
             ApplyPerformanceSettings(config.Performance);
-            
+
             // Apply debug settings
             ApplyDebugSettings(config.Debug);
-            
+
             Debug.Log("RemoteConfig: Configuration applied successfully");
         }
 
         private void ApplyGameBalance(ConfigurationSchema.GameBalanceConfig balance)
         {
             if (balance == null) return;
-            
+
             // [[LLM: Apply balance changes to game systems]]
             // Example:
             // GameManager.Instance.SetDifficultyMultiplier(balance.difficultyMultiplier);
@@ -994,7 +994,7 @@ namespace {{project_namespace}}.RemoteConfig
         private void ApplyFeatureFlags(ConfigurationSchema.FeatureFlags flags)
         {
             if (flags == null) return;
-            
+
             // Check for changes and notify
             foreach (var flag in _featureFlags)
             {
@@ -1009,28 +1009,28 @@ namespace {{project_namespace}}.RemoteConfig
         private void ApplyMonetization(ConfigurationSchema.MonetizationConfig monetization)
         {
             if (monetization == null) return;
-            
+
             // [[LLM: Apply monetization settings to ad and IAP systems]]
         }
 
         private void ApplyPerformanceSettings(ConfigurationSchema.PerformanceConfig performance)
         {
             if (performance == null) return;
-            
+
             // Apply quality settings
             QualitySettings.SetQualityLevel(performance.defaultQualityLevel);
             Application.targetFrameRate = performance.targetFrameRate;
-            
+
             // Apply LOD settings
             QualitySettings.lodBias = performance.lodBias;
-            
+
             // [[LLM: Apply other performance settings]]
         }
 
         private void ApplyDebugSettings(ConfigurationSchema.DebugConfig debug)
         {
             if (debug == null) return;
-            
+
             // [[LLM: Apply debug settings]]
         }
 
@@ -1041,17 +1041,17 @@ namespace {{project_namespace}}.RemoteConfig
         private void SaveToCache(ConfigurationSchema config)
         {
             if (!cacheEnabled) return;
-            
+
             try
             {
                 var json = JsonConvert.SerializeObject(config);
                 PlayerPrefs.SetString("remote_config_cache", json);
                 PlayerPrefs.SetString("remote_config_timestamp", DateTime.UtcNow.ToString("O"));
                 PlayerPrefs.Save();
-                
+
                 _cachedConfig = config;
                 _cacheTimestamp = DateTime.UtcNow;
-                
+
                 Debug.Log("RemoteConfig: Configuration cached successfully");
             }
             catch (Exception ex)
@@ -1063,20 +1063,20 @@ namespace {{project_namespace}}.RemoteConfig
         private void LoadCachedConfig()
         {
             if (!cacheEnabled) return;
-            
+
             try
             {
                 var json = PlayerPrefs.GetString("remote_config_cache", "");
                 if (!string.IsNullOrEmpty(json))
                 {
                     _cachedConfig = JsonConvert.DeserializeObject<ConfigurationSchema>(json);
-                    
+
                     var timestampStr = PlayerPrefs.GetString("remote_config_timestamp", "");
                     if (DateTime.TryParse(timestampStr, out DateTime timestamp))
                     {
                         _cacheTimestamp = timestamp;
                     }
-                    
+
                     Debug.Log("RemoteConfig: Cached configuration loaded");
                 }
             }
@@ -1089,7 +1089,7 @@ namespace {{project_namespace}}.RemoteConfig
         private bool IsCacheValid()
         {
             if (_cachedConfig == null) return false;
-            
+
             var cacheAge = (DateTime.UtcNow - _cacheTimestamp).TotalMinutes;
             return cacheAge < cacheExpirationMinutes;
         }
@@ -1112,7 +1112,7 @@ namespace {{project_namespace}}.RemoteConfig
                     Debug.LogError($"RemoteConfig: Failed to load fallback configuration - {ex.Message}");
                 }
             }
-            
+
             // Hard-coded fallback if JSON fails
             if (_fallbackConfig == null && useHardcodedFallback)
             {
@@ -1146,7 +1146,7 @@ namespace {{project_namespace}}.RemoteConfig
         public void EnableRealtimeUpdates()
         {
             if (_realtimeUpdatesEnabled) return;
-            
+
             _realtimeUpdatesEnabled = true;
             ConnectWebSocket();
         }
@@ -1162,13 +1162,13 @@ namespace {{project_namespace}}.RemoteConfig
             try
             {
                 var newConfig = JsonConvert.DeserializeObject<ConfigurationSchema>(configJson);
-                
+
                 if (HasConfigurationChanged(newConfig))
                 {
                     ApplyConfiguration(newConfig);
                     SaveToCache(newConfig);
                     OnConfigUpdated?.Invoke(newConfig);
-                    
+
                     Debug.Log("RemoteConfig: Real-time configuration update applied");
                 }
             }
@@ -1185,18 +1185,18 @@ namespace {{project_namespace}}.RemoteConfig
         private bool HasConfigurationChanged(ConfigurationSchema newConfig)
         {
             if (_currentConfig == null) return true;
-            
+
             // Compare configurations
             var currentJson = JsonConvert.SerializeObject(_currentConfig);
             var newJson = JsonConvert.SerializeObject(newConfig);
-            
+
             return currentJson != newJson;
         }
 
         private async void FetchConfigPeriodically()
         {
             if (!autoFetch) return;
-            
+
             await FetchConfiguration();
         }
 
@@ -1234,11 +1234,11 @@ namespace {{project_namespace}}.RemoteConfig
         #region Public API
 
         public ConfigurationSchema GetCurrentConfig() => _currentConfig;
-        
+
         public T GetConfigValue<T>(string key, T defaultValue = default)
         {
             var config = RemoteConfigService.Instance.appConfig;
-            
+
             if (typeof(T) == typeof(int))
                 return (T)(object)config.GetInt(key, (int)(object)defaultValue);
             else if (typeof(T) == typeof(float))
@@ -1247,19 +1247,19 @@ namespace {{project_namespace}}.RemoteConfig
                 return (T)(object)config.GetBool(key, (bool)(object)defaultValue);
             else if (typeof(T) == typeof(string))
                 return (T)(object)config.GetString(key, (string)(object)defaultValue);
-            
+
             return defaultValue;
         }
-        
+
         public void ForceConfigRefresh()
         {
             _ = FetchConfiguration(true);
         }
-        
+
         public bool IsInitialized() => _isInitialized;
-        
+
         public bool IsFetching() => _isFetching;
-        
+
         public DateTime GetLastFetchTime() => _lastFetchTime;
 
         #endregion
@@ -1293,12 +1293,12 @@ namespace {{project_namespace}}.RemoteConfig
             if (_instance == this)
             {
                 CancelInvoke();
-                
+
                 if (RemoteConfigService.Instance != null)
                 {
                     RemoteConfigService.Instance.FetchCompleted -= OnFetchCompleted;
                 }
-                
+
                 // Disconnect WebSocket if connected
                 _webSocketConnection?.Disconnect();
             }
@@ -1345,7 +1345,7 @@ public class RemoteConfigTests
     {
         var task = _remoteConfig.FetchConfiguration();
         yield return new WaitUntil(() => task.IsCompleted);
-        
+
         Assert.IsTrue(task.Result);
         Assert.IsNotNull(_remoteConfig.GetCurrentConfig());
     }

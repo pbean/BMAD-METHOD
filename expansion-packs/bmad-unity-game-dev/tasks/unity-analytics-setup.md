@@ -53,21 +53,21 @@ namespace {{project_namespace}}.Analytics
             public const string SESSION_START = "session_start";
             public const string SESSION_END = "session_end";
             public const string FIRST_OPEN = "first_open";
-            
+
             // Gameplay Events
             public const string LEVEL_START = "level_start";
             public const string LEVEL_COMPLETE = "level_complete";
             public const string LEVEL_FAIL = "level_fail";
             public const string LEVEL_RESTART = "level_restart";
             public const string LEVEL_SKIP = "level_skip";
-            
+
             // Progression Events
             public const string TUTORIAL_START = "tutorial_start";
             public const string TUTORIAL_COMPLETE = "tutorial_complete";
             public const string TUTORIAL_SKIP = "tutorial_skip";
             public const string ACHIEVEMENT_UNLOCKED = "achievement_unlocked";
             public const string MILESTONE_REACHED = "milestone_reached";
-            
+
             // Monetization Events
             public const string PURCHASE_INITIATED = "purchase_initiated";
             public const string PURCHASE_COMPLETED = "purchase_completed";
@@ -76,19 +76,19 @@ namespace {{project_namespace}}.Analytics
             public const string AD_CLICKED = "ad_clicked";
             public const string AD_COMPLETED = "ad_completed";
             public const string AD_SKIPPED = "ad_skipped";
-            
+
             // Social Events
             public const string SHARE_INITIATED = "share_initiated";
             public const string SHARE_COMPLETED = "share_completed";
             public const string INVITE_SENT = "invite_sent";
             public const string INVITE_ACCEPTED = "invite_accepted";
-            
+
             // Performance Events
             public const string LOAD_TIME = "load_time";
             public const string FRAME_RATE_DROP = "frame_rate_drop";
             public const string CRASH_DETECTED = "crash_detected";
             public const string ERROR_OCCURRED = "error_occurred";
-            
+
             // [[LLM: Add game-specific events based on game design document]]
         }
 
@@ -101,27 +101,27 @@ namespace {{project_namespace}}.Analytics
             public const string LEVEL_INDEX = "level_index";
             public const string DIFFICULTY = "difficulty";
             public const string GAME_MODE = "game_mode";
-            
+
             // Performance Parameters
             public const string DURATION = "duration_ms";
             public const string SCORE = "score";
             public const string HIGH_SCORE = "high_score";
             public const string ATTEMPTS = "attempts";
             public const string SUCCESS = "success";
-            
+
             // Monetization Parameters
             public const string PRODUCT_ID = "product_id";
             public const string PRICE = "price";
             public const string CURRENCY = "currency";
             public const string TRANSACTION_ID = "transaction_id";
             public const string RECEIPT = "receipt";
-            
+
             // Player Parameters
             public const string PLAYER_LEVEL = "player_level";
             public const string PLAYER_XP = "player_xp";
             public const string PLAYER_SEGMENT = "player_segment";
             public const string AB_TEST_GROUP = "ab_test_group";
-            
+
             // Technical Parameters
             public const string PLATFORM = "platform";
             public const string DEVICE_MODEL = "device_model";
@@ -129,7 +129,7 @@ namespace {{project_namespace}}.Analytics
             public const string APP_VERSION = "app_version";
             public const string BUILD_NUMBER = "build_number";
             public const string CONNECTION_TYPE = "connection_type";
-            
+
             // Error Parameters
             public const string ERROR_CODE = "error_code";
             public const string ERROR_MESSAGE = "error_message";
@@ -185,31 +185,31 @@ namespace {{project_namespace}}.Analytics
         [SerializeField] private int batchSize = 100;
         [SerializeField] private float batchInterval = 30f;
         [SerializeField] private int maxRetries = 3;
-        
+
         [Header("Privacy Settings")]
         [SerializeField] private bool requireConsent = true;
         [SerializeField] private bool anonymizeIpAddress = true;
-        
+
         // Event queue for batching
         private ConcurrentQueue<QueuedEvent> _eventQueue;
         private float _lastBatchTime;
-        
+
         // Session tracking
         private string _sessionId;
         private DateTime _sessionStartTime;
         private Dictionary<string, object> _sessionContext;
-        
+
         // Player segmentation
         private string _playerSegment;
         private string _abTestGroup;
-        
+
         // Privacy and consent
         private bool _hasUserConsent;
         private HashSet<string> _piiFields;
-        
+
         // Performance tracking
         private PerformanceTracker _performanceTracker;
-        
+
         // Event deduplication
         private LRUCache<string, DateTime> _recentEvents;
 
@@ -243,24 +243,24 @@ namespace {{project_namespace}}.Analytics
             _piiFields = new HashSet<string> { "email", "name", "phone", "address" };
             _recentEvents = new LRUCache<string, DateTime>(1000);
             _performanceTracker = new PerformanceTracker();
-            
+
             // Generate session ID
             _sessionId = Guid.NewGuid().ToString();
             _sessionStartTime = DateTime.UtcNow;
-            
+
             // Load consent status
             _hasUserConsent = PlayerPrefs.GetInt("analytics_consent", 0) == 1;
-            
+
             // Start batch processing
             InvokeRepeating(nameof(ProcessEventBatch), batchInterval, batchInterval);
-            
+
             // Track session start
             TrackSessionStart();
         }
 
         #region Core Event Tracking
 
-        public void TrackEvent(string eventName, Dictionary<string, object> parameters = null, 
+        public void TrackEvent(string eventName, Dictionary<string, object> parameters = null,
             EventTaxonomy.Priority priority = EventTaxonomy.Priority.MEDIUM)
         {
             if (!ValidateEvent(eventName, parameters))
@@ -290,10 +290,10 @@ namespace {{project_namespace}}.Analytics
 
             // Enrich parameters
             var enrichedParams = EnrichParameters(parameters);
-            
+
             // Sanitize PII
             enrichedParams = SanitizePII(enrichedParams);
-            
+
             // Queue event
             var queuedEvent = new QueuedEvent
             {
@@ -361,31 +361,31 @@ namespace {{project_namespace}}.Analytics
 
         private Dictionary<string, object> EnrichParameters(Dictionary<string, object> parameters)
         {
-            var enriched = parameters != null ? 
-                new Dictionary<string, object>(parameters) : 
+            var enriched = parameters != null ?
+                new Dictionary<string, object>(parameters) :
                 new Dictionary<string, object>();
 
             // Add session context
             enriched["session_id"] = _sessionId;
             enriched["session_duration"] = (DateTime.UtcNow - _sessionStartTime).TotalSeconds;
-            
+
             // Add player context
             if (!string.IsNullOrEmpty(_playerSegment))
                 enriched[EventTaxonomy.Parameters.PLAYER_SEGMENT] = _playerSegment;
             if (!string.IsNullOrEmpty(_abTestGroup))
                 enriched[EventTaxonomy.Parameters.AB_TEST_GROUP] = _abTestGroup;
-            
+
             // Add technical context
             enriched[EventTaxonomy.Parameters.PLATFORM] = Application.platform.ToString();
             enriched[EventTaxonomy.Parameters.APP_VERSION] = Application.version;
             enriched[EventTaxonomy.Parameters.DEVICE_MODEL] = SystemInfo.deviceModel;
             enriched[EventTaxonomy.Parameters.OS_VERSION] = SystemInfo.operatingSystem;
             enriched[EventTaxonomy.Parameters.CONNECTION_TYPE] = Application.internetReachability.ToString();
-            
+
             // Add performance context
             enriched["fps"] = _performanceTracker.GetAverageFPS();
             enriched["memory_usage_mb"] = _performanceTracker.GetMemoryUsageMB();
-            
+
             // Add custom session context
             foreach (var context in _sessionContext)
             {
@@ -394,7 +394,7 @@ namespace {{project_namespace}}.Analytics
             }
 
             // [[LLM: Add game-specific context enrichment based on current game state]]
-            
+
             return enriched;
         }
 
@@ -422,7 +422,7 @@ namespace {{project_namespace}}.Analytics
         private string HashPII(string value)
         {
             if (string.IsNullOrEmpty(value)) return "";
-            
+
             using (var sha256 = System.Security.Cryptography.SHA256.Create())
             {
                 byte[] bytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(value));
@@ -480,7 +480,7 @@ namespace {{project_namespace}}.Analytics
                 catch (Exception ex)
                 {
                     Debug.LogError($"Analytics: Failed to send event '{evt.EventName}': {ex.Message}");
-                    
+
                     // Retry logic
                     if (evt.RetryCount < maxRetries)
                     {
@@ -497,13 +497,13 @@ namespace {{project_namespace}}.Analytics
         {
             // Custom event recording
             AnalyticsService.Instance.CustomData(evt.EventName, evt.Parameters);
-            
+
             // For critical events, also send to custom backend
             if (evt.Priority == EventTaxonomy.Priority.CRITICAL)
             {
                 await SendToCustomBackend(evt);
             }
-            
+
             if (enableDebugLogging)
                 Debug.Log($"Analytics: Sent event '{evt.EventName}'");
         }
@@ -519,7 +519,7 @@ namespace {{project_namespace}}.Analytics
 
         #region Specialized Event Methods
 
-        public void TrackLevelStart(int levelId, string levelName, string difficulty, 
+        public void TrackLevelStart(int levelId, string levelName, string difficulty,
             Dictionary<string, object> additionalParams = null)
         {
             var parameters = new Dictionary<string, object>
@@ -560,7 +560,7 @@ namespace {{project_namespace}}.Analytics
             TrackEvent(EventTaxonomy.Events.LEVEL_COMPLETE, parameters, EventTaxonomy.Priority.HIGH);
         }
 
-        public void TrackPurchase(string productId, decimal price, string currency, 
+        public void TrackPurchase(string productId, decimal price, string currency,
             string transactionId, Dictionary<string, object> additionalParams = null)
         {
             var parameters = new Dictionary<string, object>
@@ -579,7 +579,7 @@ namespace {{project_namespace}}.Analytics
 
             // Revenue events are critical
             TrackEvent(EventTaxonomy.Events.PURCHASE_COMPLETED, parameters, EventTaxonomy.Priority.CRITICAL);
-            
+
             // Also track to Unity's revenue tracking
             AnalyticsService.Instance.Transaction(new TransactionParameters
             {
@@ -590,7 +590,7 @@ namespace {{project_namespace}}.Analytics
             });
         }
 
-        public void TrackError(string errorCode, string errorMessage, string stackTrace, 
+        public void TrackError(string errorCode, string errorMessage, string stackTrace,
             string severity = "ERROR")
         {
             var parameters = new Dictionary<string, object>
@@ -631,7 +631,7 @@ namespace {{project_namespace}}.Analytics
             };
 
             TrackEvent(EventTaxonomy.Events.SESSION_START, parameters, EventTaxonomy.Priority.HIGH);
-            
+
             PlayerPrefs.SetInt("session_count", PlayerPrefs.GetInt("session_count", 0) + 1);
         }
 
@@ -645,7 +645,7 @@ namespace {{project_namespace}}.Analytics
             };
 
             TrackEvent(EventTaxonomy.Events.SESSION_END, parameters, EventTaxonomy.Priority.HIGH);
-            
+
             PlayerPrefs.SetString("last_session_end", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
         }
 
@@ -708,7 +708,7 @@ namespace {{project_namespace}}.Analytics
         {
             _hasUserConsent = hasConsent;
             PlayerPrefs.SetInt("analytics_consent", hasConsent ? 1 : 0);
-            
+
             if (hasConsent)
             {
                 TrackEvent("consent_granted", null, EventTaxonomy.Priority.CRITICAL);
@@ -792,7 +792,7 @@ namespace {{project_namespace}}.Analytics
         {
             float currentFPS = 1f / Time.deltaTime;
             _fpsHistory.Enqueue(currentFPS);
-            
+
             if (_fpsHistory.Count > 60)
                 _fpsHistory.Dequeue();
         }
@@ -1135,13 +1135,13 @@ namespace {{project_namespace}}.Analytics
         [SerializeField] private bool enforceGDPR = true;
         [SerializeField] private bool enforceCCPA = true;
         [SerializeField] private bool enforceC0PPA = false;
-        
+
         [Header("UI References")]
         [SerializeField] private GameObject consentDialog;
         [SerializeField] private Toggle analyticsToggle;
         [SerializeField] private Toggle advertisingToggle;
         [SerializeField] private Toggle personalizationToggle;
-        
+
         private ConsentStatus _consentStatus;
         private DateTime _consentTimestamp;
         private string _consentVersion = "1.0";
@@ -1181,27 +1181,27 @@ namespace {{project_namespace}}.Analytics
         {
             // Check user location
             string country = GetUserCountry();
-            
+
             bool requiresConsent = false;
-            
+
             // GDPR (EU countries)
             if (enforceGDPR && IsEUCountry(country))
             {
                 requiresConsent = true;
             }
-            
+
             // CCPA (California)
             if (enforceCCPA && country == "US" && GetUserState() == "CA")
             {
                 requiresConsent = true;
             }
-            
+
             // COPPA (Under 13)
             if (enforceC0PPA && IsUserUnder13())
             {
                 requiresConsent = true;
             }
-            
+
             if (requiresConsent && !HasValidConsent())
             {
                 ShowConsentDialog();
@@ -1233,18 +1233,18 @@ namespace {{project_namespace}}.Analytics
                 country = GetUserCountry(),
                 ipAddress = GetAnonymizedIP()
             };
-            
+
             SaveConsentStatus();
             ApplyConsentSettings();
-            
+
             if (consentDialog != null)
             {
                 consentDialog.SetActive(false);
                 Time.timeScale = 1; // Resume game
             }
-            
+
             // Track consent event
-            AdvancedAnalyticsManager.Instance.TrackEvent("privacy_consent_given", 
+            AdvancedAnalyticsManager.Instance.TrackEvent("privacy_consent_given",
                 new Dictionary<string, object>
                 {
                     { "analytics", _consentStatus.analytics },
@@ -1264,10 +1264,10 @@ namespace {{project_namespace}}.Analytics
                 timestamp = DateTime.UtcNow,
                 version = _consentVersion
             };
-            
+
             SaveConsentStatus();
             ApplyConsentSettings();
-            
+
             if (consentDialog != null)
             {
                 consentDialog.SetActive(false);
@@ -1282,7 +1282,7 @@ namespace {{project_namespace}}.Analytics
             {
                 AdvancedAnalyticsManager.Instance.SetUserConsent(_consentStatus.analytics);
             }
-            
+
             // [[LLM: Apply advertising consent to ad SDKs]]
             // [[LLM: Apply personalization consent to recommendation systems]]
         }
@@ -1297,35 +1297,35 @@ namespace {{project_namespace}}.Analytics
                 { "request_time", DateTime.UtcNow },
                 { "data_categories", new[] { "analytics", "gameplay", "purchases" } }
             };
-            
-            AdvancedAnalyticsManager.Instance.TrackEvent("privacy_data_export_requested", 
+
+            AdvancedAnalyticsManager.Instance.TrackEvent("privacy_data_export_requested",
                 exportData, EventTaxonomy.Priority.HIGH);
-            
+
             // [[LLM: Implement actual data export to user]]
         }
 
         public void RequestDataDeletion()
         {
             AdvancedAnalyticsManager.Instance.RequestDataDeletion();
-            
+
             // Clear local data
             PlayerPrefs.DeleteAll();
-            
+
             // Track deletion request
-            AdvancedAnalyticsManager.Instance.TrackEvent("privacy_data_deletion_requested", 
+            AdvancedAnalyticsManager.Instance.TrackEvent("privacy_data_deletion_requested",
                 null, EventTaxonomy.Priority.CRITICAL);
         }
 
         private bool HasValidConsent()
         {
             if (_consentStatus == null) return false;
-            
+
             // Check if consent version is current
             if (_consentStatus.version != _consentVersion) return false;
-            
+
             // Check if consent is not older than 1 year (GDPR requirement)
             if ((DateTime.UtcNow - _consentStatus.timestamp).Days > 365) return false;
-            
+
             return true;
         }
 
@@ -1359,8 +1359,8 @@ namespace {{project_namespace}}.Analytics
 
         private bool IsEUCountry(string country)
         {
-            string[] euCountries = { "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", 
-                                    "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", 
+            string[] euCountries = { "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI",
+                                    "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU",
                                     "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE" };
             return Array.IndexOf(euCountries, country) >= 0;
         }
@@ -1458,7 +1458,7 @@ public class AnalyticsTests
         // Act
         _funnelTracker.StartFunnel(funnelName, steps);
         yield return new WaitForSeconds(0.1f);
-        
+
         foreach (var step in steps)
         {
             _funnelTracker.CompleteStep(funnelName, step);
@@ -1510,7 +1510,7 @@ public class AnalyticsTests
 
 Create comprehensive documentation in task:
 
-```markdown
+````markdown
 ## Analytics Integration Guide
 
 ### Quick Start
@@ -1523,12 +1523,14 @@ Create comprehensive documentation in task:
 ### Event Tracking Best Practices
 
 #### Event Naming Convention
+
 - Use snake_case for event names
 - Prefix with category (e.g., `gameplay_level_start`)
 - Maximum 32 characters
 - No PII in event names
 
 #### Parameter Guidelines
+
 - Maximum 25 parameters per event
 - Use consistent parameter names across events
 - Include context parameters (level, difficulty, etc.)
@@ -1540,22 +1542,25 @@ Track user journeys through critical paths:
 
 ```csharp
 // Start a funnel
-FunnelTracker.Instance.StartFunnel("onboarding", 
+FunnelTracker.Instance.StartFunnel("onboarding",
     new List<string> { "welcome", "tutorial", "first_game" });
 
 // Complete steps
 FunnelTracker.Instance.CompleteStep("onboarding", "welcome");
 ```
+````
 
 ### Privacy Compliance
 
 #### GDPR Compliance
+
 - Consent required before tracking
 - Data export available on request
 - Data deletion within 30 days
 - Annual consent renewal
 
 #### CCPA Compliance
+
 - Opt-out mechanism provided
 - Do Not Sell option available
 - Data disclosure on request
@@ -1572,6 +1577,7 @@ FunnelTracker.Instance.CompleteStep("onboarding", "welcome");
 Access Unity Dashboard at: https://dashboard.unity3d.com
 
 Configure:
+
 - Custom events and parameters
 - Funnels and conversion tracking
 - User segments and cohorts
@@ -1582,12 +1588,14 @@ Configure:
 ### Troubleshooting
 
 #### Events Not Appearing
+
 1. Check Unity Services initialization
 2. Verify project ID configuration
 3. Check consent status
 4. Review event validation errors in console
 
 #### High Memory Usage
+
 1. Reduce batch size
 2. Increase batch interval
 3. Limit event queue size
@@ -1596,6 +1604,7 @@ Configure:
 ### API Reference
 
 See inline code documentation for detailed API reference.
+
 ```
 
 ### 7. Completion Checklist
@@ -1638,3 +1647,4 @@ See inline code documentation for detailed API reference.
 - Integrates with Unity's native analytics service
 - Extensible for custom analytics providers
 - [[LLM: Adapt implementation based on specific game requirements and monetization strategy]]
+```
