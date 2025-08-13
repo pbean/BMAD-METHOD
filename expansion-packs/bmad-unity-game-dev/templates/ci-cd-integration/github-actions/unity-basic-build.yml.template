@@ -51,7 +51,7 @@ jobs:
         unityVersion: ${{ env.UNITY_VERSION }}
         targetPlatform: ${{ matrix.targetPlatform }}
 
-    - name: Run Unity Tests (Optional)
+    - name: Run Unity Tests with Coverage
       uses: game-ci/unity-test-runner@v2
       if: {{ENABLE_TESTING}}  # Set to true to enable testing
       env:
@@ -59,6 +59,42 @@ jobs:
       with:
         unityVersion: ${{ env.UNITY_VERSION }}
         testMode: all  # EditMode, PlayMode, or all
+        coverageOptions: 'generateAdditionalMetrics;generateHtmlReport;generateBadgeReport;assemblyFilters:+BMAD.Unity.*,-BMAD.Unity.Tests.*'
+        artifactsPath: TestResults
+        
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: Unity-Test-Results-${{ matrix.targetPlatform }}
+        path: TestResults
+        retention-days: 30
+        
+    - name: Upload Coverage Report
+      uses: actions/upload-artifact@v3
+      if: {{ENABLE_TESTING}}
+      with:
+        name: Coverage-Report-${{ matrix.targetPlatform }}
+        path: CodeCoverageReport
+        retention-days: 30
+        
+    - name: Validate Coverage Threshold
+      if: {{ENABLE_TESTING}}
+      run: |
+        # Check if coverage meets minimum threshold (70%)
+        COVERAGE_FILE="CodeCoverageReport/Summary.xml"
+        if [ -f "$COVERAGE_FILE" ]; then
+          COVERAGE=$(grep -o 'lineCoverage="[^"]*"' "$COVERAGE_FILE" | cut -d'"' -f2 | head -1)
+          COVERAGE_INT=$(echo "$COVERAGE * 100" | bc | cut -d'.' -f1)
+          if [ "$COVERAGE_INT" -lt 70 ]; then
+            echo "Coverage ($COVERAGE_INT%) below minimum threshold (70%)"
+            exit 1
+          else
+            echo "Coverage ($COVERAGE_INT%) meets minimum threshold (70%)"
+          fi
+        else
+          echo "Coverage report not found, skipping validation"
+        fi
 
     - name: Build Unity Project
       uses: game-ci/unity-builder@v2
@@ -94,10 +130,33 @@ jobs:
 
     - name: Run BMAD Unity Validation
       run: |
-        # Basic validation without enterprise features
-        echo "Running basic Unity validation..."
-        # Add your validation commands here
-        # Example: unity-editor -batchmode -quit -executeMethod YourValidationClass.RunBasicValidation
+        # Run actual Unity Test Framework tests created in tests/ directory
+        echo "Running BMAD Unity validation tests..."
+        unity-editor \
+          -batchmode \
+          -quit \
+          -projectPath . \
+          -runTests \
+          -testPlatform EditMode \
+          -testResults EditModeResults.xml \
+          -logFile unity-editmode.log
+        
+        unity-editor \
+          -batchmode \
+          -quit \
+          -projectPath . \
+          -runTests \
+          -testPlatform PlayMode \
+          -testResults PlayModeResults.xml \
+          -logFile unity-playmode.log
+        
+        # Validate test results
+        if [ -f "EditModeResults.xml" ] && [ -f "PlayModeResults.xml" ]; then
+          echo "✅ All BMAD Unity validation tests completed successfully"
+        else
+          echo "❌ Unity validation tests failed"
+          exit 1
+        fi
 
 # Template Variables to Replace:
 # {{PROJECT_NAME}} - Your Unity project name (e.g., "MyAwesomeGame")

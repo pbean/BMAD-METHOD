@@ -1,0 +1,32 @@
+{
+  "reportTypes": [
+    "Html",
+    "Badges",
+    "SonarQube"
+  ],
+  "assemblyFilters": [
+    "+BMAD.Unity.*",
+    "-BMAD.Unity.Tests.*",
+    "-Unity.*",
+    "-UnityEngine.*",
+    "-UnityEditor.*"
+  ],
+  "pathFilters": [
+    "+Assets/Scripts/**",
+    "+expansion-packs/bmad-unity-game-dev/**",
+    "-Assets/Scripts/Tests/**",
+    "-**/Tests/**"
+  ],
+  "coverageThreshold": {
+    "linePercentage": 70,
+    "branchPercentage": 65,
+    "methodPercentage": 75
+  },
+  "generateAdditionalMetrics": true,
+  "generateHtmlReport": true,
+  "generateBadgeReport": true,
+  "historyDirectory": "CodeCoverageHistory",
+  "reportDirectory": "CodeCoverageReport",
+  "enableCodeOptimization": false,
+  "verbosityLevel": "Info"
+}

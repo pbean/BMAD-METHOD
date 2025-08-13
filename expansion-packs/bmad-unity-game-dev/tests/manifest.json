@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "com.unity.test-framework": "1.1.33",
+    "com.unity.code-coverage": "1.2.4",
+    "com.unity.performance.profile-analyzer": "1.2.2"
+  },
+  "scopedRegistries": [
+    {
+      "name": "Unity Technologies",
+      "url": "https://packages.unity.com",
+      "scopes": [
+        "com.unity"
+      ]
+    }
+  ],
+  "testables": [
+    "com.bmad.unity.gamedev"
+  ]
+}
