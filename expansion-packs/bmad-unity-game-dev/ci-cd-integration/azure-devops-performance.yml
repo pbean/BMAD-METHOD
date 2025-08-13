@@ -1,0 +1,423 @@
+# Azure DevOps Pipeline for Unity Profiler API automation framework
+# Part of BMAD Unity expansion pack Priority 3 implementation
+# Enterprise-grade performance testing and validation pipeline
+
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+    - feature/*
+  paths:
+    include:
+    - Assets/**
+    - ProjectSettings/**
+    - Packages/**
+
+pr:
+  branches:
+    include:
+    - main
+    - develop
+
+schedules:
+- cron: "0 2 * * *"
+  displayName: Nightly Performance Tests
+  branches:
+    include:
+    - main
+  always: true
+
+variables:
+  UNITY_VERSION: '2022.3.10f1'
+  BUILD_PLATFORM: 'StandaloneWindows64'
+
+stages:
+- stage: PerformanceValidation
+  displayName: 'Unity Performance Validation'
+  jobs:
+  - job: PerformanceTestMatrix
+    displayName: 'Performance Test Matrix'
+    strategy:
+      matrix:
+        Windows_MainMenu:
+          platform: 'StandaloneWindows64'
+          testScene: 'MainMenu'
+          vmImage: 'windows-2022'
+        Windows_Gameplay:
+          platform: 'StandaloneWindows64'  
+          testScene: 'GameplayLevel1'
+          vmImage: 'windows-2022'
+        Android_MainMenu:
+          platform: 'Android'
+          testScene: 'MainMenu'
+          vmImage: 'ubuntu-20.04'
+        iOS_MainMenu:
+          platform: 'iOS'
+          testScene: 'MainMenu'
+          vmImage: 'macos-12'
+          
+    pool:
+      vmImage: $(vmImage)
+      
+    steps:
+    - checkout: self
+      fetchDepth: 0
+      
+    - task: UnityGetProjectVersionV1@1
+      displayName: 'Get Unity Version'
+      
+    - task: UnityActivateLicenseV1@1
+      displayName: 'Activate Unity License'
+      inputs:
+        username: '$(UNITY_USERNAME)'
+        password: '$(UNITY_PASSWORD)'
+        serial: '$(UNITY_SERIAL)'
+
+    - task: Cache@2
+      displayName: 'Cache Unity Library'
+      inputs:
+        key: 'unity-library | "$(Agent.OS)" | $(platform) | $(Build.SourcesDirectory)/Assets/**/* | $(Build.SourcesDirectory)/Packages/**/* | $(Build.SourcesDirectory)/ProjectSettings/**/*'
+        restoreKeys: |
+          unity-library | "$(Agent.OS)" | $(platform)
+          unity-library | "$(Agent.OS)"
+        path: Library
+
+    - task: PowerShell@2
+      displayName: 'Setup Performance Test Environment'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Create performance results directory
+          New-Item -ItemType Directory -Force -Path "$(Build.ArtifactStagingDirectory)/performance-results"
+          
+          # Set environment variables for Unity
+          $env:BMAD_PROFILER_ENABLED = "true"
+          $env:BMAD_TARGET_PLATFORM = "$(platform)"
+          $env:BMAD_TEST_SCENE = "$(testScene)"
+          
+          Write-Host "Performance test environment configured"
+          Write-Host "Platform: $(platform)"
+          Write-Host "Test Scene: $(testScene)"
+
+    - task: UnityBuildV1@1
+      displayName: 'Run Unity Performance Tests'
+      inputs:
+        buildTarget: '$(platform)'
+        unityProjectPath: '$(Build.SourcesDirectory)'
+        outputPath: '$(Build.BinariesDirectory)/build'
+        customParameters: |
+          -quit
+          -batchmode
+          -nographics
+          -executeMethod BMAD.Unity.ProfilerAutomation.UnityProfilerIntegrationManager.RunCIPerformanceTests
+          -testScene $(testScene)
+          -targetPlatform $(platform)
+          -performanceReportPath "$(Build.ArtifactStagingDirectory)/performance-results/"
+          -logFile "$(Build.ArtifactStagingDirectory)/unity-performance-log.txt"
+
+    - task: PowerShell@2
+      displayName: 'Parse Performance Results'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $performanceFile = "$(Build.ArtifactStagingDirectory)/performance-results/performance-report.json"
+          
+          if (Test-Path $performanceFile) {
+            $results = Get-Content $performanceFile | ConvertFrom-Json
+            
+            Write-Host "##vso[task.setvariable variable=PerformancePassed;isOutput=true]$($results.withinThresholds)"
+            Write-Host "##vso[task.setvariable variable=AverageFPS;isOutput=true]$($results.averageFPS)"
+            Write-Host "##vso[task.setvariable variable=MemoryUsage;isOutput=true]$($results.totalMemoryUsed)"
+            
+            # Create performance summary
+            $summary = @{
+              platform = "$(platform)"
+              testScene = "$(testScene)"
+              passed = $results.withinThresholds
+              averageFPS = $results.averageFPS
+              frameTime = $results.averageFrameTime
+              memoryMB = [math]::Round($results.totalMemoryUsed / 1MB, 2)
+              violations = $results.thresholdViolations
+            }
+            
+            $summary | ConvertTo-Json -Depth 3 | Out-File "$(Build.ArtifactStagingDirectory)/performance-summary.json"
+            
+            # Log results
+            Write-Host "Performance Test Results:"
+            Write-Host "  Status: $(if($results.withinThresholds) {'PASSED'} else {'FAILED'})"
+            Write-Host "  Average FPS: $($results.averageFPS)"
+            Write-Host "  Frame Time: $($results.averageFrameTime) ms"
+            Write-Host "  Memory Usage: $([math]::Round($results.totalMemoryUsed / 1MB, 2)) MB"
+            
+            if ($results.thresholdViolations -and $results.thresholdViolations.Length -gt 0) {
+              Write-Host "  Violations:"
+              foreach ($violation in $results.thresholdViolations) {
+                Write-Host "    - $violation"
+              }
+            }
+          } else {
+            Write-Host "##vso[task.logissue type=error]Performance results file not found"
+            Write-Host "##vso[task.setvariable variable=PerformancePassed;isOutput=true]false"
+          }
+      name: ParseResults
+
+    - task: PublishTestResults@2
+      displayName: 'Publish Performance Test Results'
+      condition: always()
+      inputs:
+        testResultsFormat: 'NUnit'
+        testResultsFiles: '$(Build.ArtifactStagingDirectory)/performance-results/**/*.xml'
+        testRunTitle: 'Performance Tests - $(platform) - $(testScene)'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Performance Artifacts'
+      condition: always()
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)/performance-results'
+        artifactName: 'performance-results-$(platform)-$(testScene)'
+
+    - task: PowerShell@2
+      displayName: 'Fail Build on Performance Issues'
+      condition: eq(variables['ParseResults.PerformancePassed'], 'false')
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "##vso[task.logissue type=error]Performance tests failed - check artifacts for details"
+          exit 1
+
+- stage: PerformanceRegression
+  displayName: 'Performance Regression Analysis'
+  dependsOn: PerformanceValidation
+  condition: always()
+  jobs:
+  - job: RegressionAnalysis
+    displayName: 'Analyze Performance Regression'
+    pool:
+      vmImage: 'windows-2022'
+    
+    steps:
+    - checkout: self
+      fetchDepth: 0
+
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download Performance Results'
+      inputs:
+        buildType: 'current'
+        downloadType: 'specific'
+        downloadPath: '$(Build.ArtifactStagingDirectory)/all-results'
+
+    - task: UnityActivateLicenseV1@1
+      displayName: 'Activate Unity License'
+      inputs:
+        username: '$(UNITY_USERNAME)'
+        password: '$(UNITY_PASSWORD)'
+        serial: '$(UNITY_SERIAL)'
+
+    - task: PowerShell@2
+      displayName: 'Consolidate Performance Data'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Consolidate all performance results
+          New-Item -ItemType Directory -Force -Path "$(Build.ArtifactStagingDirectory)/consolidated-results"
+          
+          Get-ChildItem -Path "$(Build.ArtifactStagingDirectory)/all-results" -Recurse -Filter "performance-report.json" | 
+            ForEach-Object { Copy-Item $_.FullName "$(Build.ArtifactStagingDirectory)/consolidated-results/$($_.Directory.Name)-performance-report.json" }
+
+    - task: UnityBuildV1@1
+      displayName: 'Run Regression Analysis'
+      inputs:
+        buildTarget: 'StandaloneWindows64'
+        customParameters: |
+          -quit
+          -batchmode
+          -nographics
+          -executeMethod BMAD.Unity.ProfilerAutomation.UnityProfilerIntegrationManager.AnalyzePerformanceRegression
+          -resultsPath "$(Build.ArtifactStagingDirectory)/consolidated-results/"
+          -outputPath "$(Build.ArtifactStagingDirectory)/regression-analysis/"
+
+    - task: PowerShell@2
+      displayName: 'Generate Regression Report'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $regressionFile = "$(Build.ArtifactStagingDirectory)/regression-analysis/regression-report.json"
+          
+          if (Test-Path $regressionFile) {
+            $report = Get-Content $regressionFile | ConvertFrom-Json
+            
+            # Create markdown report
+            $markdown = @"
+# Performance Regression Report
+
+**Date**: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+**Commit**: $(Build.SourceVersion)
+**Branch**: $(Build.SourceBranch)
+
+## Summary
+
+- **Regressions Detected**: $($report.regressionsDetected.Count)
+- **Overall Status**: $(if($report.regressionsDetected.Count -eq 0) {'✅ No Regressions'} else {'⚠️ Regressions Found'})
+
+"@
+            
+            if ($report.regressionsDetected.Count -gt 0) {
+              $markdown += "`n## Detected Regressions`n`n"
+              foreach ($regression in $report.regressionsDetected) {
+                $markdown += "- **$($regression.scene)** ($($regression.platform)): $($regression.description)`n"
+              }
+            }
+            
+            $markdown | Out-File "$(Build.ArtifactStagingDirectory)/regression-report.md"
+            
+            # Set pipeline variable
+            Write-Host "##vso[task.setvariable variable=RegressionsFound;isOutput=true]$($report.regressionsDetected.Count -gt 0)"
+          }
+      name: RegressionReport
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Regression Analysis'
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)/regression-analysis'
+        artifactName: 'performance-regression-analysis'
+
+- stage: PerformanceBenchmarking
+  displayName: 'Performance Benchmarking'
+  dependsOn: PerformanceValidation
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - job: ComprehensiveBenchmark
+    displayName: 'Comprehensive Performance Benchmark'
+    pool:
+      vmImage: 'windows-2022'
+    
+    steps:
+    - checkout: self
+      
+    - task: UnityActivateLicenseV1@1
+      displayName: 'Activate Unity License'
+      inputs:
+        username: '$(UNITY_USERNAME)'
+        password: '$(UNITY_PASSWORD)'
+        serial: '$(UNITY_SERIAL)'
+
+    - task: UnityBuildV1@1
+      displayName: 'Run Comprehensive Benchmark'
+      inputs:
+        buildTarget: 'StandaloneWindows64'
+        customParameters: |
+          -quit
+          -batchmode
+          -nographics
+          -executeMethod BMAD.Unity.ProfilerAutomation.UnityProfilerIntegrationManager.RunComprehensiveBenchmark
+          -benchmarkDuration 300
+          -outputPath "$(Build.ArtifactStagingDirectory)/benchmark-results/"
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Archive Benchmark Results'
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)/benchmark-results'
+        artifactName: 'performance-benchmark-$(Build.BuildId)'
+
+    - task: PowerShell@2
+      displayName: 'Update Performance Dashboard'
+      condition: succeeded()
+      inputs:
+        targetType: 'inline'
+        script: |
+          $benchmarkFile = "$(Build.ArtifactStagingDirectory)/benchmark-results/benchmark-summary.json"
+          
+          if (Test-Path $benchmarkFile) {
+            # Send results to performance dashboard
+            $headers = @{'Content-Type' = 'application/json'}
+            $body = Get-Content $benchmarkFile -Raw
+            
+            try {
+              Invoke-RestMethod -Uri "$(PERFORMANCE_DASHBOARD_WEBHOOK)" -Method Post -Headers $headers -Body $body
+              Write-Host "Performance dashboard updated successfully"
+            }
+            catch {
+              Write-Host "##vso[task.logissue type=warning]Failed to update performance dashboard: $($_.Exception.Message)"
+            }
+          }
+
+- stage: MobilePerformanceTesting
+  displayName: 'Mobile Performance Testing'
+  dependsOn: PerformanceValidation
+  condition: or(contains(variables['Build.SourceVersionMessage'], '[mobile-test]'), eq(variables['Build.Reason'], 'Schedule'))
+  jobs:
+  - job: MobileTestMatrix
+    displayName: 'Mobile Performance Tests'
+    strategy:
+      matrix:
+        iOS:
+          platform: 'iOS'
+          vmImage: 'macos-12'
+        Android:
+          platform: 'Android'
+          vmImage: 'ubuntu-20.04'
+          
+    pool:
+      vmImage: $(vmImage)
+    
+    steps:
+    - checkout: self
+      
+    - task: UnityActivateLicenseV1@1
+      displayName: 'Activate Unity License'
+      inputs:
+        username: '$(UNITY_USERNAME)'
+        password: '$(UNITY_PASSWORD)'
+        serial: '$(UNITY_SERIAL)'
+
+    - task: UnityBuildV1@1
+      displayName: 'Build Mobile Test Application'
+      inputs:
+        buildTarget: '$(platform)'
+        outputPath: '$(Build.BinariesDirectory)/mobile-build'
+        customParameters: |
+          -quit
+          -batchmode
+          -executeMethod BMAD.Unity.ProfilerAutomation.UnityProfilerIntegrationManager.BuildPerformanceTestApp
+
+    - task: Bash@3
+      displayName: 'Setup Mobile Testing Environment (iOS)'
+      condition: eq(variables['platform'], 'iOS')
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Create iOS simulator
+          xcrun simctl create "iPhone 14" com.apple.CoreSimulator.SimDeviceType.iPhone-14
+          xcrun simctl boot "iPhone 14"
+          echo "iOS simulator ready"
+
+    - task: Bash@3
+      displayName: 'Setup Mobile Testing Environment (Android)'
+      condition: eq(variables['platform'], 'Android')
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Setup Android emulator
+          echo "y" | $ANDROID_HOME/tools/bin/sdkmanager --install "system-images;android-29;google_apis;x86_64"
+          echo "no" | $ANDROID_HOME/tools/bin/avdmanager create avd -n test -k "system-images;android-29;google_apis;x86_64"
+          $ANDROID_HOME/emulator/emulator -avd test -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim &
+          sleep 60
+          echo "Android emulator ready"
+
+    - task: UnityBuildV1@1
+      displayName: 'Run Mobile Performance Tests'
+      inputs:
+        buildTarget: '$(platform)'
+        customParameters: |
+          -quit
+          -batchmode
+          -executeMethod BMAD.Unity.ProfilerAutomation.UnityProfilerIntegrationManager.RunMobilePerformanceTests
+          -platform $(platform)
+          -outputPath "$(Build.ArtifactStagingDirectory)/mobile-performance-results/"
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Mobile Performance Results'
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)/mobile-performance-results'
+        artifactName: 'mobile-performance-$(platform)'
