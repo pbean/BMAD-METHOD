@@ -1,0 +1,390 @@
+// [[LLM: This template creates a comprehensive Unity CustomEditor for game configuration settings.
+// Adapt the following elements based on project needs:
+// - Configuration categories (graphics, audio, gameplay, difficulty)
+// - Validation rules for settings values
+// - Platform-specific configurations
+// - Runtime preview capabilities
+// The template supports nested configurations and automatic validation.]]
+
+using UnityEngine;
+using UnityEditor;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace {{project_namespace}}.Editor
+{
+    /// <summary>
+    /// [[LLM: Custom inspector for {{config_class_name}} ScriptableObject.
+    /// Provides organized sections for different configuration categories,
+    /// validation for settings, and preview capabilities.
+    /// Customize the configuration categories based on your game's needs.]]
+    /// </summary>
+    [CustomEditor(typeof({{config_class_name}}))]
+    public class {{config_class_name}}Inspector : Editor
+    {
+        // [[LLM: SerializedProperties for efficient property access.
+        // Add or remove properties based on your configuration structure.]]
+        private SerializedProperty {{graphics_settings_prop}};
+        private SerializedProperty {{audio_settings_prop}};
+        private SerializedProperty {{gameplay_settings_prop}};
+        private SerializedProperty {{difficulty_settings_prop}};
+        private SerializedProperty {{platform_settings_prop}};
+        
+        // [[LLM: Foldout states for organized inspector sections.
+        // Maintains UI state between inspector refreshes.]]
+        private bool {{graphics_foldout}} = true;
+        private bool {{audio_foldout}} = true;
+        private bool {{gameplay_foldout}} = true;
+        private bool {{difficulty_foldout}} = true;
+        private bool {{platform_foldout}} = true;
+        private bool {{advanced_foldout}} = false;
+        
+        // [[LLM: Validation and preview state management.]]
+        private bool {{show_validation_errors}} = true;
+        private bool {{enable_runtime_preview}} = false;
+        private List<string> {{validation_messages}} = new List<string>();
+        
+        private void OnEnable()
+        {
+            // [[LLM: Initialize SerializedProperties in OnEnable.
+            // This ensures properties are available when inspector is displayed.
+            // Modify property names to match your ScriptableObject structure.]]
+            {{graphics_settings_prop}} = serializedObject.FindProperty("{{graphics_settings_field_name}}");
+            {{audio_settings_prop}} = serializedObject.FindProperty("{{audio_settings_field_name}}");
+            {{gameplay_settings_prop}} = serializedObject.FindProperty("{{gameplay_settings_field_name}}");
+            {{difficulty_settings_prop}} = serializedObject.FindProperty("{{difficulty_settings_field_name}}");
+            {{platform_settings_prop}} = serializedObject.FindProperty("{{platform_settings_field_name}}");
+        }
+        
+        public override void OnInspectorGUI()
+        {
+            // [[LLM: Standard Unity pattern for custom inspectors.
+            // Always call serializedObject.Update() before making changes.]]
+            serializedObject.Update();
+            
+            var config = target as {{config_class_name}};
+            
+            // [[LLM: Header section with configuration overview and validation status.]]
+            DrawHeaderSection(config);
+            
+            EditorGUILayout.Space(10);
+            
+            // [[LLM: Main configuration sections.
+            // Each section is organized in foldout groups for better UX.]]
+            DrawGraphicsSection();
+            DrawAudioSection();
+            DrawGameplaySection();
+            DrawDifficultySection();
+            DrawPlatformSection();
+            
+            EditorGUILayout.Space(10);
+            
+            // [[LLM: Advanced section for expert users.]]
+            DrawAdvancedSection();
+            
+            // [[LLM: Validation and action buttons.]]
+            DrawValidationSection(config);
+            DrawActionButtons(config);
+            
+            // [[LLM: Apply modifications to SerializedObject.]]
+            if (serializedObject.ApplyModifiedProperties())
+            {
+                // [[LLM: Trigger validation when properties change.]]
+                ValidateConfiguration(config);
+                
+                // [[LLM: Mark asset as dirty for saving.]]
+                EditorUtility.SetDirty(config);
+            }
+        }
+        
+        private void DrawHeaderSection({{config_class_name}} config)
+        {
+            // [[LLM: Professional header with configuration name and status.]]
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            
+            var titleStyle = new GUIStyle(EditorStyles.largeLabel)
+            {
+                fontSize = 16,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter
+            };
+            
+            EditorGUILayout.LabelField("{{config_display_name}}", titleStyle);
+            
+            // [[LLM: Configuration status indicator.]]
+            var statusColor = {{validation_messages}}.Count == 0 ? Color.green : Color.yellow;
+            var statusText = {{validation_messages}}.Count == 0 ? "✓ Valid Configuration" : $"⚠ {{{validation_messages}}.Count} Issues";
+            
+            var originalColor = GUI.color;
+            GUI.color = statusColor;
+            EditorGUILayout.LabelField(statusText, EditorStyles.centeredGreyMiniLabel);
+            GUI.color = originalColor;
+            
+            EditorGUILayout.EndVertical();
+        }
+        
+        private void DrawGraphicsSection()
+        {
+            // [[LLM: Graphics configuration section with quality presets and platform-specific settings.]]
+            {{graphics_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{graphics_foldout}}, "Graphics Settings");
+            
+            if ({{graphics_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: Quality preset dropdown.]]
+                EditorGUILayout.PropertyField({{graphics_settings_prop}}.FindPropertyRelative("{{quality_preset_field}}"));
+                
+                // [[LLM: Resolution and display settings.]]
+                EditorGUILayout.PropertyField({{graphics_settings_prop}}.FindPropertyRelative("{{target_resolution_field}}"));
+                EditorGUILayout.PropertyField({{graphics_settings_prop}}.FindPropertyRelative("{{target_framerate_field}}"));
+                
+                // [[LLM: Advanced graphics options.]]
+                var advancedGraphics = {{graphics_settings_prop}}.FindPropertyRelative("{{advanced_graphics_field}}");
+                if (advancedGraphics != null)
+                {
+                    EditorGUILayout.PropertyField(advancedGraphics, new GUIContent("Advanced Graphics"), true);
+                }
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawAudioSection()
+        {
+            // [[LLM: Audio configuration with volume mixing and quality settings.]]
+            {{audio_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{audio_foldout}}, "Audio Settings");
+            
+            if ({{audio_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: Master volume and individual mix levels.]]
+                EditorGUILayout.PropertyField({{audio_settings_prop}}.FindPropertyRelative("{{master_volume_field}}"));
+                EditorGUILayout.PropertyField({{audio_settings_prop}}.FindPropertyRelative("{{music_volume_field}}"));
+                EditorGUILayout.PropertyField({{audio_settings_prop}}.FindPropertyRelative("{{sfx_volume_field}}"));
+                
+                // [[LLM: Audio quality and compression settings.]]
+                EditorGUILayout.PropertyField({{audio_settings_prop}}.FindPropertyRelative("{{audio_quality_field}}"));
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawGameplaySection()
+        {
+            // [[LLM: Gameplay configuration including controls and accessibility.]]
+            {{gameplay_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{gameplay_foldout}}, "Gameplay Settings");
+            
+            if ({{gameplay_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: Control scheme and input settings.]]
+                EditorGUILayout.PropertyField({{gameplay_settings_prop}}.FindPropertyRelative("{{control_scheme_field}}"));
+                EditorGUILayout.PropertyField({{gameplay_settings_prop}}.FindPropertyRelative("{{input_sensitivity_field}}"));
+                
+                // [[LLM: Accessibility options.]]
+                EditorGUILayout.PropertyField({{gameplay_settings_prop}}.FindPropertyRelative("{{accessibility_options_field}}"), true);
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawDifficultySection()
+        {
+            // [[LLM: Difficulty configuration with presets and custom values.]]
+            {{difficulty_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{difficulty_foldout}}, "Difficulty Settings");
+            
+            if ({{difficulty_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: Difficulty preset with custom override capability.]]
+                EditorGUILayout.PropertyField({{difficulty_settings_prop}}.FindPropertyRelative("{{difficulty_preset_field}}"));
+                
+                var customDifficulty = {{difficulty_settings_prop}}.FindPropertyRelative("{{custom_difficulty_field}}");
+                if (customDifficulty != null)
+                {
+                    EditorGUILayout.PropertyField(customDifficulty, new GUIContent("Custom Difficulty"), true);
+                }
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawPlatformSection()
+        {
+            // [[LLM: Platform-specific configuration overrides.]]
+            {{platform_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{platform_foldout}}, "Platform Settings");
+            
+            if ({{platform_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: Platform-specific overrides.]]
+                EditorGUILayout.PropertyField({{platform_settings_prop}}, new GUIContent("Platform Overrides"), true);
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawAdvancedSection()
+        {
+            // [[LLM: Advanced configuration for expert users.]]
+            {{advanced_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{advanced_foldout}}, "Advanced Settings");
+            
+            if ({{advanced_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                EditorGUILayout.HelpBox("Advanced settings require Unity and game development knowledge.", MessageType.Info);
+                
+                // [[LLM: Runtime preview toggle.]]
+                {{enable_runtime_preview}} = EditorGUILayout.Toggle("Enable Runtime Preview", {{enable_runtime_preview}});
+                
+                // [[LLM: Validation controls.]]
+                {{show_validation_errors}} = EditorGUILayout.Toggle("Show Validation Messages", {{show_validation_errors}});
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawValidationSection({{config_class_name}} config)
+        {
+            // [[LLM: Display validation messages and errors.]]
+            if ({{show_validation_errors}} && {{validation_messages}}.Count > 0)
+            {
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("Validation Messages", EditorStyles.boldLabel);
+                
+                foreach (var message in {{validation_messages}})
+                {
+                    EditorGUILayout.HelpBox(message, MessageType.Warning);
+                }
+            }
+        }
+        
+        private void DrawActionButtons({{config_class_name}} config)
+        {
+            // [[LLM: Action buttons for configuration management.]]
+            EditorGUILayout.Space(10);
+            EditorGUILayout.BeginHorizontal();
+            
+            if (GUILayout.Button("Validate Configuration"))
+            {
+                ValidateConfiguration(config);
+            }
+            
+            if (GUILayout.Button("Reset to Defaults"))
+            {
+                if (EditorUtility.DisplayDialog("Reset Configuration", 
+                    "This will reset all settings to default values. Continue?", "Reset", "Cancel"))
+                {
+                    ResetToDefaults(config);
+                }
+            }
+            
+            if (GUILayout.Button("Export Settings"))
+            {
+                ExportConfiguration(config);
+            }
+            
+            EditorGUILayout.EndHorizontal();
+        }
+        
+        private void ValidateConfiguration({{config_class_name}} config)
+        {
+            // [[LLM: Comprehensive configuration validation.
+            // Add validation rules specific to your game configuration.]]
+            {{validation_messages}}.Clear();
+            
+            // [[LLM: Example validation rules - customize for your needs.]]
+            if (config.{{graphics_settings_field_name}}.{{target_framerate_field}} <= 0)
+            {
+                {{validation_messages}}.Add("Target framerate must be greater than 0");
+            }
+            
+            if (config.{{audio_settings_field_name}}.{{master_volume_field}} < 0 || config.{{audio_settings_field_name}}.{{master_volume_field}} > 1)
+            {
+                {{validation_messages}}.Add("Master volume must be between 0 and 1");
+            }
+            
+            // [[LLM: Platform-specific validation.]]
+            ValidatePlatformSettings(config);
+            
+            if ({{validation_messages}}.Count == 0)
+            {
+                Debug.Log("Configuration validation passed successfully!");
+            }
+            else
+            {
+                Debug.LogWarning($"Configuration validation found {{{validation_messages}}.Count} issues.");
+            }
+        }
+        
+        private void ValidatePlatformSettings({{config_class_name}} config)
+        {
+            // [[LLM: Platform-specific validation logic.
+            // Implement checks for different platforms' requirements.]]
+            var currentPlatform = EditorUserBuildSettings.activeBuildTarget;
+            
+            switch (currentPlatform)
+            {
+                case BuildTarget.iOS:
+                case BuildTarget.Android:
+                    // [[LLM: Mobile platform validation.]]
+                    if (config.{{graphics_settings_field_name}}.{{target_framerate_field}} > 60)
+                    {
+                        {{validation_messages}}.Add("Mobile platforms should target 60 FPS or lower for battery optimization");
+                    }
+                    break;
+                    
+                case BuildTarget.StandaloneWindows:
+                case BuildTarget.StandaloneWindows64:
+                case BuildTarget.StandaloneOSX:
+                case BuildTarget.StandaloneLinux64:
+                    // [[LLM: Desktop platform validation.]]
+                    break;
+            }
+        }
+        
+        private void ResetToDefaults({{config_class_name}} config)
+        {
+            // [[LLM: Reset configuration to default values.
+            // Implement based on your default configuration structure.]]
+            Undo.RecordObject(config, "Reset Configuration");
+            
+            // [[LLM: Set default values - customize for your configuration.]]
+            // config.ResetToDefaults(); // Implement this method in your ScriptableObject
+            
+            EditorUtility.SetDirty(config);
+            serializedObject.Update();
+        }
+        
+        private void ExportConfiguration({{config_class_name}} config)
+        {
+            // [[LLM: Export configuration to JSON for sharing or backup.]]
+            var path = EditorUtility.SaveFilePanel("Export Configuration", "", "{{config_file_name}}.json", "json");
+            
+            if (!string.IsNullOrEmpty(path))
+            {
+                var json = JsonUtility.ToJson(config, true);
+                System.IO.File.WriteAllText(path, json);
+                Debug.Log($"Configuration exported to: {path}");
+            }
+        }
+    }
+}

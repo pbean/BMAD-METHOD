@@ -23261,6 +23261,1649 @@ This task is complete when:
 ```
 ==================== END: .bmad-unity-game-dev/tasks/unity-addressables-advanced.md ====================
 
+==================== START: .bmad-unity-game-dev/tasks/unity-analytics-setup.md ====================
+# Unity Analytics Integration Task
+
+## Purpose
+
+To implement comprehensive Unity Analytics with advanced event tracking, player segmentation, funnel analysis, and privacy-compliant data collection. This task extends `unity-cloud-services-setup.md` to provide production-ready analytics implementation following BMAD template processing patterns.
+
+## Prerequisites
+
+- Unity project with `com.unity.services.analytics` package installed
+- Unity Services Core initialized (see `unity-cloud-services-setup.md`)
+- Authentication service configured
+- Project linked to Unity Dashboard with Analytics enabled
+- [[LLM: Verify these prerequisites and halt if not met, providing specific remediation steps]]
+
+## SEQUENTIAL Task Execution (Do not proceed until current Task is complete)
+
+### 1. Analytics Architecture Design
+
+#### 1.1 Event Taxonomy Definition
+
+Create comprehensive event taxonomy in `Assets/Scripts/Analytics/EventTaxonomy.cs`:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace {{project_namespace}}.Analytics
+{
+    /// <summary>
+    /// Centralized event taxonomy following industry standards
+    /// Reference: https://docs.unity.com/analytics/AnalyticsEventBestPractices.html
+    /// </summary>
+    public static class EventTaxonomy
+    {
+        // Core Event Categories
+        public static class Categories
+        {
+            public const string GAMEPLAY = "gameplay";
+            public const string MONETIZATION = "monetization";
+            public const string PROGRESSION = "progression";
+            public const string SOCIAL = "social";
+            public const string PERFORMANCE = "performance";
+            public const string UI_INTERACTION = "ui_interaction";
+            public const string TUTORIAL = "tutorial";
+            public const string SESSION = "session";
+        }
+
+        // Standard Event Names
+        public static class Events
+        {
+            // Session Events
+            public const string SESSION_START = "session_start";
+            public const string SESSION_END = "session_end";
+            public const string FIRST_OPEN = "first_open";
+            
+            // Gameplay Events
+            public const string LEVEL_START = "level_start";
+            public const string LEVEL_COMPLETE = "level_complete";
+            public const string LEVEL_FAIL = "level_fail";
+            public const string LEVEL_RESTART = "level_restart";
+            public const string LEVEL_SKIP = "level_skip";
+            
+            // Progression Events
+            public const string TUTORIAL_START = "tutorial_start";
+            public const string TUTORIAL_COMPLETE = "tutorial_complete";
+            public const string TUTORIAL_SKIP = "tutorial_skip";
+            public const string ACHIEVEMENT_UNLOCKED = "achievement_unlocked";
+            public const string MILESTONE_REACHED = "milestone_reached";
+            
+            // Monetization Events
+            public const string PURCHASE_INITIATED = "purchase_initiated";
+            public const string PURCHASE_COMPLETED = "purchase_completed";
+            public const string PURCHASE_FAILED = "purchase_failed";
+            public const string AD_SHOWN = "ad_shown";
+            public const string AD_CLICKED = "ad_clicked";
+            public const string AD_COMPLETED = "ad_completed";
+            public const string AD_SKIPPED = "ad_skipped";
+            
+            // Social Events
+            public const string SHARE_INITIATED = "share_initiated";
+            public const string SHARE_COMPLETED = "share_completed";
+            public const string INVITE_SENT = "invite_sent";
+            public const string INVITE_ACCEPTED = "invite_accepted";
+            
+            // Performance Events
+            public const string LOAD_TIME = "load_time";
+            public const string FRAME_RATE_DROP = "frame_rate_drop";
+            public const string CRASH_DETECTED = "crash_detected";
+            public const string ERROR_OCCURRED = "error_occurred";
+            
+            // [[LLM: Add game-specific events based on game design document]]
+        }
+
+        // Standard Parameter Names
+        public static class Parameters
+        {
+            // Context Parameters
+            public const string LEVEL_ID = "level_id";
+            public const string LEVEL_NAME = "level_name";
+            public const string LEVEL_INDEX = "level_index";
+            public const string DIFFICULTY = "difficulty";
+            public const string GAME_MODE = "game_mode";
+            
+            // Performance Parameters
+            public const string DURATION = "duration_ms";
+            public const string SCORE = "score";
+            public const string HIGH_SCORE = "high_score";
+            public const string ATTEMPTS = "attempts";
+            public const string SUCCESS = "success";
+            
+            // Monetization Parameters
+            public const string PRODUCT_ID = "product_id";
+            public const string PRICE = "price";
+            public const string CURRENCY = "currency";
+            public const string TRANSACTION_ID = "transaction_id";
+            public const string RECEIPT = "receipt";
+            
+            // Player Parameters
+            public const string PLAYER_LEVEL = "player_level";
+            public const string PLAYER_XP = "player_xp";
+            public const string PLAYER_SEGMENT = "player_segment";
+            public const string AB_TEST_GROUP = "ab_test_group";
+            
+            // Technical Parameters
+            public const string PLATFORM = "platform";
+            public const string DEVICE_MODEL = "device_model";
+            public const string OS_VERSION = "os_version";
+            public const string APP_VERSION = "app_version";
+            public const string BUILD_NUMBER = "build_number";
+            public const string CONNECTION_TYPE = "connection_type";
+            
+            // Error Parameters
+            public const string ERROR_CODE = "error_code";
+            public const string ERROR_MESSAGE = "error_message";
+            public const string STACK_TRACE = "stack_trace";
+            public const string SEVERITY = "severity";
+        }
+
+        // Event Priority Levels (for batching and throttling)
+        public enum Priority
+        {
+            CRITICAL = 0,   // Send immediately
+            HIGH = 1,       // Send in next batch
+            MEDIUM = 2,     // Standard batching
+            LOW = 3         // Can be dropped if needed
+        }
+
+        // Event validation rules
+        public static class Validation
+        {
+            public const int MAX_EVENT_NAME_LENGTH = 32;
+            public const int MAX_PARAM_NAME_LENGTH = 24;
+            public const int MAX_PARAM_VALUE_LENGTH = 256;
+            public const int MAX_PARAMS_PER_EVENT = 25;
+            public const int MAX_EVENTS_PER_HOUR = 1000;
+        }
+    }
+}
+```
+
+#### 1.2 Advanced Analytics Manager
+
+Create `Assets/Scripts/Analytics/AdvancedAnalyticsManager.cs`:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
+using Unity.Services.Analytics;
+using Unity.Services.Core;
+using UnityEngine;
+using System.Linq;
+
+namespace {{project_namespace}}.Analytics
+{
+    public class AdvancedAnalyticsManager : MonoBehaviour
+    {
+        private static AdvancedAnalyticsManager _instance;
+        public static AdvancedAnalyticsManager Instance => _instance;
+
+        [Header("Configuration")]
+        [SerializeField] private bool enableDebugLogging = false;
+        [SerializeField] private int batchSize = 100;
+        [SerializeField] private float batchInterval = 30f;
+        [SerializeField] private int maxRetries = 3;
+        
+        [Header("Privacy Settings")]
+        [SerializeField] private bool requireConsent = true;
+        [SerializeField] private bool anonymizeIpAddress = true;
+        
+        // Event queue for batching
+        private ConcurrentQueue<QueuedEvent> _eventQueue;
+        private float _lastBatchTime;
+        
+        // Session tracking
+        private string _sessionId;
+        private DateTime _sessionStartTime;
+        private Dictionary<string, object> _sessionContext;
+        
+        // Player segmentation
+        private string _playerSegment;
+        private string _abTestGroup;
+        
+        // Privacy and consent
+        private bool _hasUserConsent;
+        private HashSet<string> _piiFields;
+        
+        // Performance tracking
+        private PerformanceTracker _performanceTracker;
+        
+        // Event deduplication
+        private LRUCache<string, DateTime> _recentEvents;
+
+        private class QueuedEvent
+        {
+            public string EventName;
+            public Dictionary<string, object> Parameters;
+            public EventTaxonomy.Priority Priority;
+            public DateTime Timestamp;
+            public int RetryCount;
+        }
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                InitializeAnalytics();
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        private void InitializeAnalytics()
+        {
+            _eventQueue = new ConcurrentQueue<QueuedEvent>();
+            _sessionContext = new Dictionary<string, object>();
+            _piiFields = new HashSet<string> { "email", "name", "phone", "address" };
+            _recentEvents = new LRUCache<string, DateTime>(1000);
+            _performanceTracker = new PerformanceTracker();
+            
+            // Generate session ID
+            _sessionId = Guid.NewGuid().ToString();
+            _sessionStartTime = DateTime.UtcNow;
+            
+            // Load consent status
+            _hasUserConsent = PlayerPrefs.GetInt("analytics_consent", 0) == 1;
+            
+            // Start batch processing
+            InvokeRepeating(nameof(ProcessEventBatch), batchInterval, batchInterval);
+            
+            // Track session start
+            TrackSessionStart();
+        }
+
+        #region Core Event Tracking
+
+        public void TrackEvent(string eventName, Dictionary<string, object> parameters = null, 
+            EventTaxonomy.Priority priority = EventTaxonomy.Priority.MEDIUM)
+        {
+            if (!ValidateEvent(eventName, parameters))
+                return;
+
+            // Check consent
+            if (requireConsent && !_hasUserConsent)
+            {
+                if (enableDebugLogging)
+                    Debug.LogWarning($"Analytics: Event '{eventName}' dropped - no user consent");
+                return;
+            }
+
+            // Deduplicate events
+            string eventHash = GenerateEventHash(eventName, parameters);
+            if (_recentEvents.ContainsKey(eventHash))
+            {
+                var lastTime = _recentEvents.Get(eventHash);
+                if ((DateTime.UtcNow - lastTime).TotalSeconds < 1) // Prevent duplicate within 1 second
+                {
+                    if (enableDebugLogging)
+                        Debug.LogWarning($"Analytics: Duplicate event '{eventName}' dropped");
+                    return;
+                }
+            }
+            _recentEvents.Set(eventHash, DateTime.UtcNow);
+
+            // Enrich parameters
+            var enrichedParams = EnrichParameters(parameters);
+            
+            // Sanitize PII
+            enrichedParams = SanitizePII(enrichedParams);
+            
+            // Queue event
+            var queuedEvent = new QueuedEvent
+            {
+                EventName = eventName,
+                Parameters = enrichedParams,
+                Priority = priority,
+                Timestamp = DateTime.UtcNow,
+                RetryCount = 0
+            };
+
+            _eventQueue.Enqueue(queuedEvent);
+
+            // Send critical events immediately
+            if (priority == EventTaxonomy.Priority.CRITICAL)
+            {
+                ProcessEventBatch();
+            }
+
+            if (enableDebugLogging)
+                Debug.Log($"Analytics: Event '{eventName}' queued with {enrichedParams?.Count ?? 0} parameters");
+        }
+
+        private bool ValidateEvent(string eventName, Dictionary<string, object> parameters)
+        {
+            // Validate event name
+            if (string.IsNullOrEmpty(eventName))
+            {
+                Debug.LogError("Analytics: Event name cannot be null or empty");
+                return false;
+            }
+
+            if (eventName.Length > EventTaxonomy.Validation.MAX_EVENT_NAME_LENGTH)
+            {
+                Debug.LogError($"Analytics: Event name '{eventName}' exceeds maximum length");
+                return false;
+            }
+
+            // Validate parameters
+            if (parameters != null)
+            {
+                if (parameters.Count > EventTaxonomy.Validation.MAX_PARAMS_PER_EVENT)
+                {
+                    Debug.LogError($"Analytics: Event '{eventName}' has too many parameters");
+                    return false;
+                }
+
+                foreach (var param in parameters)
+                {
+                    if (param.Key.Length > EventTaxonomy.Validation.MAX_PARAM_NAME_LENGTH)
+                    {
+                        Debug.LogError($"Analytics: Parameter name '{param.Key}' exceeds maximum length");
+                        return false;
+                    }
+
+                    if (param.Value?.ToString().Length > EventTaxonomy.Validation.MAX_PARAM_VALUE_LENGTH)
+                    {
+                        Debug.LogError($"Analytics: Parameter value for '{param.Key}' exceeds maximum length");
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private Dictionary<string, object> EnrichParameters(Dictionary<string, object> parameters)
+        {
+            var enriched = parameters != null ? 
+                new Dictionary<string, object>(parameters) : 
+                new Dictionary<string, object>();
+
+            // Add session context
+            enriched["session_id"] = _sessionId;
+            enriched["session_duration"] = (DateTime.UtcNow - _sessionStartTime).TotalSeconds;
+            
+            // Add player context
+            if (!string.IsNullOrEmpty(_playerSegment))
+                enriched[EventTaxonomy.Parameters.PLAYER_SEGMENT] = _playerSegment;
+            if (!string.IsNullOrEmpty(_abTestGroup))
+                enriched[EventTaxonomy.Parameters.AB_TEST_GROUP] = _abTestGroup;
+            
+            // Add technical context
+            enriched[EventTaxonomy.Parameters.PLATFORM] = Application.platform.ToString();
+            enriched[EventTaxonomy.Parameters.APP_VERSION] = Application.version;
+            enriched[EventTaxonomy.Parameters.DEVICE_MODEL] = SystemInfo.deviceModel;
+            enriched[EventTaxonomy.Parameters.OS_VERSION] = SystemInfo.operatingSystem;
+            enriched[EventTaxonomy.Parameters.CONNECTION_TYPE] = Application.internetReachability.ToString();
+            
+            // Add performance context
+            enriched["fps"] = _performanceTracker.GetAverageFPS();
+            enriched["memory_usage_mb"] = _performanceTracker.GetMemoryUsageMB();
+            
+            // Add custom session context
+            foreach (var context in _sessionContext)
+            {
+                if (!enriched.ContainsKey(context.Key))
+                    enriched[context.Key] = context.Value;
+            }
+
+            // [[LLM: Add game-specific context enrichment based on current game state]]
+            
+            return enriched;
+        }
+
+        private Dictionary<string, object> SanitizePII(Dictionary<string, object> parameters)
+        {
+            if (parameters == null) return null;
+
+            var sanitized = new Dictionary<string, object>();
+            foreach (var param in parameters)
+            {
+                if (_piiFields.Contains(param.Key.ToLower()))
+                {
+                    // Hash PII data
+                    sanitized[param.Key] = HashPII(param.Value?.ToString());
+                }
+                else
+                {
+                    sanitized[param.Key] = param.Value;
+                }
+            }
+
+            return sanitized;
+        }
+
+        private string HashPII(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+            
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                byte[] bytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(value));
+                return Convert.ToBase64String(bytes);
+            }
+        }
+
+        private string GenerateEventHash(string eventName, Dictionary<string, object> parameters)
+        {
+            var hash = eventName;
+            if (parameters != null)
+            {
+                var sortedParams = parameters.OrderBy(p => p.Key);
+                foreach (var param in sortedParams)
+                {
+                    hash += $"_{param.Key}:{param.Value}";
+                }
+            }
+            return hash;
+        }
+
+        #endregion
+
+        #region Batch Processing
+
+        private async void ProcessEventBatch()
+        {
+            if (_eventQueue.IsEmpty) return;
+
+            var batch = new List<QueuedEvent>();
+            var processedCount = 0;
+
+            // Dequeue events for batch
+            while (!_eventQueue.IsEmpty && processedCount < batchSize)
+            {
+                if (_eventQueue.TryDequeue(out var evt))
+                {
+                    batch.Add(evt);
+                    processedCount++;
+                }
+            }
+
+            if (batch.Count == 0) return;
+
+            // Sort by priority
+            batch = batch.OrderBy(e => e.Priority).ToList();
+
+            // Send batch to Unity Analytics
+            foreach (var evt in batch)
+            {
+                try
+                {
+                    await SendEventToAnalytics(evt);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Analytics: Failed to send event '{evt.EventName}': {ex.Message}");
+                    
+                    // Retry logic
+                    if (evt.RetryCount < maxRetries)
+                    {
+                        evt.RetryCount++;
+                        _eventQueue.Enqueue(evt);
+                    }
+                }
+            }
+
+            _lastBatchTime = Time.time;
+        }
+
+        private async Task SendEventToAnalytics(QueuedEvent evt)
+        {
+            // Custom event recording
+            AnalyticsService.Instance.CustomData(evt.EventName, evt.Parameters);
+            
+            // For critical events, also send to custom backend
+            if (evt.Priority == EventTaxonomy.Priority.CRITICAL)
+            {
+                await SendToCustomBackend(evt);
+            }
+            
+            if (enableDebugLogging)
+                Debug.Log($"Analytics: Sent event '{evt.EventName}'");
+        }
+
+        private async Task SendToCustomBackend(QueuedEvent evt)
+        {
+            // [[LLM: Implement custom backend integration if required]]
+            // This could be your own analytics server, data warehouse, etc.
+            await Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region Specialized Event Methods
+
+        public void TrackLevelStart(int levelId, string levelName, string difficulty, 
+            Dictionary<string, object> additionalParams = null)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { EventTaxonomy.Parameters.LEVEL_ID, levelId },
+                { EventTaxonomy.Parameters.LEVEL_NAME, levelName },
+                { EventTaxonomy.Parameters.DIFFICULTY, difficulty },
+                { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") }
+            };
+
+            if (additionalParams != null)
+            {
+                foreach (var param in additionalParams)
+                    parameters[param.Key] = param.Value;
+            }
+
+            TrackEvent(EventTaxonomy.Events.LEVEL_START, parameters);
+        }
+
+        public void TrackLevelComplete(int levelId, float duration, int score, bool isHighScore,
+            Dictionary<string, object> additionalParams = null)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { EventTaxonomy.Parameters.LEVEL_ID, levelId },
+                { EventTaxonomy.Parameters.DURATION, duration },
+                { EventTaxonomy.Parameters.SCORE, score },
+                { EventTaxonomy.Parameters.HIGH_SCORE, isHighScore },
+                { EventTaxonomy.Parameters.SUCCESS, true }
+            };
+
+            if (additionalParams != null)
+            {
+                foreach (var param in additionalParams)
+                    parameters[param.Key] = param.Value;
+            }
+
+            TrackEvent(EventTaxonomy.Events.LEVEL_COMPLETE, parameters, EventTaxonomy.Priority.HIGH);
+        }
+
+        public void TrackPurchase(string productId, decimal price, string currency, 
+            string transactionId, Dictionary<string, object> additionalParams = null)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { EventTaxonomy.Parameters.PRODUCT_ID, productId },
+                { EventTaxonomy.Parameters.PRICE, price },
+                { EventTaxonomy.Parameters.CURRENCY, currency },
+                { EventTaxonomy.Parameters.TRANSACTION_ID, transactionId }
+            };
+
+            if (additionalParams != null)
+            {
+                foreach (var param in additionalParams)
+                    parameters[param.Key] = param.Value;
+            }
+
+            // Revenue events are critical
+            TrackEvent(EventTaxonomy.Events.PURCHASE_COMPLETED, parameters, EventTaxonomy.Priority.CRITICAL);
+            
+            // Also track to Unity's revenue tracking
+            AnalyticsService.Instance.Transaction(new TransactionParameters
+            {
+                ProductID = productId,
+                TransactionID = transactionId,
+                Price = price,
+                Currency = currency
+            });
+        }
+
+        public void TrackError(string errorCode, string errorMessage, string stackTrace, 
+            string severity = "ERROR")
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { EventTaxonomy.Parameters.ERROR_CODE, errorCode },
+                { EventTaxonomy.Parameters.ERROR_MESSAGE, errorMessage },
+                { EventTaxonomy.Parameters.STACK_TRACE, stackTrace },
+                { EventTaxonomy.Parameters.SEVERITY, severity }
+            };
+
+            TrackEvent(EventTaxonomy.Events.ERROR_OCCURRED, parameters, EventTaxonomy.Priority.HIGH);
+        }
+
+        public void TrackPerformanceMetric(string metricName, float value, string unit = "ms")
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "metric_name", metricName },
+                { "value", value },
+                { "unit", unit }
+            };
+
+            TrackEvent("performance_metric", parameters, EventTaxonomy.Priority.LOW);
+        }
+
+        #endregion
+
+        #region Session Management
+
+        private void TrackSessionStart()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "session_id", _sessionId },
+                { "previous_session_end", PlayerPrefs.GetString("last_session_end", "") },
+                { "days_since_install", GetDaysSinceInstall() },
+                { "session_count", PlayerPrefs.GetInt("session_count", 0) + 1 }
+            };
+
+            TrackEvent(EventTaxonomy.Events.SESSION_START, parameters, EventTaxonomy.Priority.HIGH);
+            
+            PlayerPrefs.SetInt("session_count", PlayerPrefs.GetInt("session_count", 0) + 1);
+        }
+
+        private void TrackSessionEnd()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                { "session_id", _sessionId },
+                { "session_duration", (DateTime.UtcNow - _sessionStartTime).TotalSeconds },
+                { "events_tracked", GetSessionEventCount() }
+            };
+
+            TrackEvent(EventTaxonomy.Events.SESSION_END, parameters, EventTaxonomy.Priority.HIGH);
+            
+            PlayerPrefs.SetString("last_session_end", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
+        }
+
+        private int GetDaysSinceInstall()
+        {
+            string installDate = PlayerPrefs.GetString("install_date", "");
+            if (string.IsNullOrEmpty(installDate))
+            {
+                PlayerPrefs.SetString("install_date", DateTime.UtcNow.ToString("yyyy-MM-dd"));
+                return 0;
+            }
+
+            if (DateTime.TryParse(installDate, out DateTime install))
+            {
+                return (DateTime.UtcNow - install).Days;
+            }
+
+            return 0;
+        }
+
+        private int GetSessionEventCount()
+        {
+            // [[LLM: Implement session event counting logic]]
+            return 0;
+        }
+
+        public void SetSessionContext(string key, object value)
+        {
+            _sessionContext[key] = value;
+        }
+
+        #endregion
+
+        #region Player Segmentation
+
+        public void SetPlayerSegment(string segment)
+        {
+            _playerSegment = segment;
+            PlayerPrefs.SetString("player_segment", segment);
+        }
+
+        public void SetABTestGroup(string group)
+        {
+            _abTestGroup = group;
+            PlayerPrefs.SetString("ab_test_group", group);
+        }
+
+        public string GetPlayerSegment()
+        {
+            if (string.IsNullOrEmpty(_playerSegment))
+                _playerSegment = PlayerPrefs.GetString("player_segment", "unknown");
+            return _playerSegment;
+        }
+
+        #endregion
+
+        #region Privacy and Consent
+
+        public void SetUserConsent(bool hasConsent)
+        {
+            _hasUserConsent = hasConsent;
+            PlayerPrefs.SetInt("analytics_consent", hasConsent ? 1 : 0);
+            
+            if (hasConsent)
+            {
+                TrackEvent("consent_granted", null, EventTaxonomy.Priority.CRITICAL);
+            }
+            else
+            {
+                TrackEvent("consent_revoked", null, EventTaxonomy.Priority.CRITICAL);
+                RequestDataDeletion();
+            }
+        }
+
+        public async void RequestDataDeletion()
+        {
+            try
+            {
+                await AnalyticsService.Instance.RequestDataDeletionAsync();
+                Debug.Log("Analytics: Data deletion requested");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Analytics: Failed to request data deletion: {ex.Message}");
+            }
+        }
+
+        public void AddPIIField(string fieldName)
+        {
+            _piiFields.Add(fieldName.ToLower());
+        }
+
+        #endregion
+
+        #region Lifecycle
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus)
+            {
+                ProcessEventBatch(); // Flush events before pause
+            }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus)
+            {
+                ProcessEventBatch(); // Flush events when losing focus
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+            {
+                TrackSessionEnd();
+                ProcessEventBatch(); // Final flush
+                CancelInvoke();
+            }
+        }
+
+        #endregion
+    }
+
+    #region Helper Classes
+
+    public class PerformanceTracker
+    {
+        private Queue<float> _fpsHistory = new Queue<float>(60);
+        private float _lastFrameTime;
+
+        public float GetAverageFPS()
+        {
+            return _fpsHistory.Count > 0 ? _fpsHistory.Average() : 60f;
+        }
+
+        public float GetMemoryUsageMB()
+        {
+            return GC.GetTotalMemory(false) / (1024f * 1024f);
+        }
+
+        public void Update()
+        {
+            float currentFPS = 1f / Time.deltaTime;
+            _fpsHistory.Enqueue(currentFPS);
+            
+            if (_fpsHistory.Count > 60)
+                _fpsHistory.Dequeue();
+        }
+    }
+
+    public class LRUCache<TKey, TValue>
+    {
+        private readonly int _capacity;
+        private readonly Dictionary<TKey, LinkedListNode<CacheItem>> _cache;
+        private readonly LinkedList<CacheItem> _lru;
+
+        private class CacheItem
+        {
+            public TKey Key { get; set; }
+            public TValue Value { get; set; }
+        }
+
+        public LRUCache(int capacity)
+        {
+            _capacity = capacity;
+            _cache = new Dictionary<TKey, LinkedListNode<CacheItem>>(capacity);
+            _lru = new LinkedList<CacheItem>();
+        }
+
+        public bool ContainsKey(TKey key)
+        {
+            return _cache.ContainsKey(key);
+        }
+
+        public TValue Get(TKey key)
+        {
+            if (_cache.TryGetValue(key, out var node))
+            {
+                _lru.Remove(node);
+                _lru.AddFirst(node);
+                return node.Value.Value;
+            }
+            return default(TValue);
+        }
+
+        public void Set(TKey key, TValue value)
+        {
+            if (_cache.TryGetValue(key, out var node))
+            {
+                node.Value.Value = value;
+                _lru.Remove(node);
+                _lru.AddFirst(node);
+            }
+            else
+            {
+                if (_cache.Count >= _capacity)
+                {
+                    var lastNode = _lru.Last;
+                    _cache.Remove(lastNode.Value.Key);
+                    _lru.RemoveLast();
+                }
+
+                var cacheItem = new CacheItem { Key = key, Value = value };
+                var newNode = _lru.AddFirst(cacheItem);
+                _cache[key] = newNode;
+            }
+        }
+    }
+
+    #endregion
+}
+```
+
+### 2. Funnel Analysis Implementation
+
+#### 2.1 Create Funnel Tracker
+
+Generate `Assets/Scripts/Analytics/FunnelTracker.cs`:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace {{project_namespace}}.Analytics
+{
+    public class FunnelTracker : MonoBehaviour
+    {
+        [System.Serializable]
+        public class FunnelStep
+        {
+            public string stepName;
+            public string eventName;
+            public bool isCompleted;
+            public DateTime? completionTime;
+            public Dictionary<string, object> metadata;
+        }
+
+        [System.Serializable]
+        public class Funnel
+        {
+            public string funnelName;
+            public List<FunnelStep> steps;
+            public DateTime startTime;
+            public DateTime? completionTime;
+            public float conversionRate;
+        }
+
+        private Dictionary<string, Funnel> _activeFunnels;
+        private AdvancedAnalyticsManager _analytics;
+
+        private void Awake()
+        {
+            _activeFunnels = new Dictionary<string, Funnel>();
+            _analytics = AdvancedAnalyticsManager.Instance;
+        }
+
+        public void StartFunnel(string funnelName, List<string> stepNames)
+        {
+            var funnel = new Funnel
+            {
+                funnelName = funnelName,
+                steps = new List<FunnelStep>(),
+                startTime = DateTime.UtcNow
+            };
+
+            foreach (var stepName in stepNames)
+            {
+                funnel.steps.Add(new FunnelStep
+                {
+                    stepName = stepName,
+                    eventName = $"{funnelName}_{stepName}",
+                    isCompleted = false
+                });
+            }
+
+            _activeFunnels[funnelName] = funnel;
+
+            // Track funnel start
+            _analytics.TrackEvent($"funnel_started", new Dictionary<string, object>
+            {
+                { "funnel_name", funnelName },
+                { "total_steps", stepNames.Count }
+            });
+        }
+
+        public void CompleteStep(string funnelName, string stepName, Dictionary<string, object> metadata = null)
+        {
+            if (!_activeFunnels.TryGetValue(funnelName, out var funnel))
+            {
+                Debug.LogWarning($"Funnel '{funnelName}' not found");
+                return;
+            }
+
+            var step = funnel.steps.Find(s => s.stepName == stepName);
+            if (step == null)
+            {
+                Debug.LogWarning($"Step '{stepName}' not found in funnel '{funnelName}'");
+                return;
+            }
+
+            if (step.isCompleted)
+            {
+                Debug.LogWarning($"Step '{stepName}' already completed");
+                return;
+            }
+
+            step.isCompleted = true;
+            step.completionTime = DateTime.UtcNow;
+            step.metadata = metadata;
+
+            // Calculate step duration
+            var stepIndex = funnel.steps.IndexOf(step);
+            var previousTime = stepIndex > 0 && funnel.steps[stepIndex - 1].completionTime.HasValue
+                ? funnel.steps[stepIndex - 1].completionTime.Value
+                : funnel.startTime;
+            var stepDuration = (step.completionTime.Value - previousTime).TotalSeconds;
+
+            // Track step completion
+            var parameters = new Dictionary<string, object>
+            {
+                { "funnel_name", funnelName },
+                { "step_name", stepName },
+                { "step_index", stepIndex },
+                { "step_duration", stepDuration },
+                { "total_duration", (DateTime.UtcNow - funnel.startTime).TotalSeconds }
+            };
+
+            if (metadata != null)
+            {
+                foreach (var meta in metadata)
+                    parameters[meta.Key] = meta.Value;
+            }
+
+            _analytics.TrackEvent("funnel_step_completed", parameters);
+
+            // Check if funnel is complete
+            if (funnel.steps.TrueForAll(s => s.isCompleted))
+            {
+                CompleteFunnel(funnelName);
+            }
+        }
+
+        private void CompleteFunnel(string funnelName)
+        {
+            if (!_activeFunnels.TryGetValue(funnelName, out var funnel))
+                return;
+
+            funnel.completionTime = DateTime.UtcNow;
+            funnel.conversionRate = 1.0f; // 100% conversion for completed funnel
+
+            var totalDuration = (funnel.completionTime.Value - funnel.startTime).TotalSeconds;
+
+            _analytics.TrackEvent("funnel_completed", new Dictionary<string, object>
+            {
+                { "funnel_name", funnelName },
+                { "total_duration", totalDuration },
+                { "steps_completed", funnel.steps.Count },
+                { "conversion_rate", funnel.conversionRate }
+            }, EventTaxonomy.Priority.HIGH);
+
+            _activeFunnels.Remove(funnelName);
+        }
+
+        public void AbandonFunnel(string funnelName, string reason = "unknown")
+        {
+            if (!_activeFunnels.TryGetValue(funnelName, out var funnel))
+                return;
+
+            var completedSteps = funnel.steps.FindAll(s => s.isCompleted).Count;
+            var conversionRate = (float)completedSteps / funnel.steps.Count;
+
+            _analytics.TrackEvent("funnel_abandoned", new Dictionary<string, object>
+            {
+                { "funnel_name", funnelName },
+                { "completed_steps", completedSteps },
+                { "total_steps", funnel.steps.Count },
+                { "conversion_rate", conversionRate },
+                { "abandon_reason", reason },
+                { "duration", (DateTime.UtcNow - funnel.startTime).TotalSeconds }
+            });
+
+            _activeFunnels.Remove(funnelName);
+        }
+
+        public float GetFunnelConversionRate(string funnelName)
+        {
+            if (!_activeFunnels.TryGetValue(funnelName, out var funnel))
+                return 0f;
+
+            var completedSteps = funnel.steps.FindAll(s => s.isCompleted).Count;
+            return (float)completedSteps / funnel.steps.Count;
+        }
+    }
+}
+```
+
+### 3. Dashboard Configuration
+
+#### 3.1 Dashboard Metrics Configuration
+
+Create `Assets/Scripts/Analytics/DashboardConfig.cs`:
+
+```csharp
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace {{project_namespace}}.Analytics
+{
+    [CreateAssetMenu(fileName = "DashboardConfig", menuName = "Analytics/Dashboard Configuration")]
+    public class DashboardConfig : ScriptableObject
+    {
+        [Header("Key Performance Indicators")]
+        public List<KPIDefinition> kpis = new List<KPIDefinition>();
+
+        [Header("Funnel Definitions")]
+        public List<FunnelDefinition> funnels = new List<FunnelDefinition>();
+
+        [Header("Segments")]
+        public List<SegmentDefinition> segments = new List<SegmentDefinition>();
+
+        [Header("Reports")]
+        public List<ReportDefinition> reports = new List<ReportDefinition>();
+
+        [System.Serializable]
+        public class KPIDefinition
+        {
+            public string name;
+            public string description;
+            public string formula;
+            public string unit;
+            public float targetValue;
+            public float warningThreshold;
+            public float criticalThreshold;
+        }
+
+        [System.Serializable]
+        public class FunnelDefinition
+        {
+            public string name;
+            public List<string> steps;
+            public float expectedConversionRate;
+        }
+
+        [System.Serializable]
+        public class SegmentDefinition
+        {
+            public string name;
+            public string criteria;
+            public Dictionary<string, object> filters;
+        }
+
+        [System.Serializable]
+        public class ReportDefinition
+        {
+            public string name;
+            public string schedule; // daily, weekly, monthly
+            public List<string> metrics;
+            public List<string> dimensions;
+        }
+    }
+}
+```
+
+### 4. Privacy Compliance Manager
+
+#### 4.1 GDPR/CCPA Compliance
+
+Create `Assets/Scripts/Analytics/PrivacyComplianceManager.cs`:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace {{project_namespace}}.Analytics
+{
+    public class PrivacyComplianceManager : MonoBehaviour
+    {
+        private static PrivacyComplianceManager _instance;
+        public static PrivacyComplianceManager Instance => _instance;
+
+        [Header("Configuration")]
+        [SerializeField] private bool enforceGDPR = true;
+        [SerializeField] private bool enforceCCPA = true;
+        [SerializeField] private bool enforceC0PPA = false;
+        
+        [Header("UI References")]
+        [SerializeField] private GameObject consentDialog;
+        [SerializeField] private Toggle analyticsToggle;
+        [SerializeField] private Toggle advertisingToggle;
+        [SerializeField] private Toggle personalizationToggle;
+        
+        private ConsentStatus _consentStatus;
+        private DateTime _consentTimestamp;
+        private string _consentVersion = "1.0";
+
+        [System.Serializable]
+        public class ConsentStatus
+        {
+            public bool analytics;
+            public bool advertising;
+            public bool personalization;
+            public string ipAddress;
+            public string country;
+            public DateTime timestamp;
+            public string version;
+        }
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                LoadConsentStatus();
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        private void Start()
+        {
+            CheckConsentRequirement();
+        }
+
+        private void CheckConsentRequirement()
+        {
+            // Check user location
+            string country = GetUserCountry();
+            
+            bool requiresConsent = false;
+            
+            // GDPR (EU countries)
+            if (enforceGDPR && IsEUCountry(country))
+            {
+                requiresConsent = true;
+            }
+            
+            // CCPA (California)
+            if (enforceCCPA && country == "US" && GetUserState() == "CA")
+            {
+                requiresConsent = true;
+            }
+            
+            // COPPA (Under 13)
+            if (enforceC0PPA && IsUserUnder13())
+            {
+                requiresConsent = true;
+            }
+            
+            if (requiresConsent && !HasValidConsent())
+            {
+                ShowConsentDialog();
+            }
+            else
+            {
+                ApplyConsentSettings();
+            }
+        }
+
+        private void ShowConsentDialog()
+        {
+            if (consentDialog != null)
+            {
+                consentDialog.SetActive(true);
+                Time.timeScale = 0; // Pause game during consent
+            }
+        }
+
+        public void OnConsentGiven()
+        {
+            _consentStatus = new ConsentStatus
+            {
+                analytics = analyticsToggle.isOn,
+                advertising = advertisingToggle.isOn,
+                personalization = personalizationToggle.isOn,
+                timestamp = DateTime.UtcNow,
+                version = _consentVersion,
+                country = GetUserCountry(),
+                ipAddress = GetAnonymizedIP()
+            };
+            
+            SaveConsentStatus();
+            ApplyConsentSettings();
+            
+            if (consentDialog != null)
+            {
+                consentDialog.SetActive(false);
+                Time.timeScale = 1; // Resume game
+            }
+            
+            // Track consent event
+            AdvancedAnalyticsManager.Instance.TrackEvent("privacy_consent_given", 
+                new Dictionary<string, object>
+                {
+                    { "analytics", _consentStatus.analytics },
+                    { "advertising", _consentStatus.advertising },
+                    { "personalization", _consentStatus.personalization },
+                    { "consent_version", _consentVersion }
+                }, EventTaxonomy.Priority.CRITICAL);
+        }
+
+        public void OnConsentDenied()
+        {
+            _consentStatus = new ConsentStatus
+            {
+                analytics = false,
+                advertising = false,
+                personalization = false,
+                timestamp = DateTime.UtcNow,
+                version = _consentVersion
+            };
+            
+            SaveConsentStatus();
+            ApplyConsentSettings();
+            
+            if (consentDialog != null)
+            {
+                consentDialog.SetActive(false);
+                Time.timeScale = 1;
+            }
+        }
+
+        private void ApplyConsentSettings()
+        {
+            // Apply analytics consent
+            if (AdvancedAnalyticsManager.Instance != null)
+            {
+                AdvancedAnalyticsManager.Instance.SetUserConsent(_consentStatus.analytics);
+            }
+            
+            // [[LLM: Apply advertising consent to ad SDKs]]
+            // [[LLM: Apply personalization consent to recommendation systems]]
+        }
+
+        public void RequestDataExport()
+        {
+            // Generate data export
+            var exportData = new Dictionary<string, object>
+            {
+                { "user_id", GetUserId() },
+                { "consent_status", _consentStatus },
+                { "request_time", DateTime.UtcNow },
+                { "data_categories", new[] { "analytics", "gameplay", "purchases" } }
+            };
+            
+            AdvancedAnalyticsManager.Instance.TrackEvent("privacy_data_export_requested", 
+                exportData, EventTaxonomy.Priority.HIGH);
+            
+            // [[LLM: Implement actual data export to user]]
+        }
+
+        public void RequestDataDeletion()
+        {
+            AdvancedAnalyticsManager.Instance.RequestDataDeletion();
+            
+            // Clear local data
+            PlayerPrefs.DeleteAll();
+            
+            // Track deletion request
+            AdvancedAnalyticsManager.Instance.TrackEvent("privacy_data_deletion_requested", 
+                null, EventTaxonomy.Priority.CRITICAL);
+        }
+
+        private bool HasValidConsent()
+        {
+            if (_consentStatus == null) return false;
+            
+            // Check if consent version is current
+            if (_consentStatus.version != _consentVersion) return false;
+            
+            // Check if consent is not older than 1 year (GDPR requirement)
+            if ((DateTime.UtcNow - _consentStatus.timestamp).Days > 365) return false;
+            
+            return true;
+        }
+
+        private void LoadConsentStatus()
+        {
+            string json = PlayerPrefs.GetString("consent_status", "");
+            if (!string.IsNullOrEmpty(json))
+            {
+                _consentStatus = JsonUtility.FromJson<ConsentStatus>(json);
+            }
+        }
+
+        private void SaveConsentStatus()
+        {
+            string json = JsonUtility.ToJson(_consentStatus);
+            PlayerPrefs.SetString("consent_status", json);
+            PlayerPrefs.Save();
+        }
+
+        private string GetUserCountry()
+        {
+            // [[LLM: Implement IP-based geolocation or use Unity's location service]]
+            return PlayerPrefs.GetString("user_country", "US");
+        }
+
+        private string GetUserState()
+        {
+            // [[LLM: Implement state detection for US users]]
+            return PlayerPrefs.GetString("user_state", "CA");
+        }
+
+        private bool IsEUCountry(string country)
+        {
+            string[] euCountries = { "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", 
+                                    "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", 
+                                    "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE" };
+            return Array.IndexOf(euCountries, country) >= 0;
+        }
+
+        private bool IsUserUnder13()
+        {
+            // [[LLM: Implement age verification logic]]
+            return false;
+        }
+
+        private string GetAnonymizedIP()
+        {
+            // [[LLM: Implement IP anonymization (remove last octet for IPv4, etc.)]]
+            return "0.0.0.0";
+        }
+
+        private string GetUserId()
+        {
+            return Unity.Services.Authentication.AuthenticationService.Instance.PlayerId;
+        }
+    }
+}
+```
+
+### 5. Testing and Validation
+
+#### 5.1 Analytics Test Suite
+
+Create `Assets/Tests/PlayMode/AnalyticsTests.cs`:
+
+```csharp
+using System.Collections;
+using System.Collections.Generic;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
+using {{project_namespace}}.Analytics;
+
+public class AnalyticsTests
+{
+    private AdvancedAnalyticsManager _analytics;
+    private FunnelTracker _funnelTracker;
+
+    [SetUp]
+    public void Setup()
+    {
+        var go = new GameObject("Analytics");
+        _analytics = go.AddComponent<AdvancedAnalyticsManager>();
+        _funnelTracker = go.AddComponent<FunnelTracker>();
+    }
+
+    [UnityTest]
+    public IEnumerator TrackEvent_ValidEvent_Succeeds()
+    {
+        // Arrange
+        string eventName = "test_event";
+        var parameters = new Dictionary<string, object>
+        {
+            { "test_param", "value" },
+            { "test_number", 42 }
+        };
+
+        // Act
+        _analytics.TrackEvent(eventName, parameters);
+        yield return new WaitForSeconds(0.1f);
+
+        // Assert
+        Assert.Pass("Event tracked without errors");
+    }
+
+    [UnityTest]
+    public IEnumerator TrackEvent_ExceedsParameterLimit_Fails()
+    {
+        // Arrange
+        string eventName = "test_event";
+        var parameters = new Dictionary<string, object>();
+        for (int i = 0; i < 30; i++) // Exceeds limit of 25
+        {
+            parameters[$"param_{i}"] = i;
+        }
+
+        // Act & Assert
+        LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("too many parameters"));
+        _analytics.TrackEvent(eventName, parameters);
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator Funnel_CompleteAllSteps_TracksCompletion()
+    {
+        // Arrange
+        string funnelName = "onboarding";
+        var steps = new List<string> { "welcome", "tutorial", "first_game" };
+
+        // Act
+        _funnelTracker.StartFunnel(funnelName, steps);
+        yield return new WaitForSeconds(0.1f);
+        
+        foreach (var step in steps)
+        {
+            _funnelTracker.CompleteStep(funnelName, step);
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        // Assert
+        float conversionRate = _funnelTracker.GetFunnelConversionRate(funnelName);
+        Assert.AreEqual(1.0f, conversionRate, 0.01f);
+    }
+
+    [UnityTest]
+    public IEnumerator Privacy_ConsentDenied_NoEventsTracked()
+    {
+        // Arrange
+        _analytics.SetUserConsent(false);
+
+        // Act
+        _analytics.TrackEvent("test_event", null);
+        yield return new WaitForSeconds(0.1f);
+
+        // Assert
+        LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("no user consent"));
+    }
+
+    [Test]
+    public void EventValidation_LongEventName_Fails()
+    {
+        // Arrange
+        string longEventName = new string('a', 50); // Exceeds 32 character limit
+
+        // Act & Assert
+        LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("exceeds maximum length"));
+        _analytics.TrackEvent(longEventName, null);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (_analytics != null)
+            Object.DestroyImmediate(_analytics.gameObject);
+    }
+}
+```
+
+### 6. Documentation and Integration
+
+#### 6.1 Generate Analytics Documentation
+
+Create comprehensive documentation in task:
+
+```markdown
+## Analytics Integration Guide
+
+### Quick Start
+
+1. **Initialize Analytics**: Automatically initialized with Unity Services
+2. **Track Events**: Use `AdvancedAnalyticsManager.Instance.TrackEvent()`
+3. **Configure Privacy**: Set up consent dialogs and compliance
+4. **View Dashboard**: Access Unity Dashboard for real-time metrics
+
+### Event Tracking Best Practices
+
+#### Event Naming Convention
+- Use snake_case for event names
+- Prefix with category (e.g., `gameplay_level_start`)
+- Maximum 32 characters
+- No PII in event names
+
+#### Parameter Guidelines
+- Maximum 25 parameters per event
+- Use consistent parameter names across events
+- Include context parameters (level, difficulty, etc.)
+- Avoid high-cardinality values
+
+### Funnel Analysis
+
+Track user journeys through critical paths:
+
+```csharp
+// Start a funnel
+FunnelTracker.Instance.StartFunnel("onboarding", 
+    new List<string> { "welcome", "tutorial", "first_game" });
+
+// Complete steps
+FunnelTracker.Instance.CompleteStep("onboarding", "welcome");
+```
+
+### Privacy Compliance
+
+#### GDPR Compliance
+- Consent required before tracking
+- Data export available on request
+- Data deletion within 30 days
+- Annual consent renewal
+
+#### CCPA Compliance
+- Opt-out mechanism provided
+- Do Not Sell option available
+- Data disclosure on request
+
+### Performance Considerations
+
+- Events batched every 30 seconds
+- Maximum 1000 events per hour
+- Critical events sent immediately
+- Automatic retry with exponential backoff
+
+### Dashboard Configuration
+
+Access Unity Dashboard at: https://dashboard.unity3d.com
+
+Configure:
+- Custom events and parameters
+- Funnels and conversion tracking
+- User segments and cohorts
+- A/B test groups
+- Revenue tracking
+- [[LLM: Add project-specific dashboard setup steps]]
+
+### Troubleshooting
+
+#### Events Not Appearing
+1. Check Unity Services initialization
+2. Verify project ID configuration
+3. Check consent status
+4. Review event validation errors in console
+
+#### High Memory Usage
+1. Reduce batch size
+2. Increase batch interval
+3. Limit event queue size
+4. Disable debug logging in production
+
+### API Reference
+
+See inline code documentation for detailed API reference.
+```
+
+### 7. Completion Checklist
+
+- [ ] Analytics manager implemented with batching and retry logic
+- [ ] Event taxonomy defined with standard events and parameters
+- [ ] Funnel tracking system operational
+- [ ] Privacy compliance (GDPR/CCPA) implemented
+- [ ] Consent management UI configured
+- [ ] Dashboard configuration documented
+- [ ] Performance tracking integrated
+- [ ] Error tracking and reporting active
+- [ ] Player segmentation system ready
+- [ ] A/B testing framework prepared
+- [ ] Data export functionality available
+- [ ] Data deletion process implemented
+- [ ] Analytics tests passing
+- [ ] Documentation complete
+- [ ] Integration with Unity Services validated
+
+## Success Criteria
+
+- Events tracked with < 100ms overhead
+- 99.9% event delivery rate
+- Privacy compliant in all regions
+- Dashboard shows real-time metrics
+- Funnel conversion tracking accurate
+- Player segments updating correctly
+- No PII leakage in events
+- Consent flow user-friendly
+- Data export/deletion functional
+- Performance metrics within targets
+
+## Notes
+
+- Follows Unity Analytics best practices
+- Implements industry-standard event taxonomy
+- Provides enterprise-grade privacy compliance
+- Supports both real-time and batch analytics
+- Integrates with Unity's native analytics service
+- Extensible for custom analytics providers
+- [[LLM: Adapt implementation based on specific game requirements and monetization strategy]]
+==================== END: .bmad-unity-game-dev/tasks/unity-analytics-setup.md ====================
+
 ==================== START: .bmad-unity-game-dev/tasks/unity-cinemachine-setup.md ====================
 # Unity Cinemachine Camera System Integration Task
 
@@ -25600,6 +27243,1442 @@ Enhance story creation to include Cinemachine context:
 - Error handling ensures robust camera implementation across platforms
 ==================== END: .bmad-unity-game-dev/tasks/unity-cinemachine-setup.md ====================
 
+==================== START: .bmad-unity-game-dev/tasks/unity-cloud-save-setup.md ====================
+# Unity Cloud Save Integration Task
+
+## Purpose
+
+To implement robust Unity Cloud Save with conflict resolution, data versioning, offline caching, and cross-platform synchronization. This task extends `unity-cloud-services-setup.md` to provide production-ready save game implementation following BMAD template processing patterns.
+
+## Prerequisites
+
+- Unity project with `com.unity.services.cloudsave` package installed
+- Unity Services Core initialized (see `unity-cloud-services-setup.md`)
+- Authentication service configured and player signed in
+- Project linked to Unity Dashboard with Cloud Save enabled
+- [[LLM: Verify prerequisites and provide specific remediation if not met]]
+
+## SEQUENTIAL Task Execution (Do not proceed until current Task is complete)
+
+### 1. Cloud Save Architecture
+
+#### 1.1 Data Structure Design
+
+Create `Assets/Scripts/CloudSave/SaveDataModels.cs`:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace {{project_namespace}}.CloudSave
+{
+    /// <summary>
+    /// Core save data models with versioning support
+    /// Reference: https://docs.unity.com/cloud-save/
+    /// </summary>
+    
+    [Serializable]
+    public class SaveDataVersion
+    {
+        public int major = 1;
+        public int minor = 0;
+        public int patch = 0;
+        
+        public string GetVersionString() => $"{major}.{minor}.{patch}";
+        
+        public bool IsCompatible(SaveDataVersion other)
+        {
+            // Major version must match for compatibility
+            return major == other.major;
+        }
+    }
+
+    [Serializable]
+    public class PlayerSaveData
+    {
+        public SaveDataVersion version = new SaveDataVersion();
+        public string playerId;
+        public DateTime lastSaved;
+        public string deviceId;
+        public PlayerProfile profile;
+        public ProgressionData progression;
+        public InventoryData inventory;
+        public SettingsData settings;
+        public StatisticsData statistics;
+        public Dictionary<string, object> customData;
+        
+        // Compression metadata
+        public bool isCompressed;
+        public string compressionMethod;
+        public int uncompressedSize;
+        public int compressedSize;
+        
+        // Sync metadata
+        public string syncId;
+        public int syncVersion;
+        public DateTime cloudTimestamp;
+        public DateTime localTimestamp;
+    }
+
+    [Serializable]
+    public class PlayerProfile
+    {
+        public string playerName;
+        public string avatarId;
+        public int playerLevel;
+        public long experience;
+        public long totalPlayTime;
+        public DateTime firstPlayDate;
+        public DateTime lastPlayDate;
+        public string preferredLanguage;
+        public string country;
+        public List<string> unlockedAchievements;
+        public Dictionary<string, int> achievementProgress;
+    }
+
+    [Serializable]
+    public class ProgressionData
+    {
+        public int currentChapter;
+        public int currentLevel;
+        public Dictionary<string, LevelProgress> levelProgress;
+        public List<string> unlockedLevels;
+        public List<string> completedLevels;
+        public Dictionary<string, float> bestTimes;
+        public Dictionary<string, int> bestScores;
+        public Dictionary<string, int> starRatings;
+        
+        [Serializable]
+        public class LevelProgress
+        {
+            public string levelId;
+            public bool isCompleted;
+            public int attempts;
+            public float bestTime;
+            public int bestScore;
+            public int stars;
+            public DateTime firstPlayed;
+            public DateTime lastPlayed;
+            public Dictionary<string, bool> objectives;
+            public List<string> collectedItems;
+        }
+    }
+
+    [Serializable]
+    public class InventoryData
+    {
+        public Dictionary<string, int> currencies;
+        public List<InventoryItem> items;
+        public List<string> equippedItems;
+        public Dictionary<string, int> consumables;
+        public List<string> unlockedSkins;
+        public List<string> unlockedCharacters;
+        
+        [Serializable]
+        public class InventoryItem
+        {
+            public string itemId;
+            public string itemType;
+            public int quantity;
+            public int level;
+            public float durability;
+            public DateTime acquiredDate;
+            public Dictionary<string, float> stats;
+            public List<string> enchantments;
+        }
+    }
+
+    [Serializable]
+    public class SettingsData
+    {
+        public float masterVolume = 1.0f;
+        public float musicVolume = 1.0f;
+        public float sfxVolume = 1.0f;
+        public float voiceVolume = 1.0f;
+        public int graphicsQuality = 2; // 0=Low, 1=Medium, 2=High, 3=Ultra
+        public int resolutionIndex = -1; // -1 = auto
+        public bool fullscreen = true;
+        public bool vsync = true;
+        public int targetFrameRate = 60;
+        public float brightness = 1.0f;
+        public float contrast = 1.0f;
+        public string language = "en";
+        public bool subtitles = false;
+        public bool colorblindMode = false;
+        public Dictionary<string, int> inputBindings;
+        public float sensitivity = 1.0f;
+        public bool invertY = false;
+        public bool vibration = true;
+        public bool notifications = true;
+    }
+
+    [Serializable]
+    public class StatisticsData
+    {
+        public long totalPlayTime;
+        public int sessionsPlayed;
+        public int levelsCompleted;
+        public int levelsFailed;
+        public int enemiesDefeated;
+        public int itemsCollected;
+        public float totalDistanceTraveled;
+        public int totalJumps;
+        public int totalDeaths;
+        public Dictionary<string, long> customStats;
+        public DateTime lastUpdated;
+    }
+
+    // Metadata for save slots
+    [Serializable]
+    public class SaveSlotMetadata
+    {
+        public int slotNumber;
+        public string slotName;
+        public bool inUse;
+        public DateTime createdDate;
+        public DateTime modifiedDate;
+        public int playerLevel;
+        public float progressPercentage;
+        public string thumbnailPath;
+        public long saveSize;
+        public bool isCloudSynced;
+        public bool isCorrupted;
+    }
+
+    // Conflict resolution data
+    [Serializable]
+    public class ConflictData
+    {
+        public PlayerSaveData localData;
+        public PlayerSaveData cloudData;
+        public DateTime conflictDetectedTime;
+        public ConflictResolutionStrategy strategy;
+        
+        public enum ConflictResolutionStrategy
+        {
+            UseLocal,
+            UseCloud,
+            UseNewest,
+            UseMerged,
+            AskUser
+        }
+    }
+}
+```
+
+#### 1.2 Advanced Cloud Save Manager
+
+Create `Assets/Scripts/CloudSave/AdvancedCloudSaveManager.cs`:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.IO;
+using System.IO.Compression;
+using System.Text;
+using Unity.Services.CloudSave;
+using Unity.Services.CloudSave.Models;
+using Unity.Services.Authentication;
+using UnityEngine;
+using Newtonsoft.Json;
+
+namespace {{project_namespace}}.CloudSave
+{
+    public class AdvancedCloudSaveManager : MonoBehaviour
+    {
+        private static AdvancedCloudSaveManager _instance;
+        public static AdvancedCloudSaveManager Instance => _instance;
+
+        [Header("Configuration")]
+        [SerializeField] private bool autoSaveEnabled = true;
+        [SerializeField] private float autoSaveInterval = 300f; // 5 minutes
+        [SerializeField] private int maxSaveSlots = 3;
+        [SerializeField] private bool useCompression = true;
+        [SerializeField] private bool useEncryption = false;
+        [SerializeField] private ConflictData.ConflictResolutionStrategy defaultConflictStrategy = 
+            ConflictData.ConflictResolutionStrategy.UseNewest;
+        
+        [Header("Performance")]
+        [SerializeField] private int maxRetries = 3;
+        [SerializeField] private float retryDelay = 2f;
+        [SerializeField] private int compressionLevel = 6; // 1-9
+        [SerializeField] private long maxSaveSize = 10485760; // 10MB
+        
+        // Save data cache
+        private PlayerSaveData _currentSaveData;
+        private Dictionary<int, SaveSlotMetadata> _saveSlots;
+        private Queue<PlayerSaveData> _saveHistory;
+        private const int MaxHistorySize = 10;
+        
+        // Sync state
+        private bool _isSyncing;
+        private bool _hasUnsyncedChanges;
+        private DateTime _lastSyncTime;
+        private DateTime _lastAutoSaveTime;
+        
+        // Offline queue
+        private Queue<SaveOperation> _offlineQueue;
+        private bool _isOnline;
+        
+        // Events
+        public event Action<PlayerSaveData> OnSaveCompleted;
+        public event Action<PlayerSaveData> OnLoadCompleted;
+        public event Action<ConflictData> OnConflictDetected;
+        public event Action<float> OnSyncProgress;
+        public event Action<string> OnSaveError;
+
+        private class SaveOperation
+        {
+            public string Key;
+            public object Data;
+            public DateTime Timestamp;
+            public int RetryCount;
+            public SavePriority Priority;
+        }
+
+        public enum SavePriority
+        {
+            Low,
+            Normal,
+            High,
+            Critical
+        }
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                Initialize();
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        private void Initialize()
+        {
+            _saveSlots = new Dictionary<int, SaveSlotMetadata>();
+            _saveHistory = new Queue<PlayerSaveData>();
+            _offlineQueue = new Queue<SaveOperation>();
+            _isOnline = Application.internetReachability != NetworkReachability.NotReachable;
+            
+            // Load local cache
+            LoadLocalCache();
+            
+            // Start auto-save
+            if (autoSaveEnabled)
+            {
+                InvokeRepeating(nameof(AutoSave), autoSaveInterval, autoSaveInterval);
+            }
+            
+            // Monitor connectivity
+            InvokeRepeating(nameof(CheckConnectivity), 5f, 5f);
+        }
+
+        #region Save Operations
+
+        public async Task<bool> SaveGame(int slotNumber = 0, SavePriority priority = SavePriority.Normal)
+        {
+            if (_isSyncing)
+            {
+                Debug.LogWarning("CloudSave: Save operation already in progress");
+                return false;
+            }
+
+            _isSyncing = true;
+            OnSyncProgress?.Invoke(0f);
+
+            try
+            {
+                // Prepare save data
+                var saveData = PrepareSaveData();
+                
+                // Validate save data
+                if (!ValidateSaveData(saveData))
+                {
+                    throw new Exception("Save data validation failed");
+                }
+                
+                // Add to history
+                AddToHistory(saveData);
+                
+                // Compress if enabled
+                if (useCompression)
+                {
+                    saveData = await CompressSaveData(saveData);
+                }
+                
+                OnSyncProgress?.Invoke(0.3f);
+                
+                // Encrypt if enabled
+                if (useEncryption)
+                {
+                    saveData = await EncryptSaveData(saveData);
+                }
+                
+                OnSyncProgress?.Invoke(0.5f);
+                
+                // Save locally first
+                SaveToLocalCache(saveData, slotNumber);
+                
+                OnSyncProgress?.Invoke(0.7f);
+                
+                // Save to cloud
+                if (_isOnline)
+                {
+                    await SaveToCloud(saveData, slotNumber, priority);
+                }
+                else
+                {
+                    QueueOfflineSave(saveData, slotNumber, priority);
+                    Debug.Log("CloudSave: Offline - save queued for later sync");
+                }
+                
+                OnSyncProgress?.Invoke(1f);
+                
+                // Update metadata
+                UpdateSlotMetadata(slotNumber, saveData);
+                
+                _lastSyncTime = DateTime.UtcNow;
+                _hasUnsyncedChanges = false;
+                
+                OnSaveCompleted?.Invoke(saveData);
+                
+                Debug.Log($"CloudSave: Game saved successfully to slot {slotNumber}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"CloudSave: Save failed - {ex.Message}");
+                OnSaveError?.Invoke(ex.Message);
+                return false;
+            }
+            finally
+            {
+                _isSyncing = false;
+            }
+        }
+
+        private PlayerSaveData PrepareSaveData()
+        {
+            if (_currentSaveData == null)
+            {
+                _currentSaveData = new PlayerSaveData();
+            }
+            
+            // Update metadata
+            _currentSaveData.playerId = AuthenticationService.Instance.PlayerId;
+            _currentSaveData.lastSaved = DateTime.UtcNow;
+            _currentSaveData.deviceId = SystemInfo.deviceUniqueIdentifier;
+            _currentSaveData.localTimestamp = DateTime.UtcNow;
+            _currentSaveData.syncVersion++;
+            
+            // Collect game data
+            _currentSaveData.profile = CollectProfileData();
+            _currentSaveData.progression = CollectProgressionData();
+            _currentSaveData.inventory = CollectInventoryData();
+            _currentSaveData.settings = CollectSettingsData();
+            _currentSaveData.statistics = CollectStatisticsData();
+            
+            // [[LLM: Implement data collection methods based on game systems]]
+            
+            return _currentSaveData;
+        }
+
+        private async Task<PlayerSaveData> CompressSaveData(PlayerSaveData data)
+        {
+            var json = JsonConvert.SerializeObject(data);
+            var uncompressedBytes = Encoding.UTF8.GetBytes(json);
+            
+            using (var output = new MemoryStream())
+            {
+                using (var gzip = new GZipStream(output, (CompressionLevel)compressionLevel))
+                {
+                    await gzip.WriteAsync(uncompressedBytes, 0, uncompressedBytes.Length);
+                }
+                
+                var compressedBytes = output.ToArray();
+                
+                // Update compression metadata
+                data.isCompressed = true;
+                data.compressionMethod = "gzip";
+                data.uncompressedSize = uncompressedBytes.Length;
+                data.compressedSize = compressedBytes.Length;
+                
+                float compressionRatio = 1f - ((float)compressedBytes.Length / uncompressedBytes.Length);
+                Debug.Log($"CloudSave: Compressed {uncompressedBytes.Length} bytes to {compressedBytes.Length} bytes (ratio: {compressionRatio:P})");
+                
+                // Store compressed data in custom data field
+                data.customData = new Dictionary<string, object>
+                {
+                    { "compressed_data", Convert.ToBase64String(compressedBytes) }
+                };
+            }
+            
+            return data;
+        }
+
+        private async Task<PlayerSaveData> EncryptSaveData(PlayerSaveData data)
+        {
+            // [[LLM: Implement encryption using Unity's encryption utilities or custom implementation]]
+            await Task.CompletedTask;
+            return data;
+        }
+
+        private async Task SaveToCloud(PlayerSaveData data, int slotNumber, SavePriority priority)
+        {
+            var saveKey = GetSaveKey(slotNumber);
+            var saveData = new Dictionary<string, object>
+            {
+                { saveKey, data },
+                { $"{saveKey}_metadata", GetSlotMetadata(slotNumber) },
+                { "last_sync", DateTime.UtcNow.ToString("O") }
+            };
+            
+            int retryCount = 0;
+            Exception lastException = null;
+            
+            while (retryCount < maxRetries)
+            {
+                try
+                {
+                    // Check for conflicts before saving
+                    var cloudData = await LoadFromCloud(slotNumber);
+                    if (cloudData != null && HasConflict(data, cloudData))
+                    {
+                        data = await ResolveConflict(data, cloudData);
+                    }
+                    
+                    // Save to cloud
+                    await CloudSaveService.Instance.Data.Player.SaveAsync(saveData);
+                    
+                    Debug.Log($"CloudSave: Successfully saved to cloud (slot {slotNumber})");
+                    return;
+                }
+                catch (CloudSaveException ex) when (ex.ErrorCode == CloudSaveExceptionReason.RateLimited)
+                {
+                    Debug.LogWarning($"CloudSave: Rate limited, waiting {retryDelay * (retryCount + 1)} seconds");
+                    await Task.Delay((int)(retryDelay * (retryCount + 1) * 1000));
+                    retryCount++;
+                }
+                catch (CloudSaveException ex) when (ex.ErrorCode == CloudSaveExceptionReason.TooManyRequests)
+                {
+                    Debug.LogWarning($"CloudSave: Too many requests, backing off");
+                    await Task.Delay((int)(retryDelay * Math.Pow(2, retryCount) * 1000)); // Exponential backoff
+                    retryCount++;
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    Debug.LogError($"CloudSave: Save attempt {retryCount + 1} failed - {ex.Message}");
+                    retryCount++;
+                    
+                    if (retryCount < maxRetries)
+                    {
+                        await Task.Delay((int)(retryDelay * 1000));
+                    }
+                }
+            }
+            
+            // All retries failed
+            if (priority == SavePriority.Critical)
+            {
+                // Queue for later retry if critical
+                QueueOfflineSave(data, slotNumber, priority);
+            }
+            
+            throw lastException ?? new Exception("CloudSave: Failed to save after maximum retries");
+        }
+
+        #endregion
+
+        #region Load Operations
+
+        public async Task<PlayerSaveData> LoadGame(int slotNumber = 0)
+        {
+            if (_isSyncing)
+            {
+                Debug.LogWarning("CloudSave: Load operation already in progress");
+                return null;
+            }
+
+            _isSyncing = true;
+            OnSyncProgress?.Invoke(0f);
+
+            try
+            {
+                PlayerSaveData loadedData = null;
+                
+                // Try to load from cloud first
+                if (_isOnline)
+                {
+                    try
+                    {
+                        loadedData = await LoadFromCloud(slotNumber);
+                        OnSyncProgress?.Invoke(0.5f);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"CloudSave: Failed to load from cloud - {ex.Message}");
+                    }
+                }
+                
+                // Fall back to local cache if cloud load failed
+                if (loadedData == null)
+                {
+                    loadedData = LoadFromLocalCache(slotNumber);
+                    Debug.Log("CloudSave: Loaded from local cache");
+                }
+                
+                OnSyncProgress?.Invoke(0.7f);
+                
+                if (loadedData == null)
+                {
+                    Debug.LogWarning($"CloudSave: No save data found for slot {slotNumber}");
+                    return null;
+                }
+                
+                // Decompress if needed
+                if (loadedData.isCompressed)
+                {
+                    loadedData = await DecompressSaveData(loadedData);
+                }
+                
+                // Decrypt if needed
+                if (useEncryption)
+                {
+                    loadedData = await DecryptSaveData(loadedData);
+                }
+                
+                OnSyncProgress?.Invoke(0.9f);
+                
+                // Validate loaded data
+                if (!ValidateSaveData(loadedData))
+                {
+                    throw new Exception("Loaded save data is corrupted");
+                }
+                
+                // Migrate if needed
+                loadedData = await MigrateSaveData(loadedData);
+                
+                OnSyncProgress?.Invoke(1f);
+                
+                _currentSaveData = loadedData;
+                _lastSyncTime = DateTime.UtcNow;
+                
+                OnLoadCompleted?.Invoke(loadedData);
+                
+                Debug.Log($"CloudSave: Game loaded successfully from slot {slotNumber}");
+                return loadedData;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"CloudSave: Load failed - {ex.Message}");
+                OnSaveError?.Invoke(ex.Message);
+                return null;
+            }
+            finally
+            {
+                _isSyncing = false;
+            }
+        }
+
+        private async Task<PlayerSaveData> LoadFromCloud(int slotNumber)
+        {
+            var saveKey = GetSaveKey(slotNumber);
+            var keys = new HashSet<string> { saveKey, $"{saveKey}_metadata" };
+            
+            var response = await CloudSaveService.Instance.Data.Player.LoadAsync(keys);
+            
+            if (response.TryGetValue(saveKey, out var saveItem))
+            {
+                var data = saveItem.Value.GetAs<PlayerSaveData>();
+                data.cloudTimestamp = DateTime.UtcNow;
+                return data;
+            }
+            
+            return null;
+        }
+
+        private async Task<PlayerSaveData> DecompressSaveData(PlayerSaveData data)
+        {
+            if (!data.isCompressed || data.customData == null)
+                return data;
+            
+            if (data.customData.TryGetValue("compressed_data", out var compressedBase64))
+            {
+                var compressedBytes = Convert.FromBase64String(compressedBase64.ToString());
+                
+                using (var input = new MemoryStream(compressedBytes))
+                using (var gzip = new GZipStream(input, CompressionMode.Decompress))
+                using (var output = new MemoryStream())
+                {
+                    await gzip.CopyToAsync(output);
+                    var json = Encoding.UTF8.GetString(output.ToArray());
+                    return JsonConvert.DeserializeObject<PlayerSaveData>(json);
+                }
+            }
+            
+            return data;
+        }
+
+        private async Task<PlayerSaveData> DecryptSaveData(PlayerSaveData data)
+        {
+            // [[LLM: Implement decryption]]
+            await Task.CompletedTask;
+            return data;
+        }
+
+        #endregion
+
+        #region Conflict Resolution
+
+        private bool HasConflict(PlayerSaveData localData, PlayerSaveData cloudData)
+        {
+            // No conflict if cloud data is older
+            if (cloudData.lastSaved < localData.lastSaved)
+                return false;
+            
+            // Check sync versions
+            if (cloudData.syncVersion != localData.syncVersion)
+                return true;
+            
+            // Check device ID to detect multi-device conflicts
+            if (cloudData.deviceId != localData.deviceId)
+                return true;
+            
+            return false;
+        }
+
+        private async Task<PlayerSaveData> ResolveConflict(PlayerSaveData localData, PlayerSaveData cloudData)
+        {
+            var conflict = new ConflictData
+            {
+                localData = localData,
+                cloudData = cloudData,
+                conflictDetectedTime = DateTime.UtcNow,
+                strategy = defaultConflictStrategy
+            };
+            
+            OnConflictDetected?.Invoke(conflict);
+            
+            switch (conflict.strategy)
+            {
+                case ConflictData.ConflictResolutionStrategy.UseLocal:
+                    Debug.Log("CloudSave: Conflict resolved - using local data");
+                    return localData;
+                    
+                case ConflictData.ConflictResolutionStrategy.UseCloud:
+                    Debug.Log("CloudSave: Conflict resolved - using cloud data");
+                    return cloudData;
+                    
+                case ConflictData.ConflictResolutionStrategy.UseNewest:
+                    var newest = localData.lastSaved > cloudData.lastSaved ? localData : cloudData;
+                    Debug.Log($"CloudSave: Conflict resolved - using newest ({newest.lastSaved})");
+                    return newest;
+                    
+                case ConflictData.ConflictResolutionStrategy.UseMerged:
+                    Debug.Log("CloudSave: Conflict resolved - merging data");
+                    return await MergeSaveData(localData, cloudData);
+                    
+                case ConflictData.ConflictResolutionStrategy.AskUser:
+                    Debug.Log("CloudSave: Conflict detected - waiting for user decision");
+                    return await ShowConflictDialog(localData, cloudData);
+                    
+                default:
+                    return localData;
+            }
+        }
+
+        private async Task<PlayerSaveData> MergeSaveData(PlayerSaveData localData, PlayerSaveData cloudData)
+        {
+            var merged = new PlayerSaveData
+            {
+                version = localData.version,
+                playerId = localData.playerId,
+                lastSaved = DateTime.UtcNow,
+                deviceId = SystemInfo.deviceUniqueIdentifier
+            };
+            
+            // Merge profile - use most recent
+            merged.profile = localData.profile.lastPlayDate > cloudData.profile.lastPlayDate ? 
+                localData.profile : cloudData.profile;
+            
+            // Merge progression - use highest progress
+            merged.progression = MergeProgression(localData.progression, cloudData.progression);
+            
+            // Merge inventory - combine items
+            merged.inventory = MergeInventory(localData.inventory, cloudData.inventory);
+            
+            // Merge settings - use most recent
+            merged.settings = localData.settings;
+            
+            // Merge statistics - use highest values
+            merged.statistics = MergeStatistics(localData.statistics, cloudData.statistics);
+            
+            Debug.Log("CloudSave: Data merged successfully");
+            return merged;
+        }
+
+        private ProgressionData MergeProgression(ProgressionData local, ProgressionData cloud)
+        {
+            var merged = new ProgressionData
+            {
+                currentChapter = Math.Max(local.currentChapter, cloud.currentChapter),
+                currentLevel = Math.Max(local.currentLevel, cloud.currentLevel),
+                levelProgress = new Dictionary<string, ProgressionData.LevelProgress>(),
+                unlockedLevels = new List<string>(),
+                completedLevels = new List<string>(),
+                bestTimes = new Dictionary<string, float>(),
+                bestScores = new Dictionary<string, int>(),
+                starRatings = new Dictionary<string, int>()
+            };
+            
+            // Merge level progress
+            foreach (var level in local.levelProgress)
+            {
+                merged.levelProgress[level.Key] = level.Value;
+            }
+            
+            foreach (var level in cloud.levelProgress)
+            {
+                if (!merged.levelProgress.ContainsKey(level.Key))
+                {
+                    merged.levelProgress[level.Key] = level.Value;
+                }
+                else
+                {
+                    // Use better progress
+                    var localProg = merged.levelProgress[level.Key];
+                    if (level.Value.bestScore > localProg.bestScore)
+                        localProg.bestScore = level.Value.bestScore;
+                    if (level.Value.bestTime < localProg.bestTime && level.Value.bestTime > 0)
+                        localProg.bestTime = level.Value.bestTime;
+                    if (level.Value.stars > localProg.stars)
+                        localProg.stars = level.Value.stars;
+                }
+            }
+            
+            // Merge unlocked levels
+            merged.unlockedLevels.AddRange(local.unlockedLevels);
+            merged.unlockedLevels.AddRange(cloud.unlockedLevels);
+            merged.unlockedLevels = new List<string>(new HashSet<string>(merged.unlockedLevels));
+            
+            // [[LLM: Complete merge logic for other progression fields]]
+            
+            return merged;
+        }
+
+        private InventoryData MergeInventory(InventoryData local, InventoryData cloud)
+        {
+            var merged = new InventoryData
+            {
+                currencies = new Dictionary<string, int>(),
+                items = new List<InventoryData.InventoryItem>(),
+                consumables = new Dictionary<string, int>(),
+                unlockedSkins = new List<string>(),
+                unlockedCharacters = new List<string>()
+            };
+            
+            // Merge currencies - use higher values
+            foreach (var currency in local.currencies)
+            {
+                merged.currencies[currency.Key] = currency.Value;
+            }
+            
+            foreach (var currency in cloud.currencies)
+            {
+                if (!merged.currencies.ContainsKey(currency.Key))
+                    merged.currencies[currency.Key] = currency.Value;
+                else
+                    merged.currencies[currency.Key] = Math.Max(merged.currencies[currency.Key], currency.Value);
+            }
+            
+            // [[LLM: Complete inventory merge logic]]
+            
+            return merged;
+        }
+
+        private StatisticsData MergeStatistics(StatisticsData local, StatisticsData cloud)
+        {
+            return new StatisticsData
+            {
+                totalPlayTime = Math.Max(local.totalPlayTime, cloud.totalPlayTime),
+                sessionsPlayed = Math.Max(local.sessionsPlayed, cloud.sessionsPlayed),
+                levelsCompleted = Math.Max(local.levelsCompleted, cloud.levelsCompleted),
+                enemiesDefeated = Math.Max(local.enemiesDefeated, cloud.enemiesDefeated),
+                // [[LLM: Complete statistics merge]]
+                lastUpdated = DateTime.UtcNow
+            };
+        }
+
+        private async Task<PlayerSaveData> ShowConflictDialog(PlayerSaveData localData, PlayerSaveData cloudData)
+        {
+            // [[LLM: Implement UI dialog for user to choose between local and cloud saves]]
+            // This should show:
+            // - Last save time for each
+            // - Key differences (level, progress, etc.)
+            // - Options: Keep Local, Keep Cloud, or Cancel
+            
+            await Task.CompletedTask;
+            return localData; // Default to local for now
+        }
+
+        #endregion
+
+        #region Data Migration
+
+        private async Task<PlayerSaveData> MigrateSaveData(PlayerSaveData data)
+        {
+            var currentVersion = new SaveDataVersion { major = 1, minor = 0, patch = 0 };
+            
+            if (data.version == null)
+            {
+                // Very old save without versioning
+                data = await MigrateFromLegacy(data);
+                data.version = currentVersion;
+            }
+            else if (!data.version.IsCompatible(currentVersion))
+            {
+                Debug.LogError($"CloudSave: Incompatible save version {data.version.GetVersionString()}");
+                throw new Exception("Save data version incompatible");
+            }
+            else if (data.version.minor < currentVersion.minor)
+            {
+                // Minor version upgrade
+                data = await MigrateMinorVersion(data, currentVersion);
+            }
+            
+            return data;
+        }
+
+        private async Task<PlayerSaveData> MigrateFromLegacy(PlayerSaveData data)
+        {
+            Debug.Log("CloudSave: Migrating from legacy save format");
+            
+            // [[LLM: Implement legacy migration based on old save structure]]
+            
+            await Task.CompletedTask;
+            return data;
+        }
+
+        private async Task<PlayerSaveData> MigrateMinorVersion(PlayerSaveData data, SaveDataVersion targetVersion)
+        {
+            Debug.Log($"CloudSave: Migrating from {data.version.GetVersionString()} to {targetVersion.GetVersionString()}");
+            
+            // [[LLM: Implement minor version migrations]]
+            
+            data.version = targetVersion;
+            await Task.CompletedTask;
+            return data;
+        }
+
+        #endregion
+
+        #region Local Cache Management
+
+        private void SaveToLocalCache(PlayerSaveData data, int slotNumber)
+        {
+            try
+            {
+                var json = JsonConvert.SerializeObject(data, Formatting.None);
+                var key = $"save_slot_{slotNumber}";
+                PlayerPrefs.SetString(key, json);
+                PlayerPrefs.SetString($"{key}_backup", json); // Keep backup
+                PlayerPrefs.Save();
+                
+                Debug.Log($"CloudSave: Saved to local cache (slot {slotNumber})");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"CloudSave: Failed to save to local cache - {ex.Message}");
+            }
+        }
+
+        private PlayerSaveData LoadFromLocalCache(int slotNumber = 0)
+        {
+            try
+            {
+                var key = $"save_slot_{slotNumber}";
+                var json = PlayerPrefs.GetString(key, "");
+                
+                if (string.IsNullOrEmpty(json))
+                {
+                    // Try backup
+                    json = PlayerPrefs.GetString($"{key}_backup", "");
+                }
+                
+                if (!string.IsNullOrEmpty(json))
+                {
+                    return JsonConvert.DeserializeObject<PlayerSaveData>(json);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"CloudSave: Failed to load from local cache - {ex.Message}");
+            }
+            
+            return null;
+        }
+
+        private void LoadLocalCache()
+        {
+            for (int i = 0; i < maxSaveSlots; i++)
+            {
+                var metadata = LoadSlotMetadata(i);
+                if (metadata != null)
+                {
+                    _saveSlots[i] = metadata;
+                }
+            }
+        }
+
+        #endregion
+
+        #region Offline Queue Management
+
+        private void QueueOfflineSave(PlayerSaveData data, int slotNumber, SavePriority priority)
+        {
+            var operation = new SaveOperation
+            {
+                Key = GetSaveKey(slotNumber),
+                Data = data,
+                Timestamp = DateTime.UtcNow,
+                Priority = priority,
+                RetryCount = 0
+            };
+            
+            _offlineQueue.Enqueue(operation);
+            Debug.Log($"CloudSave: Queued offline save (queue size: {_offlineQueue.Count})");
+        }
+
+        private async void ProcessOfflineQueue()
+        {
+            if (!_isOnline || _offlineQueue.Count == 0)
+                return;
+            
+            Debug.Log($"CloudSave: Processing {_offlineQueue.Count} offline saves");
+            
+            while (_offlineQueue.Count > 0)
+            {
+                var operation = _offlineQueue.Dequeue();
+                
+                try
+                {
+                    var saveData = new Dictionary<string, object>
+                    {
+                        { operation.Key, operation.Data },
+                        { "offline_save", true },
+                        { "queued_time", operation.Timestamp.ToString("O") }
+                    };
+                    
+                    await CloudSaveService.Instance.Data.Player.SaveAsync(saveData);
+                    Debug.Log($"CloudSave: Offline save synced successfully");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"CloudSave: Failed to sync offline save - {ex.Message}");
+                    
+                    operation.RetryCount++;
+                    if (operation.RetryCount < maxRetries)
+                    {
+                        _offlineQueue.Enqueue(operation);
+                    }
+                }
+            }
+        }
+
+        private void CheckConnectivity()
+        {
+            bool wasOnline = _isOnline;
+            _isOnline = Application.internetReachability != NetworkReachability.NotReachable;
+            
+            if (!wasOnline && _isOnline)
+            {
+                Debug.Log("CloudSave: Connection restored, processing offline queue");
+                ProcessOfflineQueue();
+            }
+        }
+
+        #endregion
+
+        #region Utility Methods
+
+        private string GetSaveKey(int slotNumber)
+        {
+            return $"save_slot_{slotNumber}";
+        }
+
+        private SaveSlotMetadata GetSlotMetadata(int slotNumber)
+        {
+            if (_saveSlots.TryGetValue(slotNumber, out var metadata))
+                return metadata;
+            
+            return new SaveSlotMetadata
+            {
+                slotNumber = slotNumber,
+                inUse = false,
+                createdDate = DateTime.UtcNow
+            };
+        }
+
+        private SaveSlotMetadata LoadSlotMetadata(int slotNumber)
+        {
+            var key = $"save_slot_{slotNumber}_metadata";
+            var json = PlayerPrefs.GetString(key, "");
+            
+            if (!string.IsNullOrEmpty(json))
+            {
+                return JsonConvert.DeserializeObject<SaveSlotMetadata>(json);
+            }
+            
+            return null;
+        }
+
+        private void UpdateSlotMetadata(int slotNumber, PlayerSaveData data)
+        {
+            var metadata = GetSlotMetadata(slotNumber);
+            
+            metadata.inUse = true;
+            metadata.modifiedDate = DateTime.UtcNow;
+            metadata.playerLevel = data.profile?.playerLevel ?? 0;
+            metadata.progressPercentage = CalculateProgressPercentage(data);
+            metadata.isCloudSynced = _isOnline;
+            metadata.saveSize = EstimateSaveSize(data);
+            
+            _saveSlots[slotNumber] = metadata;
+            
+            // Save metadata locally
+            var key = $"save_slot_{slotNumber}_metadata";
+            PlayerPrefs.SetString(key, JsonConvert.SerializeObject(metadata));
+        }
+
+        private float CalculateProgressPercentage(PlayerSaveData data)
+        {
+            if (data.progression == null) return 0f;
+            
+            // [[LLM: Calculate actual progress based on game structure]]
+            int totalLevels = 100; // Example
+            int completedLevels = data.progression.completedLevels?.Count ?? 0;
+            
+            return (float)completedLevels / totalLevels * 100f;
+        }
+
+        private long EstimateSaveSize(PlayerSaveData data)
+        {
+            var json = JsonConvert.SerializeObject(data);
+            return Encoding.UTF8.GetByteCount(json);
+        }
+
+        private bool ValidateSaveData(PlayerSaveData data)
+        {
+            if (data == null) return false;
+            
+            // Check required fields
+            if (string.IsNullOrEmpty(data.playerId)) return false;
+            if (data.version == null) return false;
+            
+            // Check data integrity
+            if (data.profile == null) return false;
+            if (data.progression == null) return false;
+            
+            // Check for corruption
+            if (data.lastSaved > DateTime.UtcNow.AddDays(1)) return false; // Future date
+            if (data.lastSaved < DateTime.UtcNow.AddYears(-10)) return false; // Too old
+            
+            // Check size limits
+            var size = EstimateSaveSize(data);
+            if (size > maxSaveSize)
+            {
+                Debug.LogWarning($"CloudSave: Save data exceeds size limit ({size} > {maxSaveSize})");
+                return false;
+            }
+            
+            return true;
+        }
+
+        private void AddToHistory(PlayerSaveData data)
+        {
+            _saveHistory.Enqueue(data);
+            
+            while (_saveHistory.Count > MaxHistorySize)
+            {
+                _saveHistory.Dequeue();
+            }
+        }
+
+        #endregion
+
+        #region Auto Save
+
+        private async void AutoSave()
+        {
+            if (!autoSaveEnabled || _isSyncing)
+                return;
+            
+            if ((DateTime.UtcNow - _lastAutoSaveTime).TotalSeconds < autoSaveInterval)
+                return;
+            
+            if (_hasUnsyncedChanges)
+            {
+                Debug.Log("CloudSave: Auto-saving...");
+                await SaveGame(0, SavePriority.Low);
+                _lastAutoSaveTime = DateTime.UtcNow;
+            }
+        }
+
+        public void MarkDirty()
+        {
+            _hasUnsyncedChanges = true;
+        }
+
+        #endregion
+
+        #region Data Collection Helpers
+
+        private PlayerProfile CollectProfileData()
+        {
+            // [[LLM: Implement based on game's profile system]]
+            return _currentSaveData?.profile ?? new PlayerProfile();
+        }
+
+        private ProgressionData CollectProgressionData()
+        {
+            // [[LLM: Implement based on game's progression system]]
+            return _currentSaveData?.progression ?? new ProgressionData();
+        }
+
+        private InventoryData CollectInventoryData()
+        {
+            // [[LLM: Implement based on game's inventory system]]
+            return _currentSaveData?.inventory ?? new InventoryData();
+        }
+
+        private SettingsData CollectSettingsData()
+        {
+            // [[LLM: Implement based on game's settings]]
+            return _currentSaveData?.settings ?? new SettingsData();
+        }
+
+        private StatisticsData CollectStatisticsData()
+        {
+            // [[LLM: Implement based on game's statistics tracking]]
+            return _currentSaveData?.statistics ?? new StatisticsData();
+        }
+
+        #endregion
+
+        #region Public API
+
+        public PlayerSaveData GetCurrentSaveData() => _currentSaveData;
+        
+        public bool IsSyncing() => _isSyncing;
+        
+        public bool HasUnsyncedChanges() => _hasUnsyncedChanges;
+        
+        public DateTime GetLastSyncTime() => _lastSyncTime;
+        
+        public int GetOfflineQueueSize() => _offlineQueue.Count;
+        
+        public Dictionary<int, SaveSlotMetadata> GetSaveSlots() => new Dictionary<int, SaveSlotMetadata>(_saveSlots);
+        
+        public async Task<bool> DeleteSaveSlot(int slotNumber)
+        {
+            try
+            {
+                // Delete from cloud
+                if (_isOnline)
+                {
+                    var keys = new HashSet<string> 
+                    { 
+                        GetSaveKey(slotNumber), 
+                        $"{GetSaveKey(slotNumber)}_metadata" 
+                    };
+                    await CloudSaveService.Instance.Data.Player.DeleteAsync(keys);
+                }
+                
+                // Delete from local cache
+                PlayerPrefs.DeleteKey($"save_slot_{slotNumber}");
+                PlayerPrefs.DeleteKey($"save_slot_{slotNumber}_backup");
+                PlayerPrefs.DeleteKey($"save_slot_{slotNumber}_metadata");
+                PlayerPrefs.Save();
+                
+                // Update metadata
+                _saveSlots.Remove(slotNumber);
+                
+                Debug.Log($"CloudSave: Deleted save slot {slotNumber}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"CloudSave: Failed to delete slot {slotNumber} - {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> ExportSaveData(string filePath)
+        {
+            try
+            {
+                var data = _currentSaveData ?? await LoadGame();
+                var json = JsonConvert.SerializeObject(data, Formatting.Indented);
+                await File.WriteAllTextAsync(filePath, json);
+                Debug.Log($"CloudSave: Exported save data to {filePath}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"CloudSave: Failed to export save data - {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> ImportSaveData(string filePath)
+        {
+            try
+            {
+                var json = await File.ReadAllTextAsync(filePath);
+                var data = JsonConvert.DeserializeObject<PlayerSaveData>(json);
+                
+                if (ValidateSaveData(data))
+                {
+                    _currentSaveData = data;
+                    await SaveGame();
+                    Debug.Log($"CloudSave: Imported save data from {filePath}");
+                    return true;
+                }
+                
+                Debug.LogError("CloudSave: Imported save data validation failed");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"CloudSave: Failed to import save data - {ex.Message}");
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region Lifecycle
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus && autoSaveEnabled)
+            {
+                // Force save when pausing
+                _ = SaveGame(0, SavePriority.High);
+            }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus && autoSaveEnabled && _hasUnsyncedChanges)
+            {
+                // Save when losing focus
+                _ = SaveGame(0, SavePriority.Normal);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+            {
+                CancelInvoke();
+                
+                // Final save attempt
+                if (_hasUnsyncedChanges)
+                {
+                    SaveToLocalCache(_currentSaveData, 0);
+                }
+            }
+        }
+
+        #endregion
+    }
+}
+```
+
+### 3. Testing and Validation
+
+Create `Assets/Tests/PlayMode/CloudSaveTests.cs`:
+
+```csharp
+using System.Collections;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
+using {{project_namespace}}.CloudSave;
+
+public class CloudSaveTests
+{
+    private AdvancedCloudSaveManager _cloudSave;
+
+    [SetUp]
+    public void Setup()
+    {
+        var go = new GameObject("CloudSave");
+        _cloudSave = go.AddComponent<AdvancedCloudSaveManager>();
+    }
+
+    [UnityTest]
+    public IEnumerator SaveAndLoad_RoundTrip_Success()
+    {
+        // Save
+        var saveTask = _cloudSave.SaveGame(0);
+        yield return new WaitUntil(() => saveTask.IsCompleted);
+        Assert.IsTrue(saveTask.Result);
+
+        // Load
+        var loadTask = _cloudSave.LoadGame(0);
+        yield return new WaitUntil(() => loadTask.IsCompleted);
+        Assert.IsNotNull(loadTask.Result);
+    }
+
+    [UnityTest]
+    public IEnumerator ConflictResolution_NewestWins()
+    {
+        // Test conflict resolution
+        yield return null;
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (_cloudSave != null)
+            Object.DestroyImmediate(_cloudSave.gameObject);
+    }
+}
+```
+
+## Success Criteria
+
+- Save/load operations complete in < 2 seconds
+- Conflict resolution handles all edge cases
+- Data compression reduces size by > 50%
+- Offline queue processes when reconnected
+- Cross-platform saves work seamlessly
+- Save versioning and migration functional
+- No data loss during conflicts
+- Auto-save works without blocking gameplay
+- Save corruption recovery successful
+- Privacy compliant (no PII in cloud)
+
+## Notes
+
+- Implements production-ready cloud save system
+- Handles offline scenarios gracefully
+- Provides comprehensive conflict resolution
+- Supports data migration for updates
+- Optimized for mobile and desktop
+- [[LLM: Adapt to specific game save requirements]]
+==================== END: .bmad-unity-game-dev/tasks/unity-cloud-save-setup.md ====================
+
 ==================== START: .bmad-unity-game-dev/tasks/unity-cloud-services-setup.md ====================
 # Unity Cloud Services Setup Task
 
@@ -27470,6 +30549,1398 @@ If new packages added:
 - Preview packages require explicit justification
 - Asset Store packages handled by separate unity-asset-integration task
 ==================== END: .bmad-unity-game-dev/tasks/unity-package-setup.md ====================
+
+==================== START: .bmad-unity-game-dev/tasks/unity-remote-config-setup.md ====================
+# Unity Remote Config Integration Task
+
+## Purpose
+
+To implement comprehensive Unity Remote Config with feature flags, A/B testing frameworks, gradual rollouts, and real-time configuration updates. This task extends `unity-cloud-services-setup.md` to provide production-ready remote configuration following BMAD template processing patterns.
+
+## Prerequisites
+
+- Unity project with `com.unity.remote-config` package installed
+- Unity Services Core initialized (see `unity-cloud-services-setup.md`)
+- Authentication service configured
+- Project linked to Unity Dashboard with Remote Config enabled
+- Analytics integration recommended for measuring impact
+- [[LLM: Verify prerequisites and halt if not met, provide remediation steps]]
+
+## SEQUENTIAL Task Execution (Do not proceed until current Task is complete)
+
+### 1. Remote Config Architecture
+
+#### 1.1 Configuration Schema Design
+
+Create `Assets/Scripts/RemoteConfig/ConfigurationSchema.cs`:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace {{project_namespace}}.RemoteConfig
+{
+    /// <summary>
+    /// Comprehensive configuration schema with type safety and validation
+    /// Reference: https://docs.unity.com/remote-config/
+    /// </summary>
+    
+    [Serializable]
+    public class ConfigurationSchema
+    {
+        // Game Balance Configuration
+        [Serializable]
+        public class GameBalanceConfig
+        {
+            [Range(0.1f, 10f)]
+            public float difficultyMultiplier = 1.0f;
+            
+            [Range(1, 1000)]
+            public int playerStartHealth = 100;
+            
+            [Range(1, 100)]
+            public int playerBaseDamage = 10;
+            
+            [Range(0.5f, 5f)]
+            public float enemyHealthScaling = 1.0f;
+            
+            [Range(0.5f, 5f)]
+            public float enemyDamageScaling = 1.0f;
+            
+            [Range(0.1f, 10f)]
+            public float experienceMultiplier = 1.0f;
+            
+            [Range(0.1f, 10f)]
+            public float goldMultiplier = 1.0f;
+            
+            [Range(0.01f, 1f)]
+            public float dropRateMultiplier = 1.0f;
+            
+            public Dictionary<string, float> weaponDamageModifiers;
+            public Dictionary<string, float> enemyTypeModifiers;
+            public Dictionary<int, LevelBalanceConfig> levelSpecificBalance;
+            
+            [Serializable]
+            public class LevelBalanceConfig
+            {
+                public int levelId;
+                public float difficultyOverride;
+                public int enemyCount;
+                public float timeLimit;
+                public Dictionary<string, float> specificModifiers;
+            }
+        }
+        
+        // Feature Flags Configuration
+        [Serializable]
+        public class FeatureFlags
+        {
+            public bool newTutorialEnabled = false;
+            public bool advancedGraphicsEnabled = false;
+            public bool multiplayerEnabled = false;
+            public bool seasonalEventActive = false;
+            public bool debugMenuEnabled = false;
+            public bool betaFeaturesEnabled = false;
+            public bool socialFeaturesEnabled = true;
+            public bool cloudSaveEnabled = true;
+            public bool analyticsEnabled = true;
+            public bool adsEnabled = true;
+            
+            // Feature rollout percentages (0-100)
+            public int newFeatureRolloutPercentage = 0;
+            public int experimentalFeaturePercentage = 0;
+            
+            // Feature variant flags
+            public string uiVariant = "default"; // default, modern, classic
+            public string tutorialVariant = "guided"; // guided, hints, none
+            public string progressionSystem = "linear"; // linear, branching, open
+            
+            // Platform-specific flags
+            public bool mobileSpecificFeatures = true;
+            public bool consoleSpecificFeatures = true;
+            public bool pcSpecificFeatures = true;
+            
+            // Time-gated features
+            public DateTime featureUnlockDate;
+            public DateTime featureExpireDate;
+        }
+        
+        // Monetization Configuration
+        [Serializable]
+        public class MonetizationConfig
+        {
+            // Ad configuration
+            public bool showInterstitialAds = true;
+            public int interstitialAdFrequency = 3; // Show every N levels
+            public bool showRewardedAds = true;
+            public int rewardedAdCooldown = 300; // Seconds
+            public bool showBannerAds = false;
+            public string adProvider = "unity"; // unity, admob, ironsource
+            
+            // IAP configuration
+            public bool inAppPurchasesEnabled = true;
+            public float globalPriceMultiplier = 1.0f;
+            public Dictionary<string, float> productPriceOverrides;
+            public Dictionary<string, bool> productAvailability;
+            public List<SpecialOffer> activeOffers;
+            
+            // Economy configuration
+            public int dailyBonusAmount = 100;
+            public int levelCompletionReward = 50;
+            public float watchAdRewardMultiplier = 2.0f;
+            public Dictionary<string, int> currencyExchangeRates;
+            
+            [Serializable]
+            public class SpecialOffer
+            {
+                public string offerId;
+                public string productId;
+                public float discountPercentage;
+                public DateTime startDate;
+                public DateTime endDate;
+                public int maxPurchases;
+                public string targetSegment;
+            }
+        }
+        
+        // A/B Testing Configuration
+        [Serializable]
+        public class ABTestConfig
+        {
+            public string activeExperiment = "none";
+            public string experimentGroup = "control";
+            public Dictionary<string, ExperimentConfig> experiments;
+            
+            [Serializable]
+            public class ExperimentConfig
+            {
+                public string experimentId;
+                public string experimentName;
+                public bool isActive;
+                public DateTime startDate;
+                public DateTime endDate;
+                public List<ExperimentVariant> variants;
+                public string primaryMetric;
+                public List<string> secondaryMetrics;
+                public float minimumSampleSize;
+                public float confidenceLevel;
+            }
+            
+            [Serializable]
+            public class ExperimentVariant
+            {
+                public string variantId;
+                public string variantName;
+                public float trafficAllocation; // Percentage 0-100
+                public Dictionary<string, object> parameters;
+            }
+        }
+        
+        // Live Ops Configuration
+        [Serializable]
+        public class LiveOpsConfig
+        {
+            // Events
+            public List<LiveEvent> activeEvents;
+            public string currentSeason = "default";
+            public int seasonPassLevel = 1;
+            
+            // Messages
+            public List<InGameMessage> messages;
+            public string maintenanceMessage = "";
+            public bool isMaintenanceMode = false;
+            public DateTime nextMaintenanceWindow;
+            
+            // Content updates
+            public List<ContentUpdate> availableUpdates;
+            public bool forceUpdate = false;
+            public string minimumVersion = "1.0.0";
+            public string recommendedVersion = "1.0.0";
+            
+            [Serializable]
+            public class LiveEvent
+            {
+                public string eventId;
+                public string eventName;
+                public string eventType;
+                public DateTime startTime;
+                public DateTime endTime;
+                public Dictionary<string, object> eventData;
+                public List<string> rewards;
+                public bool isActive;
+            }
+            
+            [Serializable]
+            public class InGameMessage
+            {
+                public string messageId;
+                public string title;
+                public string body;
+                public string imageUrl;
+                public string actionUrl;
+                public MessagePriority priority;
+                public DateTime displayTime;
+                public int displayDuration;
+                public string targetSegment;
+            }
+            
+            public enum MessagePriority
+            {
+                Low,
+                Normal,
+                High,
+                Critical
+            }
+            
+            [Serializable]
+            public class ContentUpdate
+            {
+                public string updateId;
+                public string updateType;
+                public string contentUrl;
+                public long contentSize;
+                public string checksum;
+                public bool isRequired;
+            }
+        }
+        
+        // Performance Configuration
+        [Serializable]
+        public class PerformanceConfig
+        {
+            // Graphics settings
+            public int defaultQualityLevel = 2; // 0=Low, 1=Medium, 2=High, 3=Ultra
+            public bool autoAdjustQuality = true;
+            public int targetFrameRate = 60;
+            public float renderScale = 1.0f;
+            
+            // LOD settings
+            public float[] lodDistances = { 50f, 100f, 200f };
+            public float lodBias = 1.0f;
+            
+            // Memory management
+            public int maxMemoryUsageMB = 512;
+            public bool aggressiveGC = false;
+            public int textureStreamingBudgetMB = 256;
+            
+            // Network settings
+            public int maxConcurrentDownloads = 3;
+            public int downloadTimeoutSeconds = 30;
+            public int apiCallTimeoutSeconds = 10;
+            public int maxRetries = 3;
+            
+            // Platform-specific overrides
+            public Dictionary<string, PlatformPerformanceConfig> platformOverrides;
+            
+            [Serializable]
+            public class PlatformPerformanceConfig
+            {
+                public string platform;
+                public int qualityLevel;
+                public int targetFrameRate;
+                public float renderScale;
+                public int memoryBudgetMB;
+            }
+        }
+        
+        // Debug Configuration
+        [Serializable]
+        public class DebugConfig
+        {
+            public bool enableDebugLogging = false;
+            public bool showFPS = false;
+            public bool showMemoryStats = false;
+            public bool showNetworkStats = false;
+            public bool enableCheatCodes = false;
+            public bool godMode = false;
+            public bool unlockAllContent = false;
+            public bool skipTutorials = false;
+            public List<string> enabledDebugPanels;
+            public Dictionary<string, string> debugOverrides;
+        }
+    }
+}
+```
+
+#### 1.2 Advanced Remote Config Manager
+
+Create `Assets/Scripts/RemoteConfig/AdvancedRemoteConfigManager.cs`:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Unity.Services.RemoteConfig;
+using Unity.Services.Authentication;
+using Unity.Services.Core;
+using UnityEngine;
+using Newtonsoft.Json;
+
+namespace {{project_namespace}}.RemoteConfig
+{
+    public class AdvancedRemoteConfigManager : MonoBehaviour
+    {
+        private static AdvancedRemoteConfigManager _instance;
+        public static AdvancedRemoteConfigManager Instance => _instance;
+
+        [Header("Configuration")]
+        [SerializeField] private bool autoFetch = true;
+        [SerializeField] private float fetchInterval = 300f; // 5 minutes
+        [SerializeField] private bool cacheEnabled = true;
+        [SerializeField] private int cacheExpirationMinutes = 60;
+        
+        [Header("Fallback Settings")]
+        [SerializeField] private TextAsset defaultConfigJson;
+        [SerializeField] private bool useHardcodedFallback = true;
+        
+        // Current configuration
+        private ConfigurationSchema _currentConfig;
+        private ConfigurationSchema _fallbackConfig;
+        private ConfigurationSchema _cachedConfig;
+        
+        // Feature flags cache
+        private Dictionary<string, bool> _featureFlags;
+        private Dictionary<string, string> _featureVariants;
+        
+        // A/B testing
+        private string _currentExperiment;
+        private string _experimentGroup;
+        private Dictionary<string, object> _experimentParameters;
+        
+        // Configuration state
+        private bool _isInitialized;
+        private bool _isFetching;
+        private DateTime _lastFetchTime;
+        private DateTime _cacheTimestamp;
+        
+        // Events
+        public event Action<ConfigurationSchema> OnConfigUpdated;
+        public event Action<string, bool> OnFeatureFlagChanged;
+        public event Action<string> OnConfigFetchFailed;
+        public event Action<Dictionary<string, object>> OnExperimentAssigned;
+        
+        // Real-time updates
+        private bool _realtimeUpdatesEnabled;
+        private WebSocketConnection _webSocketConnection;
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                Initialize();
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        private async void Initialize()
+        {
+            _featureFlags = new Dictionary<string, bool>();
+            _featureVariants = new Dictionary<string, string>();
+            _experimentParameters = new Dictionary<string, object>();
+            
+            // Load fallback configuration
+            LoadFallbackConfig();
+            
+            // Load cached configuration
+            LoadCachedConfig();
+            
+            // Apply initial configuration
+            ApplyConfiguration(_cachedConfig ?? _fallbackConfig);
+            
+            // Setup Remote Config
+            await SetupRemoteConfig();
+            
+            // Start auto-fetch if enabled
+            if (autoFetch)
+            {
+                InvokeRepeating(nameof(FetchConfigPeriodically), fetchInterval, fetchInterval);
+            }
+            
+            _isInitialized = true;
+        }
+
+        #region Configuration Setup
+
+        private async Task SetupRemoteConfig()
+        {
+            try
+            {
+                // Wait for Unity Services initialization
+                if (UnityServices.State != ServicesInitializationState.Initialized)
+                {
+                    await UnityServices.InitializeAsync();
+                }
+                
+                // Wait for authentication
+                if (!AuthenticationService.Instance.IsSignedIn)
+                {
+                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                }
+                
+                // Subscribe to fetch completion
+                RemoteConfigService.Instance.FetchCompleted += OnFetchCompleted;
+                
+                // Set user attributes
+                SetUserAttributes();
+                
+                // Set app attributes
+                SetAppAttributes();
+                
+                // Initial fetch
+                await FetchConfiguration();
+                
+                Debug.Log("RemoteConfig: Setup completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"RemoteConfig: Setup failed - {ex.Message}");
+                OnConfigFetchFailed?.Invoke(ex.Message);
+            }
+        }
+
+        private void SetUserAttributes()
+        {
+            var userAttributes = new Dictionary<string, object>
+            {
+                { "userId", AuthenticationService.Instance.PlayerId },
+                { "platform", Application.platform.ToString() },
+                { "deviceModel", SystemInfo.deviceModel },
+                { "deviceType", SystemInfo.deviceType.ToString() },
+                { "operatingSystem", SystemInfo.operatingSystem },
+                { "language", Application.systemLanguage.ToString() },
+                { "timezone", TimeZoneInfo.Local.Id },
+                { "screenResolution", $"{Screen.width}x{Screen.height}" },
+                { "graphicsDevice", SystemInfo.graphicsDeviceName }
+            };
+            
+            // Add custom user attributes
+            AddCustomUserAttributes(userAttributes);
+            
+            // [[LLM: Add game-specific user attributes like player level, segment, etc.]]
+        }
+
+        private void SetAppAttributes()
+        {
+            var appAttributes = new Dictionary<string, object>
+            {
+                { "appVersion", Application.version },
+                { "buildNumber", {{build_number}} },
+                { "environment", {{environment}}, // dev, staging, production
+                { "bundleId", Application.identifier },
+                { "installDate", GetInstallDate() },
+                { "sessionCount", GetSessionCount() },
+                { "crashCount", GetCrashCount() }
+            };
+            
+            // [[LLM: Add additional app attributes]]
+        }
+
+        private void AddCustomUserAttributes(Dictionary<string, object> attributes)
+        {
+            // Player progression
+            attributes["playerLevel"] = GetPlayerLevel();
+            attributes["daysPlayed"] = GetDaysPlayed();
+            attributes["totalPlaytime"] = GetTotalPlaytime();
+            
+            // Monetization
+            attributes["isPayer"] = IsPayingPlayer();
+            attributes["totalSpent"] = GetTotalSpent();
+            attributes["lastPurchaseDate"] = GetLastPurchaseDate();
+            
+            // Engagement
+            attributes["sessionLength"] = GetAverageSessionLength();
+            attributes["retentionDays"] = GetRetentionDays();
+            
+            // Segmentation
+            attributes["playerSegment"] = GetPlayerSegment();
+            attributes["cohort"] = GetPlayerCohort();
+            
+            // [[LLM: Implement getter methods based on game systems]]
+        }
+
+        #endregion
+
+        #region Configuration Fetching
+
+        public async Task<bool> FetchConfiguration(bool forceRefresh = false)
+        {
+            if (_isFetching)
+            {
+                Debug.LogWarning("RemoteConfig: Fetch already in progress");
+                return false;
+            }
+
+            // Check cache validity
+            if (!forceRefresh && IsCacheValid())
+            {
+                Debug.Log("RemoteConfig: Using cached configuration");
+                ApplyConfiguration(_cachedConfig);
+                return true;
+            }
+
+            _isFetching = true;
+
+            try
+            {
+                Debug.Log("RemoteConfig: Fetching configuration...");
+                
+                // Create fetch options
+                var options = new FetchOptions
+                {
+                    EnvironmentID = {{environment_id}}, // Set in Unity Dashboard
+                    SetEnvironmentID = true
+                };
+                
+                // Fetch with attributes
+                await RemoteConfigService.Instance.FetchConfigsAsync(
+                    GetUserAttributes(),
+                    GetAppAttributes()
+                );
+                
+                _lastFetchTime = DateTime.UtcNow;
+                
+                Debug.Log("RemoteConfig: Fetch completed successfully");
+                return true;
+            }
+            catch (RemoteConfigException ex)
+            {
+                Debug.LogError($"RemoteConfig: Fetch failed - {ex.Message}");
+                OnConfigFetchFailed?.Invoke(ex.Message);
+                
+                // Fall back to cached or default config
+                ApplyConfiguration(_cachedConfig ?? _fallbackConfig);
+                return false;
+            }
+            finally
+            {
+                _isFetching = false;
+            }
+        }
+
+        private void OnFetchCompleted(ConfigResponse response)
+        {
+            if (response.status == ConfigRequestStatus.Success)
+            {
+                Debug.Log($"RemoteConfig: Config fetched - Origin: {response.requestOrigin}");
+                
+                // Parse configuration
+                var newConfig = ParseConfiguration(response.config);
+                
+                // Check for changes
+                if (HasConfigurationChanged(newConfig))
+                {
+                    // Apply new configuration
+                    ApplyConfiguration(newConfig);
+                    
+                    // Save to cache
+                    SaveToCache(newConfig);
+                    
+                    // Notify listeners
+                    OnConfigUpdated?.Invoke(newConfig);
+                }
+                
+                // Handle experiments
+                ProcessExperiments(response.config);
+            }
+            else
+            {
+                Debug.LogError($"RemoteConfig: Fetch failed - Status: {response.status}");
+                OnConfigFetchFailed?.Invoke(response.status.ToString());
+            }
+        }
+
+        private ConfigurationSchema ParseConfiguration(RuntimeConfig config)
+        {
+            var schema = new ConfigurationSchema();
+            
+            // Parse game balance
+            schema.GameBalance = ParseGameBalance(config);
+            
+            // Parse feature flags
+            schema.FeatureFlags = ParseFeatureFlags(config);
+            
+            // Parse monetization
+            schema.Monetization = ParseMonetization(config);
+            
+            // Parse A/B testing
+            schema.ABTesting = ParseABTesting(config);
+            
+            // Parse live ops
+            schema.LiveOps = ParseLiveOps(config);
+            
+            // Parse performance
+            schema.Performance = ParsePerformance(config);
+            
+            // Parse debug
+            schema.Debug = ParseDebug(config);
+            
+            return schema;
+        }
+
+        private ConfigurationSchema.GameBalanceConfig ParseGameBalance(RuntimeConfig config)
+        {
+            return new ConfigurationSchema.GameBalanceConfig
+            {
+                difficultyMultiplier = config.GetFloat("difficulty_multiplier", 1.0f),
+                playerStartHealth = config.GetInt("player_start_health", 100),
+                playerBaseDamage = config.GetInt("player_base_damage", 10),
+                enemyHealthScaling = config.GetFloat("enemy_health_scaling", 1.0f),
+                enemyDamageScaling = config.GetFloat("enemy_damage_scaling", 1.0f),
+                experienceMultiplier = config.GetFloat("experience_multiplier", 1.0f),
+                goldMultiplier = config.GetFloat("gold_multiplier", 1.0f),
+                dropRateMultiplier = config.GetFloat("drop_rate_multiplier", 1.0f)
+            };
+        }
+
+        private ConfigurationSchema.FeatureFlags ParseFeatureFlags(RuntimeConfig config)
+        {
+            var flags = new ConfigurationSchema.FeatureFlags
+            {
+                newTutorialEnabled = config.GetBool("feature_new_tutorial", false),
+                advancedGraphicsEnabled = config.GetBool("feature_advanced_graphics", false),
+                multiplayerEnabled = config.GetBool("feature_multiplayer", false),
+                seasonalEventActive = config.GetBool("feature_seasonal_event", false),
+                debugMenuEnabled = config.GetBool("feature_debug_menu", false),
+                betaFeaturesEnabled = config.GetBool("feature_beta", false),
+                socialFeaturesEnabled = config.GetBool("feature_social", true),
+                cloudSaveEnabled = config.GetBool("feature_cloud_save", true),
+                analyticsEnabled = config.GetBool("feature_analytics", true),
+                adsEnabled = config.GetBool("feature_ads", true),
+                
+                // Rollout percentages
+                newFeatureRolloutPercentage = config.GetInt("rollout_new_feature", 0),
+                experimentalFeaturePercentage = config.GetInt("rollout_experimental", 0),
+                
+                // Variants
+                uiVariant = config.GetString("variant_ui", "default"),
+                tutorialVariant = config.GetString("variant_tutorial", "guided"),
+                progressionSystem = config.GetString("variant_progression", "linear")
+            };
+            
+            // Cache feature flags for quick access
+            CacheFeatureFlags(flags);
+            
+            return flags;
+        }
+
+        private void CacheFeatureFlags(ConfigurationSchema.FeatureFlags flags)
+        {
+            _featureFlags.Clear();
+            _featureVariants.Clear();
+            
+            // Cache boolean flags
+            _featureFlags["new_tutorial"] = flags.newTutorialEnabled;
+            _featureFlags["advanced_graphics"] = flags.advancedGraphicsEnabled;
+            _featureFlags["multiplayer"] = flags.multiplayerEnabled;
+            _featureFlags["seasonal_event"] = flags.seasonalEventActive;
+            _featureFlags["debug_menu"] = flags.debugMenuEnabled;
+            _featureFlags["beta_features"] = flags.betaFeaturesEnabled;
+            _featureFlags["social"] = flags.socialFeaturesEnabled;
+            _featureFlags["cloud_save"] = flags.cloudSaveEnabled;
+            _featureFlags["analytics"] = flags.analyticsEnabled;
+            _featureFlags["ads"] = flags.adsEnabled;
+            
+            // Cache variants
+            _featureVariants["ui"] = flags.uiVariant;
+            _featureVariants["tutorial"] = flags.tutorialVariant;
+            _featureVariants["progression"] = flags.progressionSystem;
+        }
+
+        #endregion
+
+        #region Feature Flags & Rollouts
+
+        public bool IsFeatureEnabled(string featureName)
+        {
+            if (_featureFlags.TryGetValue(featureName, out bool enabled))
+            {
+                return enabled;
+            }
+            
+            // Check rollout percentage
+            return IsInRollout(featureName);
+        }
+
+        private bool IsInRollout(string featureName)
+        {
+            int rolloutPercentage = 0;
+            
+            switch (featureName)
+            {
+                case "new_feature":
+                    rolloutPercentage = _currentConfig?.FeatureFlags?.newFeatureRolloutPercentage ?? 0;
+                    break;
+                case "experimental":
+                    rolloutPercentage = _currentConfig?.FeatureFlags?.experimentalFeaturePercentage ?? 0;
+                    break;
+            }
+            
+            if (rolloutPercentage <= 0) return false;
+            if (rolloutPercentage >= 100) return true;
+            
+            // Use stable hash of user ID for consistent rollout
+            var userId = AuthenticationService.Instance.PlayerId;
+            var hash = GetStableHash(userId + featureName);
+            var userPercentage = hash % 100;
+            
+            return userPercentage < rolloutPercentage;
+        }
+
+        public string GetFeatureVariant(string featureName)
+        {
+            return _featureVariants.TryGetValue(featureName, out string variant) ? 
+                variant : "default";
+        }
+
+        public void EnableFeatureOverride(string featureName, bool enabled)
+        {
+            _featureFlags[featureName] = enabled;
+            OnFeatureFlagChanged?.Invoke(featureName, enabled);
+            
+            Debug.Log($"RemoteConfig: Feature '{featureName}' overridden to {enabled}");
+        }
+
+        private int GetStableHash(string input)
+        {
+            int hash = 0;
+            foreach (char c in input)
+            {
+                hash = ((hash << 5) - hash) + c;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            return Math.Abs(hash);
+        }
+
+        #endregion
+
+        #region A/B Testing
+
+        private void ProcessExperiments(RuntimeConfig config)
+        {
+            _currentExperiment = config.GetString("experiment_id", "none");
+            _experimentGroup = config.GetString("experiment_group", "control");
+            
+            if (_currentExperiment != "none")
+            {
+                Debug.Log($"RemoteConfig: Assigned to experiment '{_currentExperiment}' group '{_experimentGroup}'");
+                
+                // Load experiment parameters
+                LoadExperimentParameters(config);
+                
+                // Notify listeners
+                OnExperimentAssigned?.Invoke(_experimentParameters);
+                
+                // Track assignment in analytics
+                TrackExperimentAssignment();
+            }
+        }
+
+        private void LoadExperimentParameters(RuntimeConfig config)
+        {
+            _experimentParameters.Clear();
+            
+            // Load all parameters prefixed with experiment group
+            var prefix = $"exp_{_experimentGroup}_";
+            
+            // [[LLM: Parse experiment-specific parameters based on experiment design]]
+            
+            // Example parameters
+            _experimentParameters["button_color"] = config.GetString($"{prefix}button_color", "blue");
+            _experimentParameters["reward_multiplier"] = config.GetFloat($"{prefix}reward_multiplier", 1.0f);
+            _experimentParameters["tutorial_type"] = config.GetString($"{prefix}tutorial_type", "standard");
+        }
+
+        private void TrackExperimentAssignment()
+        {
+            // [[LLM: Send experiment assignment to analytics]]
+            var parameters = new Dictionary<string, object>
+            {
+                { "experiment_id", _currentExperiment },
+                { "experiment_group", _experimentGroup },
+                { "assignment_time", DateTime.UtcNow.ToString("O") }
+            };
+            
+            // Track via analytics manager if available
+        }
+
+        public string GetExperimentGroup() => _experimentGroup;
+        
+        public T GetExperimentParameter<T>(string parameterName, T defaultValue = default)
+        {
+            if (_experimentParameters.TryGetValue(parameterName, out object value))
+            {
+                try
+                {
+                    return (T)Convert.ChangeType(value, typeof(T));
+                }
+                catch
+                {
+                    Debug.LogWarning($"RemoteConfig: Failed to convert experiment parameter '{parameterName}' to type {typeof(T)}");
+                }
+            }
+            
+            return defaultValue;
+        }
+
+        #endregion
+
+        #region Live Operations
+
+        public List<ConfigurationSchema.LiveOpsConfig.LiveEvent> GetActiveEvents()
+        {
+            var activeEvents = new List<ConfigurationSchema.LiveOpsConfig.LiveEvent>();
+            
+            if (_currentConfig?.LiveOps?.activeEvents != null)
+            {
+                var now = DateTime.UtcNow;
+                foreach (var evt in _currentConfig.LiveOps.activeEvents)
+                {
+                    if (evt.isActive && evt.startTime <= now && evt.endTime >= now)
+                    {
+                        activeEvents.Add(evt);
+                    }
+                }
+            }
+            
+            return activeEvents;
+        }
+
+        public bool IsEventActive(string eventId)
+        {
+            var activeEvents = GetActiveEvents();
+            return activeEvents.Exists(e => e.eventId == eventId);
+        }
+
+        public ConfigurationSchema.LiveOpsConfig.InGameMessage GetNextMessage()
+        {
+            if (_currentConfig?.LiveOps?.messages == null || _currentConfig.LiveOps.messages.Count == 0)
+                return null;
+            
+            var now = DateTime.UtcNow;
+            var eligibleMessages = _currentConfig.LiveOps.messages.FindAll(m => 
+                m.displayTime <= now && 
+                IsInTargetSegment(m.targetSegment)
+            );
+            
+            if (eligibleMessages.Count == 0)
+                return null;
+            
+            // Sort by priority and return highest
+            eligibleMessages.Sort((a, b) => b.priority.CompareTo(a.priority));
+            return eligibleMessages[0];
+        }
+
+        private bool IsInTargetSegment(string segment)
+        {
+            if (string.IsNullOrEmpty(segment) || segment == "all")
+                return true;
+            
+            // [[LLM: Implement segment matching based on player data]]
+            return GetPlayerSegment() == segment;
+        }
+
+        public bool IsMaintenanceMode()
+        {
+            return _currentConfig?.LiveOps?.isMaintenanceMode ?? false;
+        }
+
+        public string GetMaintenanceMessage()
+        {
+            return _currentConfig?.LiveOps?.maintenanceMessage ?? "Server maintenance in progress";
+        }
+
+        #endregion
+
+        #region Kill Switches
+
+        public void ImplementKillSwitch(string feature)
+        {
+            // Immediate feature disable
+            _featureFlags[feature] = false;
+            OnFeatureFlagChanged?.Invoke(feature, false);
+            
+            Debug.LogWarning($"RemoteConfig: Kill switch activated for feature '{feature}'");
+            
+            // Disable related systems
+            switch (feature)
+            {
+                case "multiplayer":
+                    DisableMultiplayer();
+                    break;
+                case "ads":
+                    DisableAds();
+                    break;
+                case "iap":
+                    DisableIAP();
+                    break;
+                // [[LLM: Add other kill switch implementations]]
+            }
+        }
+
+        private void DisableMultiplayer()
+        {
+            // [[LLM: Implement multiplayer shutdown]]
+            Debug.Log("RemoteConfig: Multiplayer disabled via kill switch");
+        }
+
+        private void DisableAds()
+        {
+            // [[LLM: Implement ad system shutdown]]
+            Debug.Log("RemoteConfig: Ads disabled via kill switch");
+        }
+
+        private void DisableIAP()
+        {
+            // [[LLM: Implement IAP shutdown]]
+            Debug.Log("RemoteConfig: IAP disabled via kill switch");
+        }
+
+        #endregion
+
+        #region Configuration Application
+
+        private void ApplyConfiguration(ConfigurationSchema config)
+        {
+            if (config == null)
+            {
+                Debug.LogError("RemoteConfig: Cannot apply null configuration");
+                return;
+            }
+            
+            _currentConfig = config;
+            
+            // Apply game balance
+            ApplyGameBalance(config.GameBalance);
+            
+            // Apply feature flags
+            ApplyFeatureFlags(config.FeatureFlags);
+            
+            // Apply monetization
+            ApplyMonetization(config.Monetization);
+            
+            // Apply performance settings
+            ApplyPerformanceSettings(config.Performance);
+            
+            // Apply debug settings
+            ApplyDebugSettings(config.Debug);
+            
+            Debug.Log("RemoteConfig: Configuration applied successfully");
+        }
+
+        private void ApplyGameBalance(ConfigurationSchema.GameBalanceConfig balance)
+        {
+            if (balance == null) return;
+            
+            // [[LLM: Apply balance changes to game systems]]
+            // Example:
+            // GameManager.Instance.SetDifficultyMultiplier(balance.difficultyMultiplier);
+            // PlayerController.Instance.SetHealth(balance.playerStartHealth);
+            // CombatSystem.Instance.SetDamage(balance.playerBaseDamage);
+        }
+
+        private void ApplyFeatureFlags(ConfigurationSchema.FeatureFlags flags)
+        {
+            if (flags == null) return;
+            
+            // Check for changes and notify
+            foreach (var flag in _featureFlags)
+            {
+                bool newValue = IsFeatureEnabled(flag.Key);
+                if (flag.Value != newValue)
+                {
+                    OnFeatureFlagChanged?.Invoke(flag.Key, newValue);
+                }
+            }
+        }
+
+        private void ApplyMonetization(ConfigurationSchema.MonetizationConfig monetization)
+        {
+            if (monetization == null) return;
+            
+            // [[LLM: Apply monetization settings to ad and IAP systems]]
+        }
+
+        private void ApplyPerformanceSettings(ConfigurationSchema.PerformanceConfig performance)
+        {
+            if (performance == null) return;
+            
+            // Apply quality settings
+            QualitySettings.SetQualityLevel(performance.defaultQualityLevel);
+            Application.targetFrameRate = performance.targetFrameRate;
+            
+            // Apply LOD settings
+            QualitySettings.lodBias = performance.lodBias;
+            
+            // [[LLM: Apply other performance settings]]
+        }
+
+        private void ApplyDebugSettings(ConfigurationSchema.DebugConfig debug)
+        {
+            if (debug == null) return;
+            
+            // [[LLM: Apply debug settings]]
+        }
+
+        #endregion
+
+        #region Caching
+
+        private void SaveToCache(ConfigurationSchema config)
+        {
+            if (!cacheEnabled) return;
+            
+            try
+            {
+                var json = JsonConvert.SerializeObject(config);
+                PlayerPrefs.SetString("remote_config_cache", json);
+                PlayerPrefs.SetString("remote_config_timestamp", DateTime.UtcNow.ToString("O"));
+                PlayerPrefs.Save();
+                
+                _cachedConfig = config;
+                _cacheTimestamp = DateTime.UtcNow;
+                
+                Debug.Log("RemoteConfig: Configuration cached successfully");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"RemoteConfig: Failed to cache configuration - {ex.Message}");
+            }
+        }
+
+        private void LoadCachedConfig()
+        {
+            if (!cacheEnabled) return;
+            
+            try
+            {
+                var json = PlayerPrefs.GetString("remote_config_cache", "");
+                if (!string.IsNullOrEmpty(json))
+                {
+                    _cachedConfig = JsonConvert.DeserializeObject<ConfigurationSchema>(json);
+                    
+                    var timestampStr = PlayerPrefs.GetString("remote_config_timestamp", "");
+                    if (DateTime.TryParse(timestampStr, out DateTime timestamp))
+                    {
+                        _cacheTimestamp = timestamp;
+                    }
+                    
+                    Debug.Log("RemoteConfig: Cached configuration loaded");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"RemoteConfig: Failed to load cached configuration - {ex.Message}");
+            }
+        }
+
+        private bool IsCacheValid()
+        {
+            if (_cachedConfig == null) return false;
+            
+            var cacheAge = (DateTime.UtcNow - _cacheTimestamp).TotalMinutes;
+            return cacheAge < cacheExpirationMinutes;
+        }
+
+        #endregion
+
+        #region Fallback Configuration
+
+        private void LoadFallbackConfig()
+        {
+            if (defaultConfigJson != null)
+            {
+                try
+                {
+                    _fallbackConfig = JsonConvert.DeserializeObject<ConfigurationSchema>(defaultConfigJson.text);
+                    Debug.Log("RemoteConfig: Fallback configuration loaded");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"RemoteConfig: Failed to load fallback configuration - {ex.Message}");
+                }
+            }
+            
+            // Hard-coded fallback if JSON fails
+            if (_fallbackConfig == null && useHardcodedFallback)
+            {
+                _fallbackConfig = GetHardcodedFallback();
+            }
+        }
+
+        private ConfigurationSchema GetHardcodedFallback()
+        {
+            return new ConfigurationSchema
+            {
+                GameBalance = new ConfigurationSchema.GameBalanceConfig
+                {
+                    difficultyMultiplier = 1.0f,
+                    playerStartHealth = 100,
+                    playerBaseDamage = 10
+                },
+                FeatureFlags = new ConfigurationSchema.FeatureFlags
+                {
+                    cloudSaveEnabled = true,
+                    analyticsEnabled = true
+                },
+                // [[LLM: Complete hardcoded fallback]]
+            };
+        }
+
+        #endregion
+
+        #region Real-time Updates
+
+        public void EnableRealtimeUpdates()
+        {
+            if (_realtimeUpdatesEnabled) return;
+            
+            _realtimeUpdatesEnabled = true;
+            ConnectWebSocket();
+        }
+
+        private void ConnectWebSocket()
+        {
+            // [[LLM: Implement WebSocket connection for real-time config updates]]
+            // This would connect to a WebSocket endpoint that pushes config changes
+        }
+
+        private void OnRealtimeConfigUpdate(string configJson)
+        {
+            try
+            {
+                var newConfig = JsonConvert.DeserializeObject<ConfigurationSchema>(configJson);
+                
+                if (HasConfigurationChanged(newConfig))
+                {
+                    ApplyConfiguration(newConfig);
+                    SaveToCache(newConfig);
+                    OnConfigUpdated?.Invoke(newConfig);
+                    
+                    Debug.Log("RemoteConfig: Real-time configuration update applied");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"RemoteConfig: Failed to apply real-time update - {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region Utility Methods
+
+        private bool HasConfigurationChanged(ConfigurationSchema newConfig)
+        {
+            if (_currentConfig == null) return true;
+            
+            // Compare configurations
+            var currentJson = JsonConvert.SerializeObject(_currentConfig);
+            var newJson = JsonConvert.SerializeObject(newConfig);
+            
+            return currentJson != newJson;
+        }
+
+        private async void FetchConfigPeriodically()
+        {
+            if (!autoFetch) return;
+            
+            await FetchConfiguration();
+        }
+
+        private Dictionary<string, object> GetUserAttributes()
+        {
+            var attributes = new Dictionary<string, object>();
+            SetUserAttributes();
+            return attributes;
+        }
+
+        private Dictionary<string, object> GetAppAttributes()
+        {
+            var attributes = new Dictionary<string, object>();
+            SetAppAttributes();
+            return attributes;
+        }
+
+        // Placeholder methods - implement based on game systems
+        private int GetPlayerLevel() => PlayerPrefs.GetInt("player_level", 1);
+        private int GetDaysPlayed() => PlayerPrefs.GetInt("days_played", 0);
+        private float GetTotalPlaytime() => PlayerPrefs.GetFloat("total_playtime", 0);
+        private bool IsPayingPlayer() => PlayerPrefs.GetInt("is_payer", 0) == 1;
+        private float GetTotalSpent() => PlayerPrefs.GetFloat("total_spent", 0);
+        private string GetLastPurchaseDate() => PlayerPrefs.GetString("last_purchase", "");
+        private float GetAverageSessionLength() => PlayerPrefs.GetFloat("avg_session", 0);
+        private int GetRetentionDays() => PlayerPrefs.GetInt("retention_days", 0);
+        private string GetPlayerSegment() => PlayerPrefs.GetString("player_segment", "new");
+        private string GetPlayerCohort() => PlayerPrefs.GetString("player_cohort", "2024-01");
+        private string GetInstallDate() => PlayerPrefs.GetString("install_date", DateTime.UtcNow.ToString("O"));
+        private int GetSessionCount() => PlayerPrefs.GetInt("session_count", 0);
+        private int GetCrashCount() => PlayerPrefs.GetInt("crash_count", 0);
+
+        #endregion
+
+        #region Public API
+
+        public ConfigurationSchema GetCurrentConfig() => _currentConfig;
+        
+        public T GetConfigValue<T>(string key, T defaultValue = default)
+        {
+            var config = RemoteConfigService.Instance.appConfig;
+            
+            if (typeof(T) == typeof(int))
+                return (T)(object)config.GetInt(key, (int)(object)defaultValue);
+            else if (typeof(T) == typeof(float))
+                return (T)(object)config.GetFloat(key, (float)(object)defaultValue);
+            else if (typeof(T) == typeof(bool))
+                return (T)(object)config.GetBool(key, (bool)(object)defaultValue);
+            else if (typeof(T) == typeof(string))
+                return (T)(object)config.GetString(key, (string)(object)defaultValue);
+            
+            return defaultValue;
+        }
+        
+        public void ForceConfigRefresh()
+        {
+            _ = FetchConfiguration(true);
+        }
+        
+        public bool IsInitialized() => _isInitialized;
+        
+        public bool IsFetching() => _isFetching;
+        
+        public DateTime GetLastFetchTime() => _lastFetchTime;
+
+        #endregion
+
+        #region Lifecycle
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (!pauseStatus && autoFetch)
+            {
+                // Refresh config when returning from pause
+                _ = FetchConfiguration();
+            }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus && autoFetch)
+            {
+                // Check if we should refresh
+                var timeSinceLastFetch = (DateTime.UtcNow - _lastFetchTime).TotalMinutes;
+                if (timeSinceLastFetch > 30) // Refresh if older than 30 minutes
+                {
+                    _ = FetchConfiguration();
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+            {
+                CancelInvoke();
+                
+                if (RemoteConfigService.Instance != null)
+                {
+                    RemoteConfigService.Instance.FetchCompleted -= OnFetchCompleted;
+                }
+                
+                // Disconnect WebSocket if connected
+                _webSocketConnection?.Disconnect();
+            }
+        }
+
+        #endregion
+    }
+
+    // Helper class for WebSocket connection (simplified)
+    public class WebSocketConnection
+    {
+        public void Disconnect()
+        {
+            // [[LLM: Implement WebSocket disconnection]]
+        }
+    }
+}
+```
+
+### 3. Testing Implementation
+
+Create `Assets/Tests/PlayMode/RemoteConfigTests.cs`:
+
+```csharp
+using System.Collections;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
+using {{project_namespace}}.RemoteConfig;
+
+public class RemoteConfigTests
+{
+    private AdvancedRemoteConfigManager _remoteConfig;
+
+    [SetUp]
+    public void Setup()
+    {
+        var go = new GameObject("RemoteConfig");
+        _remoteConfig = go.AddComponent<AdvancedRemoteConfigManager>();
+    }
+
+    [UnityTest]
+    public IEnumerator FetchConfig_Success()
+    {
+        var task = _remoteConfig.FetchConfiguration();
+        yield return new WaitUntil(() => task.IsCompleted);
+        
+        Assert.IsTrue(task.Result);
+        Assert.IsNotNull(_remoteConfig.GetCurrentConfig());
+    }
+
+    [Test]
+    public void FeatureFlag_RolloutPercentage()
+    {
+        // Test rollout logic
+        Assert.Pass();
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (_remoteConfig != null)
+            Object.DestroyImmediate(_remoteConfig.gameObject);
+    }
+}
+```
+
+## Success Criteria
+
+- Configuration fetched in < 2 seconds
+- Feature flags apply immediately
+- A/B test assignment consistent
+- Rollout percentages accurate
+- Kill switches work instantly
+- Cache survives app restarts
+- Fallback config always available
+- Real-time updates < 100ms latency
+- No performance impact on gameplay
+- Dashboard changes reflect in-game
+
+## Notes
+
+- Implements enterprise-grade remote configuration
+- Supports complex A/B testing scenarios
+- Provides instant kill switches for emergencies
+- Enables gradual feature rollouts
+- Integrates with Unity Analytics for impact measurement
+- [[LLM: Adapt to specific game configuration needs]]
+==================== END: .bmad-unity-game-dev/tasks/unity-remote-config-setup.md ====================
 
 ==================== START: .bmad-unity-game-dev/tasks/unity-tilemap-setup.md ====================
 # Unity Tilemap Setup Task

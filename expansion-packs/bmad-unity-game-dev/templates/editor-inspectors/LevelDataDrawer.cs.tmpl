@@ -1,0 +1,561 @@
+// [[LLM: This template creates a comprehensive Unity PropertyDrawer for level metadata.
+// Adapt the following elements based on your level system:
+// - Level metadata structure (scene references, difficulty, objectives)
+// - Asset dependency tracking and validation
+// - Level progression requirements and unlocks
+// - Visual design indicators and preview
+// The template supports complex level hierarchies with validation.]]
+
+using UnityEngine;
+using UnityEditor;
+using UnityEngine.SceneManagement;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace {{project_namespace}}.Editor
+{
+    /// <summary>
+    /// [[LLM: Custom PropertyDrawer for {{level_data_class_name}} structs/classes.
+    /// Provides comprehensive level metadata editing with scene validation,
+    /// asset dependency tracking, and progression requirements.
+    /// Customize level properties and validation rules for your game.]]
+    /// </summary>
+    [CustomPropertyDrawer(typeof({{level_data_class_name}}))]
+    public class {{level_data_class_name}}Drawer : PropertyDrawer
+    {
+        // [[LLM: UI layout constants and visual settings.]]
+        private const float {{line_height}} = EditorGUIUtility.singleLineHeight;
+        private const float {{line_spacing}} = EditorGUIUtility.standardVerticalSpacing;
+        private const float {{indent_width}} = 15f;
+        private const float {{button_width}} = 70f;
+        private const float {{preview_height}} = 60f;
+        
+        // [[LLM: Visual indicators and colors.]]
+        private readonly Color {{valid_color}} = new Color(0.2f, 0.8f, 0.2f, 0.3f);
+        private readonly Color {{warning_color}} = new Color(0.8f, 0.8f, 0.2f, 0.3f);
+        private readonly Color {{error_color}} = new Color(0.8f, 0.2f, 0.2f, 0.3f);
+        
+        // [[LLM: Cached data for performance.]]
+        private static Dictionary<string, bool> {{foldout_states}} = new Dictionary<string, bool>();
+        private static Dictionary<string, List<string>> {{validation_cache}} = new Dictionary<string, List<string>>();
+        
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            // [[LLM: Calculate dynamic height based on foldout state and content.]]
+            var height = {{line_height}} + {{line_spacing}};
+            
+            var foldoutKey = GetFoldoutKey(property);
+            if ({{foldout_states}}.TryGetValue(foldoutKey, out bool isExpanded) && isExpanded)
+            {
+                // [[LLM: Calculate expanded height based on visible properties.]]
+                height += GetExpandedHeight(property);
+            }
+            
+            return height;
+        }
+        
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            EditorGUI.BeginProperty(position, label, property);
+            
+            var foldoutKey = GetFoldoutKey(property);
+            var isExpanded = {{foldout_states}}.GetValueOrDefault(foldoutKey, false);
+            
+            // [[LLM: Level data header with validation indicator.]]
+            var headerRect = new Rect(position.x, position.y, position.width, {{line_height}});
+            DrawLevelHeader(headerRect, property, label, ref isExpanded);
+            
+            {{foldout_states}}[foldoutKey] = isExpanded;
+            
+            if (isExpanded)
+            {
+                // [[LLM: Expanded level data content.]]
+                var contentRect = new Rect(position.x, position.y + {{line_height}} + {{line_spacing}}, 
+                    position.width, position.height - {{line_height}} - {{line_spacing}});
+                DrawLevelContent(contentRect, property);
+            }
+            
+            EditorGUI.EndProperty();
+        }
+        
+        private void DrawLevelHeader(Rect position, SerializedProperty property, GUIContent label, ref bool isExpanded)
+        {
+            // [[LLM: Level header with name, validation status, and quick actions.]]
+            var levelName = GetLevelName(property);
+            var validationStatus = GetValidationStatus(property);
+            
+            // [[LLM: Background color based on validation status.]]
+            var backgroundColor = validationStatus == ValidationStatus.Valid ? {{valid_color}} :
+                                  validationStatus == ValidationStatus.Warning ? {{warning_color}} : {{error_color}};
+            
+            EditorGUI.DrawRect(position, backgroundColor);
+            
+            // [[LLM: Foldout toggle.]]
+            var foldoutRect = new Rect(position.x, position.y, {{indent_width}}, position.height);
+            isExpanded = EditorGUI.Foldout(foldoutRect, isExpanded, GUIContent.none, true);
+            
+            // [[LLM: Level name and status.]]
+            var nameRect = new Rect(position.x + {{indent_width}}, position.y, position.width - {{indent_width}} - {{button_width}} * 2, position.height);
+            var displayName = string.IsNullOrEmpty(levelName) ? "Unnamed Level" : levelName;
+            var statusIcon = GetValidationIcon(validationStatus);
+            EditorGUI.LabelField(nameRect, $"{statusIcon} {displayName}", EditorStyles.boldLabel);
+            
+            // [[LLM: Quick action buttons.]]
+            var loadButtonRect = new Rect(position.x + position.width - {{button_width}} * 2, position.y, {{button_width}}, position.height);
+            var validateButtonRect = new Rect(position.x + position.width - {{button_width}}, position.y, {{button_width}}, position.height);
+            
+            if (GUI.Button(loadButtonRect, "Load"))
+            {
+                LoadLevelScene(property);
+            }
+            
+            if (GUI.Button(validateButtonRect, "Check"))
+            {
+                ValidateLevel(property);
+            }
+        }
+        
+        private void DrawLevelContent(Rect position, SerializedProperty property)
+        {
+            // [[LLM: Expanded level content with organized sections.]]
+            var currentY = position.y;
+            var sectionWidth = position.width;
+            
+            // [[LLM: Basic level information.]]
+            currentY = DrawBasicInfo(position.x, currentY, sectionWidth, property);
+            currentY += {{line_spacing}};
+            
+            // [[LLM: Scene and asset references.]]
+            currentY = DrawSceneReferences(position.x, currentY, sectionWidth, property);
+            currentY += {{line_spacing}};
+            
+            // [[LLM: Level progression and requirements.]]
+            currentY = DrawProgressionData(position.x, currentY, sectionWidth, property);
+            currentY += {{line_spacing}};
+            
+            // [[LLM: Validation and debugging info.]]
+            DrawValidationInfo(position.x, currentY, sectionWidth, property);
+        }
+        
+        private float DrawBasicInfo(float x, float y, float width, SerializedProperty property)
+        {
+            // [[LLM: Basic level information fields.]]
+            var startY = y;
+            
+            EditorGUI.LabelField(new Rect(x, y, width, {{line_height}}), "Basic Information", EditorStyles.boldLabel);
+            y += {{line_height}} + {{line_spacing}};
+            
+            // [[LLM: Level name and description.]]
+            var levelNameProp = property.FindPropertyRelative("{{level_name_field}}");
+            if (levelNameProp != null)
+            {
+                EditorGUI.PropertyField(new Rect(x + {{indent_width}}, y, width - {{indent_width}}, {{line_height}}), 
+                    levelNameProp, new GUIContent("Level Name"));
+                y += {{line_height}} + {{line_spacing}};
+            }
+            
+            var descriptionProp = property.FindPropertyRelative("{{description_field}}");
+            if (descriptionProp != null)
+            {
+                var descHeight = EditorGUI.GetPropertyHeight(descriptionProp);
+                EditorGUI.PropertyField(new Rect(x + {{indent_width}}, y, width - {{indent_width}}, descHeight), 
+                    descriptionProp, new GUIContent("Description"));
+                y += descHeight + {{line_spacing}};
+            }
+            
+            // [[LLM: Difficulty and category.]]
+            var difficultyProp = property.FindPropertyRelative("{{difficulty_field}}");
+            var categoryProp = property.FindPropertyRelative("{{category_field}}");
+            
+            if (difficultyProp != null && categoryProp != null)
+            {
+                var halfWidth = (width - {{indent_width}} - {{line_spacing}}) / 2f;
+                
+                EditorGUI.PropertyField(new Rect(x + {{indent_width}}, y, halfWidth, {{line_height}}), 
+                    difficultyProp, new GUIContent("Difficulty"));
+                EditorGUI.PropertyField(new Rect(x + {{indent_width}} + halfWidth + {{line_spacing}}, y, halfWidth, {{line_height}}), 
+                    categoryProp, new GUIContent("Category"));
+                y += {{line_height}} + {{line_spacing}};
+            }
+            
+            return y - startY;
+        }
+        
+        private float DrawSceneReferences(float x, float y, float width, SerializedProperty property)
+        {
+            // [[LLM: Scene and asset reference management.]]
+            var startY = y;
+            
+            EditorGUI.LabelField(new Rect(x, y, width, {{line_height}}), "Scene & Assets", EditorStyles.boldLabel);
+            y += {{line_height}} + {{line_spacing}};
+            
+            // [[LLM: Main scene reference.]]
+            var sceneRefProp = property.FindPropertyRelative("{{scene_reference_field}}");
+            if (sceneRefProp != null)
+            {
+                var sceneRect = new Rect(x + {{indent_width}}, y, width - {{indent_width}} - {{button_width}}, {{line_height}});
+                var buttonRect = new Rect(x + width - {{button_width}}, y, {{button_width}}, {{line_height}});
+                
+                EditorGUI.PropertyField(sceneRect, sceneRefProp, new GUIContent("Scene Asset"));
+                
+                if (GUI.Button(buttonRect, "Ping"))
+                {
+                    if (sceneRefProp.objectReferenceValue != null)
+                    {
+                        EditorGUIUtility.PingObject(sceneRefProp.objectReferenceValue);
+                    }
+                }
+                
+                y += {{line_height}} + {{line_spacing}};
+            }
+            
+            // [[LLM: Additional asset dependencies.]]
+            var dependenciesProp = property.FindPropertyRelative("{{asset_dependencies_field}}");
+            if (dependenciesProp != null)
+            {
+                var depHeight = EditorGUI.GetPropertyHeight(dependenciesProp);
+                EditorGUI.PropertyField(new Rect(x + {{indent_width}}, y, width - {{indent_width}}, depHeight), 
+                    dependenciesProp, new GUIContent("Asset Dependencies"), true);
+                y += depHeight + {{line_spacing}};
+            }
+            
+            // [[LLM: Preview section (if available).]]
+            var previewProp = property.FindPropertyRelative("{{preview_image_field}}");
+            if (previewProp != null && previewProp.objectReferenceValue != null)
+            {
+                DrawLevelPreview(new Rect(x + {{indent_width}}, y, width - {{indent_width}}, {{preview_height}}), previewProp);
+                y += {{preview_height}} + {{line_spacing}};
+            }
+            
+            return y - startY;
+        }
+        
+        private float DrawProgressionData(float x, float y, float width, SerializedProperty property)
+        {
+            // [[LLM: Level progression and unlock requirements.]]
+            var startY = y;
+            
+            EditorGUI.LabelField(new Rect(x, y, width, {{line_height}}), "Progression & Requirements", EditorStyles.boldLabel);
+            y += {{line_height}} + {{line_spacing}};
+            
+            // [[LLM: Unlock requirements.]]
+            var requirementsProp = property.FindPropertyRelative("{{unlock_requirements_field}}");
+            if (requirementsProp != null)
+            {
+                var reqHeight = EditorGUI.GetPropertyHeight(requirementsProp);
+                EditorGUI.PropertyField(new Rect(x + {{indent_width}}, y, width - {{indent_width}}, reqHeight), 
+                    requirementsProp, new GUIContent("Unlock Requirements"), true);
+                y += reqHeight + {{line_spacing}};
+            }
+            
+            // [[LLM: Objectives and completion criteria.]]
+            var objectivesProp = property.FindPropertyRelative("{{objectives_field}}");
+            if (objectivesProp != null)
+            {
+                var objHeight = EditorGUI.GetPropertyHeight(objectivesProp);
+                EditorGUI.PropertyField(new Rect(x + {{indent_width}}, y, width - {{indent_width}}, objHeight), 
+                    objectivesProp, new GUIContent("Level Objectives"), true);
+                y += objHeight + {{line_spacing}};
+            }
+            
+            // [[LLM: Rewards and unlocks.]]
+            var rewardsProp = property.FindPropertyRelative("{{rewards_field}}");
+            if (rewardsProp != null)
+            {
+                var rewHeight = EditorGUI.GetPropertyHeight(rewardsProp);
+                EditorGUI.PropertyField(new Rect(x + {{indent_width}}, y, width - {{indent_width}}, rewHeight), 
+                    rewardsProp, new GUIContent("Completion Rewards"), true);
+                y += rewHeight + {{line_spacing}};
+            }
+            
+            return y - startY;
+        }
+        
+        private void DrawValidationInfo(float x, float y, float width, SerializedProperty property)
+        {
+            // [[LLM: Validation results and debugging information.]]
+            var foldoutKey = GetFoldoutKey(property);
+            
+            if ({{validation_cache}}.TryGetValue(foldoutKey, out var validationMessages) && validationMessages.Count > 0)
+            {
+                EditorGUI.LabelField(new Rect(x, y, width, {{line_height}}), "Validation Issues", EditorStyles.boldLabel);
+                y += {{line_height}} + {{line_spacing}};
+                
+                foreach (var message in validationMessages)
+                {
+                    var messageRect = new Rect(x + {{indent_width}}, y, width - {{indent_width}}, {{line_height}});
+                    EditorGUI.HelpBox(messageRect, message, MessageType.Warning);
+                    y += {{line_height}} + {{line_spacing}};
+                }
+            }
+        }
+        
+        private void DrawLevelPreview(Rect position, SerializedProperty previewProp)
+        {
+            // [[LLM: Level preview image display.]]
+            var previewTexture = previewProp.objectReferenceValue as Texture2D;
+            if (previewTexture != null)
+            {
+                var aspectRatio = (float)previewTexture.width / previewTexture.height;
+                var previewWidth = Mathf.Min(position.width, position.height * aspectRatio);
+                var previewHeight = previewWidth / aspectRatio;
+                
+                var centerX = position.x + (position.width - previewWidth) / 2f;
+                var centerY = position.y + (position.height - previewHeight) / 2f;
+                
+                var previewRect = new Rect(centerX, centerY, previewWidth, previewHeight);
+                EditorGUI.DrawPreviewTexture(previewRect, previewTexture);
+                
+                // [[LLM: Preview border.]]
+                EditorGUI.DrawRect(new Rect(previewRect.x - 1, previewRect.y - 1, previewRect.width + 2, 1), Color.gray);
+                EditorGUI.DrawRect(new Rect(previewRect.x - 1, previewRect.y + previewRect.height, previewRect.width + 2, 1), Color.gray);
+                EditorGUI.DrawRect(new Rect(previewRect.x - 1, previewRect.y, 1, previewRect.height), Color.gray);
+                EditorGUI.DrawRect(new Rect(previewRect.x + previewRect.width, previewRect.y, 1, previewRect.height), Color.gray);
+            }
+        }
+        
+        private float GetExpandedHeight(SerializedProperty property)
+        {
+            // [[LLM: Calculate total height for expanded content.]]
+            float height = 0f;
+            
+            // [[LLM: Basic info section height.]]
+            height += {{line_height}} * 4 + {{line_spacing}} * 4; // Header + Name + Description + Difficulty
+            
+            // [[LLM: Scene references section height.]]
+            height += {{line_height}} * 2 + {{line_spacing}} * 2; // Header + Scene
+            
+            var dependenciesProp = property.FindPropertyRelative("{{asset_dependencies_field}}");
+            if (dependenciesProp != null)
+            {
+                height += EditorGUI.GetPropertyHeight(dependenciesProp) + {{line_spacing}};
+            }
+            
+            // [[LLM: Preview height (if available).]]
+            var previewProp = property.FindPropertyRelative("{{preview_image_field}}");
+            if (previewProp != null && previewProp.objectReferenceValue != null)
+            {
+                height += {{preview_height}} + {{line_spacing}};
+            }
+            
+            // [[LLM: Progression section height.]]
+            height += {{line_height}} + {{line_spacing}}; // Header
+            
+            var requirementsProp = property.FindPropertyRelative("{{unlock_requirements_field}}");
+            if (requirementsProp != null)
+            {
+                height += EditorGUI.GetPropertyHeight(requirementsProp) + {{line_spacing}};
+            }
+            
+            var objectivesProp = property.FindPropertyRelative("{{objectives_field}}");
+            if (objectivesProp != null)
+            {
+                height += EditorGUI.GetPropertyHeight(objectivesProp) + {{line_spacing}};
+            }
+            
+            var rewardsProp = property.FindPropertyRelative("{{rewards_field}}");
+            if (rewardsProp != null)
+            {
+                height += EditorGUI.GetPropertyHeight(rewardsProp) + {{line_spacing}};
+            }
+            
+            // [[LLM: Validation section height.]]
+            var foldoutKey = GetFoldoutKey(property);
+            if ({{validation_cache}}.TryGetValue(foldoutKey, out var validationMessages) && validationMessages.Count > 0)
+            {
+                height += ({{line_height}} + {{line_spacing}}) * (validationMessages.Count + 1);
+            }
+            
+            return height;
+        }
+        
+        private string GetFoldoutKey(SerializedProperty property)
+        {
+            // [[LLM: Generate unique key for foldout state tracking.]]
+            return $"{property.serializedObject.targetObject.GetInstanceID()}_{property.propertyPath}";
+        }
+        
+        private string GetLevelName(SerializedProperty property)
+        {
+            // [[LLM: Extract level name from property data.]]
+            var nameProp = property.FindPropertyRelative("{{level_name_field}}");
+            return nameProp?.stringValue ?? "";
+        }
+        
+        private ValidationStatus GetValidationStatus(SerializedProperty property)
+        {
+            // [[LLM: Determine validation status for level data.]]
+            var foldoutKey = GetFoldoutKey(property);
+            
+            if (!{{validation_cache}}.ContainsKey(foldoutKey))
+            {
+                ValidateLevel(property);
+            }
+            
+            var messages = {{validation_cache}}.GetValueOrDefault(foldoutKey, new List<string>());
+            
+            if (messages.Count == 0)
+                return ValidationStatus.Valid;
+            
+            return messages.Any(m => m.Contains("Error")) ? ValidationStatus.Error : ValidationStatus.Warning;
+        }
+        
+        private string GetValidationIcon(ValidationStatus status)
+        {
+            // [[LLM: Get visual icon for validation status.]]
+            return status switch
+            {
+                ValidationStatus.Valid => "✓",
+                ValidationStatus.Warning => "⚠",
+                ValidationStatus.Error => "✗",
+                _ => "?"
+            };
+        }
+        
+        private void ValidateLevel(SerializedProperty property)
+        {
+            // [[LLM: Comprehensive level validation with specific rules.]]
+            var foldoutKey = GetFoldoutKey(property);
+            var validationMessages = new List<string>();
+            
+            // [[LLM: Validate required fields.]]
+            var levelName = property.FindPropertyRelative("{{level_name_field}}")?.stringValue;
+            if (string.IsNullOrEmpty(levelName))
+            {
+                validationMessages.Add("Error: Level name is required");
+            }
+            
+            // [[LLM: Validate scene reference.]]
+            var sceneRef = property.FindPropertyRelative("{{scene_reference_field}}")?.objectReferenceValue;
+            if (sceneRef == null)
+            {
+                validationMessages.Add("Warning: No scene asset assigned");
+            }
+            else
+            {
+                // [[LLM: Validate scene exists and is in build settings.]]
+                ValidateSceneAsset(sceneRef, validationMessages);
+            }
+            
+            // [[LLM: Validate difficulty settings.]]
+            var difficulty = property.FindPropertyRelative("{{difficulty_field}}")?.enumValueIndex ?? 0;
+            if (difficulty < 0)
+            {
+                validationMessages.Add("Warning: Invalid difficulty setting");
+            }
+            
+            // [[LLM: Validate objectives.]]
+            ValidateObjectives(property, validationMessages);
+            
+            // [[LLM: Validate unlock requirements.]]
+            ValidateUnlockRequirements(property, validationMessages);
+            
+            {{validation_cache}}[foldoutKey] = validationMessages;
+        }
+        
+        private void ValidateSceneAsset(Object sceneAsset, List<string> validationMessages)
+        {
+            // [[LLM: Validate scene asset and build settings.]]
+            var scenePath = AssetDatabase.GetAssetPath(sceneAsset);
+            
+            if (string.IsNullOrEmpty(scenePath))
+            {
+                validationMessages.Add("Error: Invalid scene asset");
+                return;
+            }
+            
+            // [[LLM: Check if scene is in build settings.]]
+            var buildScenes = EditorBuildSettings.scenes;
+            var isInBuild = buildScenes.Any(scene => scene.path == scenePath && scene.enabled);
+            
+            if (!isInBuild)
+            {
+                validationMessages.Add("Warning: Scene not in build settings or disabled");
+            }
+        }
+        
+        private void ValidateObjectives(SerializedProperty property, List<string> validationMessages)
+        {
+            // [[LLM: Validate level objectives configuration.]]
+            var objectivesProp = property.FindPropertyRelative("{{objectives_field}}");
+            
+            if (objectivesProp != null && objectivesProp.isArray)
+            {
+                if (objectivesProp.arraySize == 0)
+                {
+                    validationMessages.Add("Warning: No objectives defined for level");
+                }
+                
+                for (int i = 0; i < objectivesProp.arraySize; i++)
+                {
+                    var objective = objectivesProp.GetArrayElementAtIndex(i);
+                    // [[LLM: Validate individual objectives.]]
+                    ValidateIndividualObjective(objective, i, validationMessages);
+                }
+            }
+        }
+        
+        private void ValidateIndividualObjective(SerializedProperty objective, int index, List<string> validationMessages)
+        {
+            // [[LLM: Validate individual objective configuration.]]
+            var description = objective.FindPropertyRelative("{{objective_description_field}}")?.stringValue;
+            if (string.IsNullOrEmpty(description))
+            {
+                validationMessages.Add($"Warning: Objective {index + 1} has no description");
+            }
+            
+            var isRequired = objective.FindPropertyRelative("{{objective_required_field}}")?.boolValue ?? false;
+            var points = objective.FindPropertyRelative("{{objective_points_field}}")?.intValue ?? 0;
+            
+            if (isRequired && points <= 0)
+            {
+                validationMessages.Add($"Warning: Required objective {index + 1} should have positive point value");
+            }
+        }
+        
+        private void ValidateUnlockRequirements(SerializedProperty property, List<string> validationMessages)
+        {
+            // [[LLM: Validate unlock requirements and dependencies.]]
+            var requirementsProp = property.FindPropertyRelative("{{unlock_requirements_field}}");
+            
+            if (requirementsProp != null)
+            {
+                // [[LLM: Check for circular dependencies.]]
+                // [[LLM: Validate prerequisite levels exist.]]
+                // [[LLM: Check achievement requirements are valid.]]
+                // Implement specific validation logic for your unlock system.
+            }
+        }
+        
+        private void LoadLevelScene(SerializedProperty property)
+        {
+            // [[LLM: Load level scene in editor for testing.]]
+            var sceneRef = property.FindPropertyRelative("{{scene_reference_field}}")?.objectReferenceValue;
+            
+            if (sceneRef != null)
+            {
+                var scenePath = AssetDatabase.GetAssetPath(sceneRef);
+                
+                if (!string.IsNullOrEmpty(scenePath))
+                {
+                    if (EditorUtility.DisplayDialog("Load Scene", 
+                        $"Load scene '{scenePath}'? Unsaved changes will be lost.", "Load", "Cancel"))
+                    {
+                        UnityEditor.SceneManagement.EditorSceneManager.OpenScene(scenePath);
+                    }
+                }
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("Load Scene", "No scene asset assigned to this level.", "OK");
+            }
+        }
+        
+        private enum ValidationStatus
+        {
+            Valid,
+            Warning,
+            Error
+        }
+    }
+}

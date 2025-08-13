@@ -1,0 +1,789 @@
+// [[LLM: This template creates a comprehensive Unity CustomEditor for audio management systems.
+// Adapt the following elements based on your audio architecture:
+// - Audio clip organization and categorization
+// - Volume mixing and audio groups configuration
+// - 3D spatial audio settings and falloff curves
+// - Audio compression and quality settings per platform
+// The template supports advanced audio features with real-time testing.]]
+
+using UnityEngine;
+using UnityEditor;
+using UnityEngine.Audio;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace {{project_namespace}}.Editor
+{
+    /// <summary>
+    /// [[LLM: Custom inspector for {{audio_manager_class_name}} ScriptableObject.
+    /// Provides comprehensive audio management with clip organization,
+    /// mixing controls, 3D audio settings, and real-time testing.
+    /// Customize audio categories and settings for your audio system.]]
+    /// </summary>
+    [CustomEditor(typeof({{audio_manager_class_name}}))]
+    public class {{audio_manager_class_name}}Inspector : Editor
+    {
+        // [[LLM: SerializedProperties for audio configuration.]]
+        private SerializedProperty {{music_settings_prop}};
+        private SerializedProperty {{sfx_settings_prop}};
+        private SerializedProperty {{voice_settings_prop}};
+        private SerializedProperty {{ambient_settings_prop}};
+        private SerializedProperty {{mixer_groups_prop}};
+        private SerializedProperty {{audio_sources_prop}};
+        
+        // [[LLM: Inspector UI state management.]]
+        private bool {{music_foldout}} = true;
+        private bool {{sfx_foldout}} = true;
+        private bool {{voice_foldout}} = true;
+        private bool {{ambient_foldout}} = true;
+        private bool {{mixing_foldout}} = true;
+        private bool {{spatial_foldout}} = false;
+        private bool {{advanced_foldout}} = false;
+        
+        // [[LLM: Audio testing and preview state.]]
+        private AudioSource {{preview_source}};
+        private bool {{is_playing_preview}} = false;
+        private AudioClip {{current_preview_clip}};
+        private float {{preview_volume}} = 1.0f;
+        private string {{current_category}} = "";
+        
+        // [[LLM: Visual indicators and validation.]]
+        private List<string> {{validation_messages}} = new List<string>();
+        private Dictionary<AudioClip, float> {{clip_durations}} = new Dictionary<AudioClip, float>();
+        
+        // [[LLM: UI styling.]]
+        private readonly Color {{playing_color}} = Color.green;
+        private readonly Color {{stopped_color}} = Color.gray;
+        private readonly Color {{warning_color}} = Color.yellow;
+        
+        private void OnEnable()
+        {
+            // [[LLM: Initialize SerializedProperties for audio data access.]]
+            {{music_settings_prop}} = serializedObject.FindProperty("{{music_settings_field_name}}");
+            {{sfx_settings_prop}} = serializedObject.FindProperty("{{sfx_settings_field_name}}");
+            {{voice_settings_prop}} = serializedObject.FindProperty("{{voice_settings_field_name}}");
+            {{ambient_settings_prop}} = serializedObject.FindProperty("{{ambient_settings_field_name}}");
+            {{mixer_groups_prop}} = serializedObject.FindProperty("{{mixer_groups_field_name}}");
+            {{audio_sources_prop}} = serializedObject.FindProperty("{{audio_sources_field_name}}");
+            
+            // [[LLM: Create preview audio source.]]
+            CreatePreviewAudioSource();
+            
+            // [[LLM: Initialize audio clip analysis.]]
+            AnalyzeAudioClips();
+        }
+        
+        private void OnDisable()
+        {
+            // [[LLM: Cleanup preview audio source.]]
+            StopPreview();
+            if ({{preview_source}} != null)
+            {
+                DestroyImmediate({{preview_source}}.gameObject);
+                {{preview_source}} = null;
+            }
+        }
+        
+        public override void OnInspectorGUI()
+        {
+            serializedObject.Update();
+            
+            var audioManager = target as {{audio_manager_class_name}};
+            
+            // [[LLM: Audio manager header with global controls.]]
+            DrawAudioManagerHeader(audioManager);
+            
+            EditorGUILayout.Space(10);
+            
+            // [[LLM: Audio category sections.]]
+            DrawMusicSection(audioManager);
+            DrawSFXSection(audioManager);
+            DrawVoiceSection(audioManager);
+            DrawAmbientSection(audioManager);
+            
+            EditorGUILayout.Space(10);
+            
+            // [[LLM: Mixing and advanced audio settings.]]
+            DrawMixingSection(audioManager);
+            DrawSpatialAudioSection(audioManager);
+            DrawAdvancedSection(audioManager);
+            
+            // [[LLM: Validation and management tools.]]
+            DrawValidationSection(audioManager);
+            DrawManagementButtons(audioManager);
+            
+            // [[LLM: Apply property modifications.]]
+            if (serializedObject.ApplyModifiedProperties())
+            {
+                ValidateAudioConfiguration(audioManager);
+                EditorUtility.SetDirty(audioManager);
+            }
+        }
+        
+        private void DrawAudioManagerHeader({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Audio manager header with global volume and master controls.]]
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            
+            var titleStyle = new GUIStyle(EditorStyles.largeLabel)
+            {
+                fontSize = 16,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter
+            };
+            
+            EditorGUILayout.LabelField("{{audio_manager_display_name}}", titleStyle);
+            
+            EditorGUILayout.Space(5);
+            
+            // [[LLM: Master volume control.]]
+            var masterVolumeProp = serializedObject.FindProperty("{{master_volume_field}}");
+            if (masterVolumeProp != null)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("Master Volume", GUILayout.Width(100));
+                EditorGUILayout.PropertyField(masterVolumeProp, GUIContent.none);
+                EditorGUILayout.LabelField($"{masterVolumeProp.floatValue:P0}", GUILayout.Width(40));
+                EditorGUILayout.EndHorizontal();
+            }
+            
+            // [[LLM: Global audio state indicators.]]
+            var clipCount = GetTotalClipCount(audioManager);
+            var memoryUsage = GetEstimatedMemoryUsage(audioManager);
+            
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField($"Audio Clips: {clipCount}", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"Est. Memory: {memoryUsage:F1} MB", EditorStyles.miniLabel);
+            EditorGUILayout.EndHorizontal();
+            
+            EditorGUILayout.EndVertical();
+        }
+        
+        private void DrawMusicSection({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Music category with playlist management and looping controls.]]
+            {{music_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{music_foldout}}, "Music Settings");
+            
+            if ({{music_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: Music volume and mixing.]]
+                DrawCategoryVolumeControls("Music", {{music_settings_prop}});
+                
+                EditorGUILayout.Space(5);
+                
+                // [[LLM: Music clips and playlists.]]
+                DrawAudioClipSection("Music", {{music_settings_prop}}, "{{music_clips_field}}");
+                
+                // [[LLM: Music-specific settings.]]
+                var loopProp = {{music_settings_prop}}.FindPropertyRelative("{{default_loop_field}}");
+                if (loopProp != null)
+                {
+                    EditorGUILayout.PropertyField(loopProp, new GUIContent("Default Loop"));
+                }
+                
+                var fadeTimeProp = {{music_settings_prop}}.FindPropertyRelative("{{fade_time_field}}");
+                if (fadeTimeProp != null)
+                {
+                    EditorGUILayout.PropertyField(fadeTimeProp, new GUIContent("Fade Time (seconds)"));
+                }
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawSFXSection({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Sound effects category with variation and randomization.]]
+            {{sfx_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{sfx_foldout}}, "Sound Effects (SFX)");
+            
+            if ({{sfx_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: SFX volume and mixing.]]
+                DrawCategoryVolumeControls("SFX", {{sfx_settings_prop}});
+                
+                EditorGUILayout.Space(5);
+                
+                // [[LLM: SFX clips organization.]]
+                DrawAudioClipSection("SFX", {{sfx_settings_prop}}, "{{sfx_clips_field}}");
+                
+                // [[LLM: SFX-specific settings.]]
+                var maxConcurrentProp = {{sfx_settings_prop}}.FindPropertyRelative("{{max_concurrent_field}}");
+                if (maxConcurrentProp != null)
+                {
+                    EditorGUILayout.PropertyField(maxConcurrentProp, new GUIContent("Max Concurrent SFX"));
+                }
+                
+                var pitchVariationProp = {{sfx_settings_prop}}.FindPropertyRelative("{{pitch_variation_field}}");
+                if (pitchVariationProp != null)
+                {
+                    EditorGUILayout.PropertyField(pitchVariationProp, new GUIContent("Pitch Variation"));
+                }
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawVoiceSection({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Voice and dialogue category with subtitle integration.]]
+            {{voice_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{voice_foldout}}, "Voice & Dialogue");
+            
+            if ({{voice_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: Voice volume and clarity settings.]]
+                DrawCategoryVolumeControls("Voice", {{voice_settings_prop}});
+                
+                EditorGUILayout.Space(5);
+                
+                // [[LLM: Voice clips and dialogue.]]
+                DrawAudioClipSection("Voice", {{voice_settings_prop}}, "{{voice_clips_field}}");
+                
+                // [[LLM: Voice-specific settings.]]
+                var subtitlesProp = {{voice_settings_prop}}.FindPropertyRelative("{{enable_subtitles_field}}");
+                if (subtitlesProp != null)
+                {
+                    EditorGUILayout.PropertyField(subtitlesProp, new GUIContent("Enable Subtitles"));
+                }
+                
+                var duckingProp = {{voice_settings_prop}}.FindPropertyRelative("{{ducking_level_field}}");
+                if (duckingProp != null)
+                {
+                    EditorGUILayout.PropertyField(duckingProp, new GUIContent("Music Ducking Level"));
+                }
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawAmbientSection({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Ambient audio category with environmental and atmospheric sounds.]]
+            {{ambient_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{ambient_foldout}}, "Ambient & Environment");
+            
+            if ({{ambient_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: Ambient volume and mixing.]]
+                DrawCategoryVolumeControls("Ambient", {{ambient_settings_prop}});
+                
+                EditorGUILayout.Space(5);
+                
+                // [[LLM: Ambient clips and environments.]]
+                DrawAudioClipSection("Ambient", {{ambient_settings_prop}}, "{{ambient_clips_field}}");
+                
+                // [[LLM: Ambient-specific settings.]]
+                var spatialBlendProp = {{ambient_settings_prop}}.FindPropertyRelative("{{spatial_blend_field}}");
+                if (spatialBlendProp != null)
+                {
+                    EditorGUILayout.PropertyField(spatialBlendProp, new GUIContent("Spatial Blend"));
+                }
+                
+                var reverbProp = {{ambient_settings_prop}}.FindPropertyRelative("{{reverb_zone_field}}");
+                if (reverbProp != null)
+                {
+                    EditorGUILayout.PropertyField(reverbProp, new GUIContent("Default Reverb Zone"));
+                }
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawCategoryVolumeControls(string categoryName, SerializedProperty categoryProp)
+        {
+            // [[LLM: Volume controls for audio category with real-time testing.]]
+            var volumeProp = categoryProp.FindPropertyRelative("{{volume_field}}");
+            var muteProp = categoryProp.FindPropertyRelative("{{mute_field}}");
+            
+            EditorGUILayout.BeginHorizontal();
+            
+            // [[LLM: Mute toggle.]]
+            if (muteProp != null)
+            {
+                EditorGUILayout.PropertyField(muteProp, GUIContent.none, GUILayout.Width(20));
+            }
+            
+            // [[LLM: Volume slider.]]
+            EditorGUILayout.LabelField(categoryName, GUILayout.Width(60));
+            
+            if (volumeProp != null)
+            {
+                var volume = EditorGUILayout.Slider(volumeProp.floatValue, 0f, 1f);
+                volumeProp.floatValue = volume;
+                
+                EditorGUILayout.LabelField($"{volume:P0}", GUILayout.Width(40));
+            }
+            
+            // [[LLM: Test audio button.]]
+            if (GUILayout.Button("Test", GUILayout.Width(50)))
+            {
+                PlayCategoryTest(categoryName, categoryProp);
+            }
+            
+            EditorGUILayout.EndHorizontal();
+        }
+        
+        private void DrawAudioClipSection(string categoryName, SerializedProperty categoryProp, string clipsFieldName)
+        {
+            // [[LLM: Audio clip management with preview and analysis.]]
+            var clipsProp = categoryProp.FindPropertyRelative(clipsFieldName);
+            
+            if (clipsProp != null && clipsProp.isArray)
+            {
+                EditorGUILayout.LabelField($"{categoryName} Audio Clips", EditorStyles.boldLabel);
+                
+                for (int i = 0; i < clipsProp.arraySize; i++)
+                {
+                    DrawIndividualAudioClip(clipsProp.GetArrayElementAtIndex(i), categoryName, i);
+                }
+                
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button($"Add {categoryName} Clip"))
+                {
+                    clipsProp.arraySize++;
+                }
+                if (GUILayout.Button("Clear All"))
+                {
+                    clipsProp.arraySize = 0;
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+        
+        private void DrawIndividualAudioClip(SerializedProperty clipProp, string category, int index)
+        {
+            // [[LLM: Individual audio clip with preview controls and information.]]
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.BeginHorizontal();
+            
+            // [[LLM: Audio clip reference.]]
+            var audioClip = clipProp.objectReferenceValue as AudioClip;
+            EditorGUILayout.PropertyField(clipProp, GUIContent.none);
+            
+            // [[LLM: Play/Stop preview button.]]
+            var isCurrentlyPlaying = {{is_playing_preview}} && {{current_preview_clip}} == audioClip;
+            var buttonColor = isCurrentlyPlaying ? {{playing_color}} : {{stopped_color}};
+            
+            var originalColor = GUI.backgroundColor;
+            GUI.backgroundColor = buttonColor;
+            
+            var buttonText = isCurrentlyPlaying ? "Stop" : "Play";
+            if (GUILayout.Button(buttonText, GUILayout.Width(50)))
+            {
+                if (isCurrentlyPlaying)
+                {
+                    StopPreview();
+                }
+                else
+                {
+                    PlayAudioClipPreview(audioClip, category);
+                }
+            }
+            
+            GUI.backgroundColor = originalColor;
+            
+            // [[LLM: Remove clip button.]]
+            if (GUILayout.Button("×", GUILayout.Width(20)))
+            {
+                var clipsProp = clipProp.serializedObject.FindProperty(clipProp.propertyPath.Replace($".Array.data[{index}]", ""));
+                clipsProp.DeleteArrayElementAtIndex(index);
+            }
+            
+            EditorGUILayout.EndHorizontal();
+            
+            // [[LLM: Audio clip information.]]
+            if (audioClip != null)
+            {
+                DrawAudioClipInfo(audioClip);
+            }
+            
+            EditorGUILayout.EndVertical();
+        }
+        
+        private void DrawAudioClipInfo(AudioClip clip)
+        {
+            // [[LLM: Display audio clip technical information.]]
+            EditorGUILayout.BeginHorizontal();
+            
+            var duration = {{clip_durations}}.GetValueOrDefault(clip, clip.length);
+            var sampleRate = clip.frequency;
+            var channels = clip.channels;
+            var memorySize = GetClipMemorySize(clip);
+            
+            EditorGUILayout.LabelField($"Duration: {duration:F1}s", EditorStyles.miniLabel, GUILayout.Width(80));
+            EditorGUILayout.LabelField($"Rate: {sampleRate}Hz", EditorStyles.miniLabel, GUILayout.Width(80));
+            EditorGUILayout.LabelField($"Channels: {channels}", EditorStyles.miniLabel, GUILayout.Width(80));
+            EditorGUILayout.LabelField($"Size: {memorySize:F1}KB", EditorStyles.miniLabel);
+            
+            EditorGUILayout.EndHorizontal();
+        }
+        
+        private void DrawMixingSection({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Audio mixing controls and AudioMixer group assignments.]]
+            {{mixing_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{mixing_foldout}}, "Audio Mixing");
+            
+            if ({{mixing_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: AudioMixer reference.]]
+                var mixerProp = serializedObject.FindProperty("{{audio_mixer_field}}");
+                if (mixerProp != null)
+                {
+                    EditorGUILayout.PropertyField(mixerProp, new GUIContent("Audio Mixer"));
+                }
+                
+                // [[LLM: Mixer group assignments.]]
+                if ({{mixer_groups_prop}} != null)
+                {
+                    EditorGUILayout.PropertyField({{mixer_groups_prop}}, new GUIContent("Mixer Groups"), true);
+                }
+                
+                // [[LLM: Real-time mixing controls.]]
+                DrawRealtimeMixingControls(audioManager);
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawSpatialAudioSection({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: 3D spatial audio configuration and settings.]]
+            {{spatial_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{spatial_foldout}}, "3D Spatial Audio");
+            
+            if ({{spatial_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: 3D audio settings.]]
+                var spatialProp = serializedObject.FindProperty("{{enable_3d_audio_field}}");
+                if (spatialProp != null)
+                {
+                    EditorGUILayout.PropertyField(spatialProp, new GUIContent("Enable 3D Audio"));
+                    
+                    if (spatialProp.boolValue)
+                    {
+                        EditorGUI.indentLevel++;
+                        
+                        // [[LLM: Distance settings.]]
+                        var minDistanceProp = serializedObject.FindProperty("{{min_distance_field}}");
+                        var maxDistanceProp = serializedObject.FindProperty("{{max_distance_field}}");
+                        
+                        if (minDistanceProp != null)
+                            EditorGUILayout.PropertyField(minDistanceProp, new GUIContent("Min Distance"));
+                        if (maxDistanceProp != null)
+                            EditorGUILayout.PropertyField(maxDistanceProp, new GUIContent("Max Distance"));
+                        
+                        // [[LLM: Rolloff curve.]]
+                        var rolloffProp = serializedObject.FindProperty("{{rolloff_mode_field}}");
+                        if (rolloffProp != null)
+                            EditorGUILayout.PropertyField(rolloffProp, new GUIContent("Volume Rolloff"));
+                        
+                        // [[LLM: Doppler effect.]]
+                        var dopplerProp = serializedObject.FindProperty("{{doppler_level_field}}");
+                        if (dopplerProp != null)
+                            EditorGUILayout.PropertyField(dopplerProp, new GUIContent("Doppler Level"));
+                        
+                        EditorGUI.indentLevel--;
+                    }
+                }
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawAdvancedSection({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Advanced audio settings and performance optimization.]]
+            {{advanced_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{advanced_foldout}}, "Advanced Settings");
+            
+            if ({{advanced_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                EditorGUILayout.HelpBox("Advanced settings affect audio performance and quality.", MessageType.Info);
+                
+                // [[LLM: Compression and quality settings.]]
+                var compressionProp = serializedObject.FindProperty("{{compression_format_field}}");
+                if (compressionProp != null)
+                    EditorGUILayout.PropertyField(compressionProp, new GUIContent("Compression Format"));
+                
+                var qualityProp = serializedObject.FindProperty("{{audio_quality_field}}");
+                if (qualityProp != null)
+                    EditorGUILayout.PropertyField(qualityProp, new GUIContent("Audio Quality"));
+                
+                // [[LLM: Performance settings.]]
+                var preloadProp = serializedObject.FindProperty("{{preload_audio_field}}");
+                if (preloadProp != null)
+                    EditorGUILayout.PropertyField(preloadProp, new GUIContent("Preload Audio Data"));
+                
+                var streamingProp = serializedObject.FindProperty("{{enable_streaming_field}}");
+                if (streamingProp != null)
+                    EditorGUILayout.PropertyField(streamingProp, new GUIContent("Enable Audio Streaming"));
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawRealtimeMixingControls({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Real-time audio mixing controls for testing.]]
+            if (Application.isPlaying)
+            {
+                EditorGUILayout.LabelField("Real-time Mixing (Play Mode)", EditorStyles.boldLabel);
+                
+                // [[LLM: Live volume controls would go here.]]
+                EditorGUILayout.HelpBox("Real-time mixing controls available in Play Mode", MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Enter Play Mode for real-time mixing controls", MessageType.Info);
+            }
+        }
+        
+        private void DrawValidationSection({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Audio configuration validation and warnings.]]
+            if ({{validation_messages}}.Count > 0)
+            {
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("Audio Validation", EditorStyles.boldLabel);
+                
+                foreach (var message in {{validation_messages}})
+                {
+                    EditorGUILayout.HelpBox(message, MessageType.Warning);
+                }
+            }
+        }
+        
+        private void DrawManagementButtons({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Audio management and utility buttons.]]
+            EditorGUILayout.Space(10);
+            EditorGUILayout.BeginHorizontal();
+            
+            if (GUILayout.Button("Validate Audio"))
+            {
+                ValidateAudioConfiguration(audioManager);
+            }
+            
+            if (GUILayout.Button("Analyze Clips"))
+            {
+                AnalyzeAudioClips();
+            }
+            
+            if (GUILayout.Button("Optimize Audio"))
+            {
+                OptimizeAudioSettings(audioManager);
+            }
+            
+            if (GUILayout.Button("Export Report"))
+            {
+                ExportAudioReport(audioManager);
+            }
+            
+            EditorGUILayout.EndHorizontal();
+        }
+        
+        private void CreatePreviewAudioSource()
+        {
+            // [[LLM: Create AudioSource for clip preview functionality.]]
+            if ({{preview_source}} == null)
+            {
+                var previewObject = new GameObject("Audio Preview Source");
+                previewObject.hideFlags = HideFlags.HideAndDontSave;
+                {{preview_source}} = previewObject.AddComponent<AudioSource>();
+                {{preview_source}}.playOnAwake = false;
+            }
+        }
+        
+        private void PlayAudioClipPreview(AudioClip clip, string category)
+        {
+            // [[LLM: Play audio clip preview with category-specific settings.]]
+            if (clip == null || {{preview_source}} == null) return;
+            
+            StopPreview();
+            
+            {{preview_source}}.clip = clip;
+            {{preview_source}}.volume = {{preview_volume}};
+            {{preview_source}}.Play();
+            
+            {{is_playing_preview}} = true;
+            {{current_preview_clip}} = clip;
+            {{current_category}} = category;
+            
+            // [[LLM: Auto-stop preview when clip ends.]]
+            EditorApplication.update += CheckPreviewPlayback;
+        }
+        
+        private void StopPreview()
+        {
+            // [[LLM: Stop audio clip preview.]]
+            if ({{preview_source}} != null && {{preview_source}}.isPlaying)
+            {
+                {{preview_source}}.Stop();
+            }
+            
+            {{is_playing_preview}} = false;
+            {{current_preview_clip}} = null;
+            {{current_category}} = "";
+            
+            EditorApplication.update -= CheckPreviewPlayback;
+        }
+        
+        private void CheckPreviewPlayback()
+        {
+            // [[LLM: Monitor preview playback and auto-stop when finished.]]
+            if ({{preview_source}} != null && !{{preview_source}}.isPlaying && {{is_playing_preview}})
+            {
+                StopPreview();
+                Repaint();
+            }
+        }
+        
+        private void PlayCategoryTest(string categoryName, SerializedProperty categoryProp)
+        {
+            // [[LLM: Play test audio for specific category.]]
+            // Implement category-specific test audio playback
+            Debug.Log($"Testing {categoryName} audio category");
+        }
+        
+        private void ValidateAudioConfiguration({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Comprehensive audio configuration validation.]]
+            {{validation_messages}}.Clear();
+            
+            // [[LLM: Validate audio clips.]]
+            ValidateAudioClips(audioManager);
+            
+            // [[LLM: Validate mixer settings.]]
+            ValidateMixerConfiguration(audioManager);
+            
+            // [[LLM: Validate performance settings.]]
+            ValidatePerformanceSettings(audioManager);
+            
+            if ({{validation_messages}}.Count == 0)
+            {
+                Debug.Log("Audio configuration validation passed!");
+            }
+            else
+            {
+                Debug.LogWarning($"Audio validation found {{{validation_messages}}.Count} issues.");
+            }
+        }
+        
+        private void ValidateAudioClips({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Validate audio clips for common issues.]]
+            // Check for missing clips, format issues, etc.
+        }
+        
+        private void ValidateMixerConfiguration({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Validate AudioMixer configuration.]]
+            // Check mixer group assignments, parameter exposure, etc.
+        }
+        
+        private void ValidatePerformanceSettings({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Validate audio performance and memory settings.]]
+            var totalMemory = GetEstimatedMemoryUsage(audioManager);
+            if (totalMemory > 50f) // 50MB threshold
+            {
+                {{validation_messages}}.Add($"High memory usage detected: {totalMemory:F1}MB. Consider audio compression.");
+            }
+        }
+        
+        private void AnalyzeAudioClips()
+        {
+            // [[LLM: Analyze all audio clips for optimization opportunities.]]
+            {{clip_durations}}.Clear();
+            
+            // Implement audio clip analysis logic
+            Debug.Log("Audio clip analysis completed");
+        }
+        
+        private void OptimizeAudioSettings({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Automatic audio optimization suggestions.]]
+            if (EditorUtility.DisplayDialog("Optimize Audio", 
+                "Apply recommended audio optimization settings?", "Optimize", "Cancel"))
+            {
+                // Implement optimization logic
+                Debug.Log("Audio optimization applied");
+            }
+        }
+        
+        private void ExportAudioReport({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Export comprehensive audio configuration report.]]
+            var path = EditorUtility.SaveFilePanel("Export Audio Report", "", "{{audio_report_filename}}.txt", "txt");
+            
+            if (!string.IsNullOrEmpty(path))
+            {
+                var report = GenerateAudioReport(audioManager);
+                System.IO.File.WriteAllText(path, report);
+                Debug.Log($"Audio report exported to: {path}");
+            }
+        }
+        
+        private string GenerateAudioReport({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Generate comprehensive audio system report.]]
+            var report = "Audio Configuration Report\n";
+            report += "=========================\n\n";
+            
+            report += $"Total Audio Clips: {GetTotalClipCount(audioManager)}\n";
+            report += $"Estimated Memory Usage: {GetEstimatedMemoryUsage(audioManager):F1} MB\n";
+            report += $"Validation Issues: {{{validation_messages}}.Count}\n\n";
+            
+            // Add detailed report sections
+            
+            return report;
+        }
+        
+        private int GetTotalClipCount({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Count total audio clips across all categories.]]
+            // Implement clip counting logic
+            return 0;
+        }
+        
+        private float GetEstimatedMemoryUsage({{audio_manager_class_name}} audioManager)
+        {
+            // [[LLM: Calculate estimated memory usage for all audio clips.]]
+            // Implement memory calculation logic
+            return 0f;
+        }
+        
+        private float GetClipMemorySize(AudioClip clip)
+        {
+            // [[LLM: Calculate memory size for individual audio clip.]]
+            if (clip == null) return 0f;
+            
+            // Basic calculation: samples * channels * bit depth / 8 / 1024 (for KB)
+            return (clip.samples * clip.channels * 16f / 8f) / 1024f;
+        }
+    }
+}

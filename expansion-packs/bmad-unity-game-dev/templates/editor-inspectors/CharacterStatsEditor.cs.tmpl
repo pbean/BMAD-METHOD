@@ -1,0 +1,523 @@
+// [[LLM: This template creates a comprehensive Unity CustomEditor for character statistics and data.
+// Adapt the following elements based on your character system:
+// - Stat categories (combat, movement, magic, social)
+// - Equipment slot types and validation
+// - Skill tree integration and prerequisites
+// - Real-time stat calculation and preview
+// The template supports complex character builds with visual feedback.]]
+
+using UnityEngine;
+using UnityEditor;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace {{project_namespace}}.Editor
+{
+    /// <summary>
+    /// [[LLM: Custom inspector for {{character_class_name}} ScriptableObject.
+    /// Provides organized character stat management, equipment slots,
+    /// skill integration, and real-time calculation preview.
+    /// Customize stat categories and equipment types for your RPG system.]]
+    /// </summary>
+    [CustomEditor(typeof({{character_class_name}}))]
+    public class {{character_class_name}}Editor : Editor
+    {
+        // [[LLM: SerializedProperties for character data.
+        // Modify based on your character data structure.]]
+        private SerializedProperty {{base_stats_prop}};
+        private SerializedProperty {{equipment_slots_prop}};
+        private SerializedProperty {{skills_prop}};
+        private SerializedProperty {{character_info_prop}};
+        private SerializedProperty {{progression_data_prop}};
+        
+        // [[LLM: Inspector UI state management.]]
+        private bool {{stats_foldout}} = true;
+        private bool {{equipment_foldout}} = true;
+        private bool {{skills_foldout}} = true;
+        private bool {{progression_foldout}} = true;
+        private bool {{preview_foldout}} = false;
+        
+        // [[LLM: Real-time calculation cache.]]
+        private Dictionary<string, float> {{calculated_stats}} = new Dictionary<string, float>();
+        private bool {{auto_calculate}} = true;
+        private bool {{show_stat_breakdown}} = false;
+        
+        // [[LLM: Visual customization.]]
+        private readonly Color {{stat_positive_color}} = Color.green;
+        private readonly Color {{stat_negative_color}} = Color.red;
+        private readonly Color {{stat_neutral_color}} = Color.white;
+        
+        private void OnEnable()
+        {
+            // [[LLM: Initialize SerializedProperties for character data access.]]
+            {{base_stats_prop}} = serializedObject.FindProperty("{{base_stats_field_name}}");
+            {{equipment_slots_prop}} = serializedObject.FindProperty("{{equipment_slots_field_name}}");
+            {{skills_prop}} = serializedObject.FindProperty("{{skills_field_name}}");
+            {{character_info_prop}} = serializedObject.FindProperty("{{character_info_field_name}}");
+            {{progression_data_prop}} = serializedObject.FindProperty("{{progression_data_field_name}}");
+            
+            // [[LLM: Initialize calculated stats cache.]]
+            RefreshCalculations();
+        }
+        
+        public override void OnInspectorGUI()
+        {
+            serializedObject.Update();
+            
+            var character = target as {{character_class_name}};
+            
+            // [[LLM: Character overview and portrait section.]]
+            DrawCharacterHeader(character);
+            
+            EditorGUILayout.Space(10);
+            
+            // [[LLM: Main character data sections.]]
+            DrawStatsSection(character);
+            DrawEquipmentSection(character);
+            DrawSkillsSection(character);
+            DrawProgressionSection(character);
+            
+            EditorGUILayout.Space(10);
+            
+            // [[LLM: Real-time preview and validation.]]
+            DrawPreviewSection(character);
+            DrawActionButtons(character);
+            
+            // [[LLM: Auto-refresh calculations on changes.]]
+            if (serializedObject.ApplyModifiedProperties())
+            {
+                if ({{auto_calculate}})
+                {
+                    RefreshCalculations();
+                }
+                EditorUtility.SetDirty(character);
+            }
+        }
+        
+        private void DrawCharacterHeader({{character_class_name}} character)
+        {
+            // [[LLM: Character portrait and basic information display.]]
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            
+            EditorGUILayout.BeginHorizontal();
+            
+            // [[LLM: Character portrait (if available).]]
+            var portraitProp = {{character_info_prop}}.FindPropertyRelative("{{portrait_field}}");
+            if (portraitProp != null)
+            {
+                var portrait = portraitProp.objectReferenceValue as Texture2D;
+                if (portrait != null)
+                {
+                    var rect = GUILayoutUtility.GetRect(64, 64, GUILayout.Width(64), GUILayout.Height(64));
+                    EditorGUI.DrawPreviewTexture(rect, portrait);
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("No Portrait", GUILayout.Width(64), GUILayout.Height(64));
+                }
+            }
+            
+            // [[LLM: Character basic info.]]
+            EditorGUILayout.BeginVertical();
+            
+            var nameStyle = new GUIStyle(EditorStyles.largeLabel) { fontStyle = FontStyle.Bold };
+            var characterName = {{character_info_prop}}.FindPropertyRelative("{{character_name_field}}")?.stringValue ?? "Unnamed Character";
+            EditorGUILayout.LabelField(characterName, nameStyle);
+            
+            var level = {{progression_data_prop}}.FindPropertyRelative("{{level_field}}")?.intValue ?? 1;
+            var characterClass = {{character_info_prop}}.FindPropertyRelative("{{character_class_field}}")?.stringValue ?? "Unknown";
+            EditorGUILayout.LabelField($"Level {level} {characterClass}");
+            
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndHorizontal();
+            
+            EditorGUILayout.EndVertical();
+        }
+        
+        private void DrawStatsSection({{character_class_name}} character)
+        {
+            // [[LLM: Character statistics with visual indicators and calculated values.]]
+            {{stats_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{stats_foldout}}, "Character Statistics");
+            
+            if ({{stats_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: Primary stats (Strength, Dexterity, etc.).]]
+                DrawStatCategory("Primary Stats", "{{primary_stats_field}}", {{stat_positive_color}});
+                
+                EditorGUILayout.Space(5);
+                
+                // [[LLM: Secondary stats (Health, Mana, etc.).]]
+                DrawStatCategory("Secondary Stats", "{{secondary_stats_field}}", {{stat_neutral_color}});
+                
+                EditorGUILayout.Space(5);
+                
+                // [[LLM: Derived stats (Damage, Defense, etc.).]]
+                if ({{show_stat_breakdown}})
+                {
+                    DrawDerivedStats(character);
+                }
+                
+                // [[LLM: Stat breakdown toggle.]]
+                {{show_stat_breakdown}} = EditorGUILayout.Toggle("Show Stat Breakdown", {{show_stat_breakdown}});
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawStatCategory(string categoryName, string fieldName, Color barColor)
+        {
+            // [[LLM: Draw individual stat category with progress bars.]]
+            EditorGUILayout.LabelField(categoryName, EditorStyles.boldLabel);
+            
+            var categoryProp = {{base_stats_prop}}.FindPropertyRelative(fieldName);
+            if (categoryProp != null && categoryProp.isArray)
+            {
+                for (int i = 0; i < categoryProp.arraySize; i++)
+                {
+                    var statProp = categoryProp.GetArrayElementAtIndex(i);
+                    DrawIndividualStat(statProp, barColor);
+                }
+            }
+        }
+        
+        private void DrawIndividualStat(SerializedProperty statProp, Color barColor)
+        {
+            // [[LLM: Individual stat with name, value, and visual progress bar.]]
+            EditorGUILayout.BeginHorizontal();
+            
+            var statName = statProp.FindPropertyRelative("{{stat_name_field}}")?.stringValue ?? "Unknown Stat";
+            var baseValue = statProp.FindPropertyRelative("{{base_value_field}}")?.floatValue ?? 0f;
+            var maxValue = statProp.FindPropertyRelative("{{max_value_field}}")?.floatValue ?? 100f;
+            
+            // [[LLM: Stat label and input field.]]
+            EditorGUILayout.LabelField(statName, GUILayout.Width(100));
+            EditorGUILayout.PropertyField(statProp.FindPropertyRelative("{{base_value_field}}"), GUIContent.none, GUILayout.Width(60));
+            
+            // [[LLM: Visual progress bar for stat value.]]
+            var rect = GUILayoutUtility.GetRect(100, EditorGUIUtility.singleLineHeight);
+            var fillAmount = Mathf.Clamp01(baseValue / maxValue);
+            
+            EditorGUI.DrawRect(rect, Color.gray);
+            var fillRect = new Rect(rect.x, rect.y, rect.width * fillAmount, rect.height);
+            EditorGUI.DrawRect(fillRect, barColor);
+            
+            // [[LLM: Calculated value display (if available).]]
+            if ({{calculated_stats}}.TryGetValue(statName, out float calculatedValue))
+            {
+                var deltaValue = calculatedValue - baseValue;
+                var deltaColor = deltaValue > 0 ? {{stat_positive_color}} : deltaValue < 0 ? {{stat_negative_color}} : {{stat_neutral_color}};
+                
+                var originalColor = GUI.color;
+                GUI.color = deltaColor;
+                EditorGUILayout.LabelField($"({calculatedValue:F1})", GUILayout.Width(50));
+                GUI.color = originalColor;
+            }
+            
+            EditorGUILayout.EndHorizontal();
+        }
+        
+        private void DrawEquipmentSection({{character_class_name}} character)
+        {
+            // [[LLM: Equipment slot management with drag-and-drop support.]]
+            {{equipment_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{equipment_foldout}}, "Equipment");
+            
+            if ({{equipment_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                if ({{equipment_slots_prop}} != null && {{equipment_slots_prop}}.isArray)
+                {
+                    for (int i = 0; i < {{equipment_slots_prop}}.arraySize; i++)
+                    {
+                        DrawEquipmentSlot({{equipment_slots_prop}}.GetArrayElementAtIndex(i), i);
+                    }
+                    
+                    EditorGUILayout.Space(5);
+                    
+                    // [[LLM: Equipment management buttons.]]
+                    EditorGUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Add Equipment Slot"))
+                    {
+                        {{equipment_slots_prop}}.arraySize++;
+                    }
+                    if (GUILayout.Button("Clear All Equipment"))
+                    {
+                        ClearAllEquipment();
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawEquipmentSlot(SerializedProperty slotProp, int index)
+        {
+            // [[LLM: Individual equipment slot with validation and preview.]]
+            EditorGUILayout.BeginHorizontal();
+            
+            var slotType = slotProp.FindPropertyRelative("{{slot_type_field}}")?.enumValueIndex ?? 0;
+            var equippedItem = slotProp.FindPropertyRelative("{{equipped_item_field}}");
+            
+            // [[LLM: Slot type and equipped item.]]
+            EditorGUILayout.PropertyField(slotProp.FindPropertyRelative("{{slot_type_field}}"), GUIContent.none, GUILayout.Width(100));
+            EditorGUILayout.PropertyField(equippedItem, GUIContent.none);
+            
+            // [[LLM: Remove slot button.]]
+            if (GUILayout.Button("×", GUILayout.Width(20)))
+            {
+                {{equipment_slots_prop}}.DeleteArrayElementAtIndex(index);
+            }
+            
+            EditorGUILayout.EndHorizontal();
+            
+            // [[LLM: Equipment validation and stat preview.]]
+            if (equippedItem.objectReferenceValue != null)
+            {
+                ValidateEquipmentSlot(slotProp, equippedItem.objectReferenceValue);
+            }
+        }
+        
+        private void DrawSkillsSection({{character_class_name}} character)
+        {
+            // [[LLM: Skill tree and ability management.]]
+            {{skills_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{skills_foldout}}, "Skills & Abilities");
+            
+            if ({{skills_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: Skill points available.]]
+                var skillPoints = {{progression_data_prop}}.FindPropertyRelative("{{skill_points_field}}")?.intValue ?? 0;
+                EditorGUILayout.LabelField($"Available Skill Points: {skillPoints}", EditorStyles.boldLabel);
+                
+                EditorGUILayout.Space(5);
+                
+                // [[LLM: Skill categories and individual skills.]]
+                if ({{skills_prop}} != null)
+                {
+                    EditorGUILayout.PropertyField({{skills_prop}}, new GUIContent("Skills"), true);
+                }
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawProgressionSection({{character_class_name}} character)
+        {
+            // [[LLM: Character progression, experience, and leveling.]]
+            {{progression_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{progression_foldout}}, "Progression");
+            
+            if ({{progression_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                // [[LLM: Experience and level progression.]]
+                var currentExp = {{progression_data_prop}}.FindPropertyRelative("{{current_exp_field}}")?.intValue ?? 0;
+                var expToNext = {{progression_data_prop}}.FindPropertyRelative("{{exp_to_next_field}}")?.intValue ?? 100;
+                var currentLevel = {{progression_data_prop}}.FindPropertyRelative("{{level_field}}")?.intValue ?? 1;
+                
+                EditorGUILayout.LabelField($"Level: {currentLevel}");
+                
+                // [[LLM: Experience progress bar.]]
+                var expRect = GUILayoutUtility.GetRect(0, EditorGUIUtility.singleLineHeight, GUILayout.ExpandWidth(true));
+                var expProgress = (float)currentExp / expToNext;
+                
+                EditorGUI.ProgressBar(expRect, expProgress, $"EXP: {currentExp}/{expToNext}");
+                
+                // [[LLM: Progression controls.]]
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Level Up"))
+                {
+                    LevelUpCharacter(character);
+                }
+                if (GUILayout.Button("Add 100 EXP"))
+                {
+                    AddExperience(character, 100);
+                }
+                EditorGUILayout.EndHorizontal();
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawPreviewSection({{character_class_name}} character)
+        {
+            // [[LLM: Real-time stat preview and calculations.]]
+            {{preview_foldout}} = EditorGUILayout.BeginFoldoutHeaderGroup({{preview_foldout}}, "Real-time Preview");
+            
+            if ({{preview_foldout}})
+            {
+                EditorGUI.indentLevel++;
+                
+                {{auto_calculate}} = EditorGUILayout.Toggle("Auto Calculate", {{auto_calculate}});
+                
+                if (!{{auto_calculate}} && GUILayout.Button("Refresh Calculations"))
+                {
+                    RefreshCalculations();
+                }
+                
+                EditorGUILayout.Space(5);
+                
+                // [[LLM: Display calculated stats.]]
+                if ({{calculated_stats}}.Count > 0)
+                {
+                    EditorGUILayout.LabelField("Calculated Stats:", EditorStyles.boldLabel);
+                    foreach (var kvp in {{calculated_stats}})
+                    {
+                        EditorGUILayout.LabelField($"{kvp.Key}: {kvp.Value:F2}");
+                    }
+                }
+                
+                EditorGUI.indentLevel--;
+            }
+            
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        
+        private void DrawActionButtons({{character_class_name}} character)
+        {
+            // [[LLM: Character management action buttons.]]
+            EditorGUILayout.Space(5);
+            EditorGUILayout.BeginHorizontal();
+            
+            if (GUILayout.Button("Validate Character"))
+            {
+                ValidateCharacter(character);
+            }
+            
+            if (GUILayout.Button("Reset Character"))
+            {
+                if (EditorUtility.DisplayDialog("Reset Character", 
+                    "This will reset all character data. Continue?", "Reset", "Cancel"))
+                {
+                    ResetCharacter(character);
+                }
+            }
+            
+            if (GUILayout.Button("Export Character"))
+            {
+                ExportCharacter(character);
+            }
+            
+            EditorGUILayout.EndHorizontal();
+        }
+        
+        private void RefreshCalculations()
+        {
+            // [[LLM: Calculate derived stats from base stats and equipment.
+            // Implement your specific stat calculation logic here.]]
+            {{calculated_stats}}.Clear();
+            
+            var character = target as {{character_class_name}};
+            if (character == null) return;
+            
+            // [[LLM: Example calculations - customize for your system.]]
+            // CalculateDerivedStats(character);
+            // ApplyEquipmentBonuses(character);
+            // ApplySkillBonuses(character);
+        }
+        
+        private void DrawDerivedStats({{character_class_name}} character)
+        {
+            // [[LLM: Display derived stats with breakdown.]]
+            EditorGUILayout.LabelField("Derived Stats", EditorStyles.boldLabel);
+            // Implement derived stat display
+        }
+        
+        private void ValidateEquipmentSlot(SerializedProperty slotProp, Object equippedItem)
+        {
+            // [[LLM: Validate equipment compatibility and requirements.]]
+            // Implement equipment validation logic specific to your system.
+        }
+        
+        private void ClearAllEquipment()
+        {
+            // [[LLM: Remove all equipped items.]]
+            for (int i = 0; i < {{equipment_slots_prop}}.arraySize; i++)
+            {
+                var slot = {{equipment_slots_prop}}.GetArrayElementAtIndex(i);
+                var equippedItem = slot.FindPropertyRelative("{{equipped_item_field}}");
+                equippedItem.objectReferenceValue = null;
+            }
+        }
+        
+        private void LevelUpCharacter({{character_class_name}} character)
+        {
+            // [[LLM: Level up character with appropriate bonuses.]]
+            Undo.RecordObject(character, "Level Up Character");
+            
+            // Implement level up logic
+            // character.LevelUp();
+            
+            RefreshCalculations();
+            EditorUtility.SetDirty(character);
+        }
+        
+        private void AddExperience({{character_class_name}} character, int amount)
+        {
+            // [[LLM: Add experience points to character.]]
+            Undo.RecordObject(character, "Add Experience");
+            
+            // Implement experience addition logic
+            // character.AddExperience(amount);
+            
+            EditorUtility.SetDirty(character);
+        }
+        
+        private void ValidateCharacter({{character_class_name}} character)
+        {
+            // [[LLM: Comprehensive character validation.]]
+            var issues = new List<string>();
+            
+            // Implement validation logic
+            // ValidateStats(character, issues);
+            // ValidateEquipment(character, issues);
+            // ValidateSkills(character, issues);
+            
+            if (issues.Count == 0)
+            {
+                Debug.Log("Character validation passed!");
+            }
+            else
+            {
+                Debug.LogWarning($"Character validation found {issues.Count} issues:\n{string.Join("\n", issues)}");
+            }
+        }
+        
+        private void ResetCharacter({{character_class_name}} character)
+        {
+            // [[LLM: Reset character to default state.]]
+            Undo.RecordObject(character, "Reset Character");
+            
+            // Implement character reset logic
+            // character.ResetToDefaults();
+            
+            RefreshCalculations();
+            EditorUtility.SetDirty(character);
+        }
+        
+        private void ExportCharacter({{character_class_name}} character)
+        {
+            // [[LLM: Export character data to JSON.]]
+            var path = EditorUtility.SaveFilePanel("Export Character", "", "{{character_file_name}}.json", "json");
+            
+            if (!string.IsNullOrEmpty(path))
+            {
+                var json = JsonUtility.ToJson(character, true);
+                System.IO.File.WriteAllText(path, json);
+                Debug.Log($"Character exported to: {path}");
+            }
+        }
+    }
+}
