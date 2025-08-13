@@ -322,48 +322,83 @@ When creating custom web bundles or uploading to AI platforms, include your `tec
 
 ## Configuration Setup
 
-The Unity expansion pack uses a single, comprehensive configuration file (`config.yaml`) that contains all necessary settings for Unity game development. This streamlined approach eliminates configuration confusion and ensures reliable setup.
+The Unity expansion pack provides comprehensive Unity development capabilities with **optional enterprise features** for teams that need advanced automation. The expansion pack works perfectly for all Unity development without any enterprise features enabled.
 
-### Quick Setup Guide
+### Basic Setup (Default)
 
-1. **Install the expansion pack** using the interactive installer:
+The expansion pack works out-of-the-box for Unity game development:
 
+1. **Install the expansion pack**:
    ```bash
    npx bmad-method install
    ```
 
-2. **Configure your project**: The `config.yaml` file in the expansion pack directory contains all necessary settings with clear documentation. Key settings you may want to adjust:
+2. **Start developing**: Use Unity-focused agents, workflows, and templates immediately
+   - Game-Architect for Unity architecture and technical setup
+   - Game-Developer for Unity implementation and debugging
+   - Game-Designer for game design documents and level design
 
-   - `gameDimension`: Set to "2D" or "3D" based on your project type
-   - `devLoadAlwaysFiles`: Essential Unity files that provide context to all agents
+3. **Manual validation**: Use comprehensive checklists for quality assurance
 
-3. **Verify setup**: Run the configuration validator to ensure everything is properly configured:
+### Optional Enterprise Features
 
-   ```bash
-   cd expansion-packs/bmad-unity-game-dev
-   node validate-config.js
-   ```
+For teams that want advanced automation, enable enterprise features in `config.yaml`:
 
-   The validator will check:
+```yaml
+# Optional Enterprise Features Configuration
+enterpriseFeatures:
+  enabled: true                    # Enable advanced automation
+  profilerIntegration: true        # Unity Profiler API automation
+  performanceMonitoring: true      # Performance regression detection
+  cicdIntegration: true            # CI/CD pipeline template generation
 
-   - Configuration file structure and required fields
-   - Agent team references and dependencies
-   - Unity-specific settings validity
-   - Directory structure completeness
+# Testing Framework Configuration  
+testingFramework:
+  mode: "enterprise"               # Options: basic, automated, enterprise
+  unityTestFramework: true         # Unity Test Framework integration
+  performanceTesting: true         # Automated performance testing
+
+# CI/CD Template Configuration
+cicdTemplates:
+  enabled: true                    # Generate CI/CD templates
+  platforms: ["github", "azure"]   # Generate for specific platforms
+  performanceTesting: true         # Include performance testing stages
+```
+
+### Enterprise Feature Benefits
+
+When enterprise features are enabled:
+
+- **Automated Performance Testing**: Unity Profiler API integration for regression detection
+- **CI/CD Templates**: Generate customizable pipeline templates for GitHub Actions, Azure DevOps, GitLab
+- **Unity Test Framework**: Automated test execution and validation
+- **Performance Monitoring**: Historical performance tracking and threshold enforcement
+
+### CI/CD Integration (Optional)
+
+**Important**: CI/CD integration is completely optional and provided as user templates.
+
+1. **Enable CI/CD templates** in config.yaml (see above)
+2. **Copy templates** from `templates/ci-cd-integration/` to your project
+3. **Customize variables** in templates for your specific project
+4. **Follow setup guides** for your CI/CD platform
+
+**Available CI/CD Templates**:
+- GitHub Actions (basic build + performance testing)
+- Azure DevOps (enterprise pipelines)
+- GitLab CI (build and test automation)
 
 ### Configuration File Structure
 
-The `config.yaml` file is fully documented with comments explaining each section:
-
-- **Basic metadata**: Name, version, description
-- **Document management**: PRD, architecture, and GDD settings
-- **Unity-specific settings**: Game dimension, Unity Editor path
-- **Development tools**: Debug logs, story locations
-- **Always-loaded files**: Project files that provide context to agents
+The `config.yaml` file contains all settings with clear documentation:
+- **Basic setup**: Works immediately with default values
+- **Enterprise features**: Optional sections for advanced automation
+- **CI/CD templates**: User-customizable pipeline generation
+- **Unity settings**: Game dimension, editor configuration
 
 ### Self-Contained Design
 
-**Important**: The Unity expansion pack is completely self-contained. All agents, tasks, and templates reference only the expansion pack's `config.yaml` file. There are no dependencies on project-level configuration files or external setups.
+**Important**: The Unity expansion pack is completely self-contained. All core functionality works without external dependencies. Enterprise features and CI/CD integration are optional enhancements that teams can adopt as needed.
 
 ### Developer Context Files (In Your Project)
 

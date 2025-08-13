@@ -1,0 +1,118 @@
+# BMAD Unity Game Development - Basic GitHub Actions Template
+# 
+# This is a TEMPLATE file - customize the {{VARIABLES}} for your project
+# Copy this file to .github/workflows/unity-build.yml in your project root
+#
+# Prerequisites:
+# 1. Add Unity license to GitHub repository secrets as {{SECRET_UNITY_LICENSE}}
+# 2. Replace all {{VARIABLE_NAME}} placeholders with your values
+# 3. Enable GitHub Actions in your repository settings
+
+name: {{PROJECT_NAME}} Unity Build
+
+on:
+  push:
+    branches: [ {{MAIN_BRANCH}}, {{DEVELOP_BRANCH}} ]
+  pull_request:
+    branches: [ {{MAIN_BRANCH}} ]
+
+env:
+  UNITY_LICENSE: ${{ secrets.{{SECRET_UNITY_LICENSE}} }}
+  UNITY_VERSION: {{UNITY_VERSION}}  # Example: 2022.3.10f1
+
+jobs:
+  build:
+    name: Build Unity Project
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        targetPlatform:
+          {{TARGET_PLATFORMS}}  # Example: [StandaloneWindows64, Android, WebGL]
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Needed for version numbering
+        lfs: true       # Enable Git LFS for large assets
+
+    - name: Cache Unity Library
+      uses: actions/cache@v3
+      with:
+        path: Library
+        key: Library-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+        restore-keys: |
+          Library-${{ matrix.targetPlatform }}-
+          Library-
+
+    - name: Setup Unity
+      uses: game-ci/unity-builder@v2
+      with:
+        unityVersion: ${{ env.UNITY_VERSION }}
+        targetPlatform: ${{ matrix.targetPlatform }}
+
+    - name: Run Unity Tests (Optional)
+      uses: game-ci/unity-test-runner@v2
+      if: {{ENABLE_TESTING}}  # Set to true to enable testing
+      env:
+        UNITY_LICENSE: ${{ env.UNITY_LICENSE }}
+      with:
+        unityVersion: ${{ env.UNITY_VERSION }}
+        testMode: all  # EditMode, PlayMode, or all
+
+    - name: Build Unity Project
+      uses: game-ci/unity-builder@v2
+      env:
+        UNITY_LICENSE: ${{ env.UNITY_LICENSE }}
+      with:
+        unityVersion: ${{ env.UNITY_VERSION }}
+        targetPlatform: ${{ matrix.targetPlatform }}
+        buildName: {{PROJECT_NAME}}
+        versioning: Semantic
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: {{PROJECT_NAME}}-${{ matrix.targetPlatform }}
+        path: build/${{ matrix.targetPlatform }}
+        retention-days: {{ARTIFACT_RETENTION_DAYS}}  # Example: 7
+
+  # Optional: Basic validation job
+  validate:
+    name: Basic Validation
+    runs-on: ubuntu-latest
+    if: {{ENABLE_VALIDATION}}  # Set to true to enable validation
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Setup Unity
+      uses: game-ci/unity-builder@v2
+      with:
+        unityVersion: ${{ env.UNITY_VERSION }}
+
+    - name: Run BMAD Unity Validation
+      run: |
+        # Basic validation without enterprise features
+        echo "Running basic Unity validation..."
+        # Add your validation commands here
+        # Example: unity-editor -batchmode -quit -executeMethod YourValidationClass.RunBasicValidation
+
+# Template Variables to Replace:
+# {{PROJECT_NAME}} - Your Unity project name (e.g., "MyAwesomeGame")
+# {{MAIN_BRANCH}} - Your main branch name (e.g., "main" or "master")  
+# {{DEVELOP_BRANCH}} - Your development branch name (e.g., "develop")
+# {{SECRET_UNITY_LICENSE}} - Name of GitHub secret containing Unity license (e.g., "UNITY_LICENSE")
+# {{UNITY_VERSION}} - Unity version for your project (e.g., "2022.3.10f1")
+# {{TARGET_PLATFORMS}} - List of build platforms in YAML array format
+#   Example: [StandaloneWindows64, Android, iOS, WebGL]
+# {{ENABLE_TESTING}} - true or false to enable Unity Test Framework
+# {{ENABLE_VALIDATION}} - true or false to enable BMAD validation
+# {{ARTIFACT_RETENTION_DAYS}} - Number of days to keep build artifacts (e.g., 7)
+#
+# Setup Instructions:
+# 1. Copy this file to .github/workflows/unity-build.yml in your project
+# 2. Replace all {{VARIABLE_NAME}} placeholders with your actual values
+# 3. Add Unity license to GitHub repository secrets
+# 4. Commit and push to trigger the workflow

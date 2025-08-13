@@ -6,9 +6,11 @@ name: bmad-unity-game-dev
 version: 1.5.0
 short-title: Unity C# Game Dev Pack
 description: >-
-  Game Development expansion pack for BMad Method - Unity & C# focused (2D and 3D).
-  Provides specialized agents, workflows, and templates for Unity game development
-  with comprehensive coverage of modern Unity features and best practices.
+  Unity Game Development expansion pack for BMad Framework. 
+  Provides specialized agents, workflows, and templates for Unity game development.
+  Supports both 2D and 3D game development with optional enterprise automation features.
+  Default installation provides complete Unity development capabilities with manual validation.
+  Optional enterprise features include automated testing, performance monitoring, and CI/CD templates.
 author: pbean (PinkyD)
 slashPrefix: BMadU
 
@@ -69,6 +71,29 @@ devLoadAlwaysFiles:
 
 # Custom technical documents (null = use defaults)
 customTechnicalDocuments: null
+
+# Optional Enterprise Features Configuration
+# Set enterpriseFeatures.enabled: true to activate advanced automation capabilities
+enterpriseFeatures:
+  enabled: false  # Set to true to enable advanced automation features
+  profilerIntegration: false  # Unity Profiler API automation for performance monitoring
+  performanceMonitoring: false  # Automated performance regression detection
+  memoryLeakDetection: false  # Advanced memory leak detection and analysis
+  cicdIntegration: false  # CI/CD pipeline template generation and setup
+
+# Testing Framework Configuration  
+testingFramework:
+  mode: "basic"  # Options: basic (manual validation), automated (Unity Test Framework), enterprise (full automation)
+  unityTestFramework: false  # Enable Unity Test Framework integration for automated testing
+  automatedValidation: false  # Automated validation task execution
+  performanceTesting: false  # Include performance testing in validation
+
+# CI/CD Template Configuration (when enterpriseFeatures.cicdIntegration: true)
+cicdTemplates:
+  enabled: false  # Generate CI/CD pipeline templates for user implementation
+  platforms: []  # Options: ["github", "azure", "gitlab"] - platforms to generate templates for
+  performanceTesting: false  # Include performance testing stages in CI/CD templates
+  multiPlatform: false  # Include multi-platform build matrices (Windows, Android, iOS, WebGL)
 
 # Unity Editor Configuration
 # Path to Unity Editor executable (optional - system PATH will be used if not specified)

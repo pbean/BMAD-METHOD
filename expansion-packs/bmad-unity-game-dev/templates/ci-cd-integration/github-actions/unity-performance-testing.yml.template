@@ -1,0 +1,266 @@
+# BMAD Unity Game Development - Performance Testing GitHub Actions Template
+# 
+# This is a TEMPLATE file for ENTERPRISE FEATURES - requires advanced configuration
+# Copy this file to .github/workflows/unity-performance.yml in your project root
+#
+# Prerequisites:
+# 1. Enable enterprise features in your config.yaml:
+#    enterpriseFeatures:
+#      enabled: true
+#      profilerIntegration: true
+#      performanceMonitoring: true
+# 2. Add Unity license to GitHub repository secrets
+# 3. Replace all {{VARIABLE_NAME}} placeholders with your values
+# 4. Configure performance thresholds for your project
+
+name: {{PROJECT_NAME}} Performance Testing
+
+on:
+  push:
+    branches: [ {{MAIN_BRANCH}}, {{DEVELOP_BRANCH}} ]
+  pull_request:
+    branches: [ {{MAIN_BRANCH}} ]
+  schedule:
+    # Run nightly performance tests at {{NIGHTLY_TIME}} UTC
+    - cron: '{{NIGHTLY_CRON}}'  # Example: '0 2 * * *' for 2 AM
+
+env:
+  UNITY_LICENSE: ${{ secrets.{{SECRET_UNITY_LICENSE}} }}
+  UNITY_VERSION: {{UNITY_VERSION}}
+
+jobs:
+  performance-validation:
+    name: Unity Performance Validation
+    runs-on: {{RUNNER_OS}}  # ubuntu-latest, windows-latest, or macos-latest
+    strategy:
+      matrix:
+        platform: {{TARGET_PLATFORMS}}  # Example: [StandaloneWindows64, Android, iOS, WebGL]
+        test-scene: {{TEST_SCENES}}     # Example: [MainMenu, GameplayLevel1, BossLevel]
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0 # Needed for performance trend analysis
+        lfs: true
+
+    - name: Cache Unity Library
+      uses: actions/cache@v3
+      with:
+        path: Library
+        key: Library-Performance-${{ matrix.platform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+        restore-keys: |
+          Library-Performance-${{ matrix.platform }}-
+          Library-Performance-
+          Library-
+
+    - name: Setup Unity
+      uses: game-ci/unity-builder@v2
+      with:
+        unityVersion: ${{ env.UNITY_VERSION }}
+        targetPlatform: ${{ matrix.platform }}
+
+    - name: Run Unity Performance Tests
+      uses: game-ci/unity-test-runner@v2
+      id: performance-tests
+      env:
+        UNITY_LICENSE: ${{ env.UNITY_LICENSE }}
+      with:
+        unityVersion: ${{ env.UNITY_VERSION }}
+        testMode: PlayMode
+        customParameters: |
+          -quit
+          -batchmode
+          -nographics
+          -executeMethod {{PERFORMANCE_TEST_METHOD}}
+          -testScene ${{ matrix.test-scene }}
+          -targetPlatform ${{ matrix.platform }}
+          -performanceReportPath "performance-results/"
+          -performanceThresholds "{{PERFORMANCE_THRESHOLDS_FILE}}"
+
+    - name: Upload Performance Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: performance-results-${{ matrix.platform }}-${{ matrix.test-scene }}
+        path: |
+          performance-results/
+          Logs/
+          
+    - name: Parse Performance Results
+      id: parse-results
+      run: |
+        # Parse performance test results and set outputs
+        if [ -f "performance-results/performance-report.json" ]; then
+          echo "PERFORMANCE_PASSED=$(jq -r '.withinThresholds' performance-results/performance-report.json)" >> $GITHUB_OUTPUT
+          echo "AVERAGE_FPS=$(jq -r '.averageFPS' performance-results/performance-report.json)" >> $GITHUB_OUTPUT
+          echo "MEMORY_USAGE=$(jq -r '.totalMemoryUsed' performance-results/performance-report.json)" >> $GITHUB_OUTPUT
+          echo "FRAME_TIME=$(jq -r '.averageFrameTime' performance-results/performance-report.json)" >> $GITHUB_OUTPUT
+        else
+          echo "PERFORMANCE_PASSED=false" >> $GITHUB_OUTPUT
+          echo "Performance results file not found"
+        fi
+
+    - name: Comment PR with Performance Results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const path = 'performance-results/performance-report.json';
+          
+          if (!fs.existsSync(path)) {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ❌ Performance Test Failed - ${{ matrix.platform }}
+              
+              **Scene**: ${{ matrix.test-scene }}
+              
+              Performance test results not found. Please check the logs for more details.
+              
+              **Troubleshooting**: Ensure enterprise features are enabled in config.yaml:
+              \`\`\`yaml
+              enterpriseFeatures:
+                enabled: true
+                profilerIntegration: true
+                performanceMonitoring: true
+              \`\`\``
+            });
+            return;
+          }
+          
+          const results = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const status = results.withinThresholds ? '✅ PASSED' : '❌ FAILED';
+          const violations = results.thresholdViolations || [];
+          
+          let body = `## Performance Test Results - ${{ matrix.platform }}
+          
+          **Scene**: ${{ matrix.test-scene }}
+          **Status**: ${status}
+          **Platform**: ${{ matrix.platform }}
+          
+          ### 📊 Performance Metrics
+          | Metric | Value | Threshold | Status |
+          |--------|-------|-----------|--------|
+          | Average FPS | ${results.averageFPS?.toFixed(1) || 'N/A'} | {{MIN_FPS}} | ${results.averageFPS >= {{MIN_FPS}} ? '✅' : '❌'} |
+          | Frame Time | ${results.averageFrameTime?.toFixed(2) || 'N/A'} ms | {{MAX_FRAME_TIME}}ms | ${results.averageFrameTime <= {{MAX_FRAME_TIME}} ? '✅' : '❌'} |
+          | Memory Usage | ${results.totalMemoryUsed ? Math.round(results.totalMemoryUsed / (1024 * 1024)) : 'N/A'} MB | {{MAX_MEMORY}}MB | ${(results.totalMemoryUsed / (1024 * 1024)) <= {{MAX_MEMORY}} ? '✅' : '❌'} |
+          | Draw Calls | ${results.drawCallsCount || 'N/A'} | {{MAX_DRAW_CALLS}} | ${results.drawCallsCount <= {{MAX_DRAW_CALLS}} ? '✅' : '❌'} |
+          `;
+          
+          if (violations.length > 0) {
+            body += `\n### ⚠️ Performance Issues Detected\n`;
+            violations.forEach(violation => {
+              body += `- ${violation}\n`;
+            });
+            body += `\n**Action Required**: Optimize performance before merging this PR.`;
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });
+
+    - name: Fail Build on Performance Regression
+      if: steps.parse-results.outputs.PERFORMANCE_PASSED == 'false' && {{FAIL_ON_PERFORMANCE_REGRESSION}}
+      run: |
+        echo "❌ Performance tests failed - build blocked"
+        echo "Check artifacts and PR comments for details"
+        exit 1
+
+  performance-regression-analysis:
+    name: Performance Regression Analysis
+    runs-on: {{RUNNER_OS}}
+    needs: performance-validation
+    if: always() && {{ENABLE_REGRESSION_ANALYSIS}}
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Download Performance Results
+      uses: actions/download-artifact@v3
+      with:
+        path: all-performance-results/
+
+    - name: Setup Unity for Regression Analysis
+      uses: game-ci/unity-builder@v2
+      with:
+        unityVersion: ${{ env.UNITY_VERSION }}
+        targetPlatform: StandaloneWindows64
+
+    - name: Run Performance Regression Analysis
+      env:
+        UNITY_LICENSE: ${{ env.UNITY_LICENSE }}
+      run: |
+        # Consolidate all performance results
+        mkdir -p consolidated-results
+        find all-performance-results/ -name "performance-report.json" -exec cp {} consolidated-results/ \;
+        
+        # Run Unity method for regression analysis
+        unity-editor \
+          -quit \
+          -batchmode \
+          -nographics \
+          -executeMethod {{REGRESSION_ANALYSIS_METHOD}} \
+          -resultsPath "consolidated-results/" \
+          -baselineCommit "origin/{{MAIN_BRANCH}}"
+
+    - name: Generate Performance Trend Report
+      run: |
+        # Create performance trend analysis
+        echo "# 📈 Performance Trend Report" > performance-trend.md
+        echo "**Date**: $(date)" >> performance-trend.md
+        echo "**Commit**: $GITHUB_SHA" >> performance-trend.md
+        echo "**Branch**: $GITHUB_REF_NAME" >> performance-trend.md
+        echo "" >> performance-trend.md
+        
+        # Add trend analysis data if available
+        if [ -f "performance-trend-data.json" ]; then
+          echo "## Performance Trends" >> performance-trend.md
+          cat performance-trend-data.json >> performance-trend.md
+        fi
+
+    - name: Upload Trend Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-trend-report-${{ github.sha }}
+        path: performance-trend.md
+        retention-days: {{TREND_REPORT_RETENTION}}
+
+# Template Variables to Replace:
+# {{PROJECT_NAME}} - Your Unity project name
+# {{MAIN_BRANCH}} - Your main branch name (e.g., "main")
+# {{DEVELOP_BRANCH}} - Your development branch name (e.g., "develop")  
+# {{NIGHTLY_TIME}} - Time description for nightly tests (e.g., "2 AM")
+# {{NIGHTLY_CRON}} - Cron expression for nightly tests (e.g., "0 2 * * *")
+# {{SECRET_UNITY_LICENSE}} - GitHub secret name for Unity license
+# {{UNITY_VERSION}} - Unity version (e.g., "2022.3.10f1")
+# {{RUNNER_OS}} - GitHub runner OS (ubuntu-latest, windows-latest, macos-latest)
+# {{TARGET_PLATFORMS}} - Array of build platforms to test
+# {{TEST_SCENES}} - Array of scenes to performance test
+# {{PERFORMANCE_TEST_METHOD}} - Unity method for running performance tests
+#   Example: "BMAD.Unity.ProfilerAutomation.UnityProfilerIntegrationManager.RunCIPerformanceTests"
+# {{PERFORMANCE_THRESHOLDS_FILE}} - Path to performance thresholds config file
+# {{MIN_FPS}} - Minimum acceptable FPS for your game
+# {{MAX_FRAME_TIME}} - Maximum acceptable frame time in milliseconds
+# {{MAX_MEMORY}} - Maximum acceptable memory usage in MB
+# {{MAX_DRAW_CALLS}} - Maximum acceptable draw calls per frame
+# {{FAIL_ON_PERFORMANCE_REGRESSION}} - true/false to fail build on regression
+# {{ENABLE_REGRESSION_ANALYSIS}} - true/false to enable regression analysis
+# {{REGRESSION_ANALYSIS_METHOD}} - Unity method for regression analysis
+# {{TREND_REPORT_RETENTION}} - Days to keep trend reports (e.g., 30)
+#
+# Setup Instructions:
+# 1. Ensure enterprise features are enabled in your config.yaml
+# 2. Copy this file to .github/workflows/unity-performance.yml in your project
+# 3. Replace all {{VARIABLE_NAME}} placeholders with your values
+# 4. Configure performance thresholds file for your project requirements
+# 5. Add Unity license to GitHub repository secrets
+# 6. Test with a commit to verify performance testing works
