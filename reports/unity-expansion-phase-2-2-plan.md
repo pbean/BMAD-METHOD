@@ -1016,6 +1016,69 @@ The completion of Unity workflows revealed a **critical dependency gap** that re
 
 **Expected Outcome**: Transform expansion pack from "sophisticated but unusable" to "production-ready Unity development framework"
 
+## Next Steps for New Session (IMMEDIATE PRIORITIES)
+
+### 🔥 CRITICAL: Continue Priority 1 Task Creation (3/5 remaining)
+
+**URGENT - Complete these 3 tasks first to unblock basic Unity workflows:**
+
+1. **`2d-physics-setup.md`** (HIGH PRIORITY)
+   - Unity 2D Physics2D configuration patterns
+   - Rigidbody2D, Collider2D, Physics2D settings
+   - 2D physics optimization and performance
+   - Blocks Unity 2D workflow execution
+
+2. **`playmode-tests.md`** (HIGH PRIORITY) 
+   - Unity Test Framework PlayMode testing patterns
+   - Runtime testing, scene testing, component integration tests
+   - Async testing patterns for Unity coroutines
+   - Blocks Unity Component workflow execution
+
+3. **`pixel-perfect-camera.md`** (HIGH PRIORITY)
+   - Unity Pixel Perfect Camera package integration
+   - 2D pixel art rendering optimization
+   - Pixel-perfect movement and positioning
+   - Blocks Unity 2D workflow execution
+
+### 📋 Implementation Strategy (Copy for New Session)
+
+**File Locations:**
+- Tasks: `/expansion-packs/bmad-unity-game-dev/tasks/`
+- Patterns: Follow `component-architecture.md` and `monobehaviour-creation.md`
+- Requirements: 800-1200+ lines, comprehensive LLM directives, Unity best practices
+
+**Quality Standards:**
+- Sequential task structure with numbered phases
+- Extensive `[[LLM: instructions]]` for adaptive processing
+- Unity API accuracy (validate against Unity 2022.3 LTS)
+- Production-ready code examples with error handling
+- Integration with existing Unity expansion pack patterns
+
+### 🏗️ Architectural Foundation Complete
+
+**✅ Already Completed (Secure on Branch):**
+- `component-architecture.md` (1,200+ lines) - Unity component system foundation
+- `monobehaviour-creation.md` (1,500+ lines) - Advanced MonoBehaviour patterns
+- Critical analysis reports in `/reports/` directory
+- Plan status corrected with accurate operational assessment
+
+### 📊 Current Status Summary
+
+**Progress:** 2/16 critical Unity core tasks completed (12.5%)
+**Branch:** `unity-cicd-automation-framework-20250813`
+**Workflow Status:** BROKEN (84% missing task dependencies)
+**Infrastructure:** Excellent (~85% complete)
+**Operational Functionality:** 0% (workflows unusable)
+
+### 🎯 Success Criteria for Next Session
+
+1. **Complete Priority 1**: Create remaining 3 critical path tasks
+2. **Validate Progress**: Test task creation against workflow YAML files
+3. **Begin Priority 2**: Start high-impact tasks if time permits
+4. **Maintain Quality**: Follow established patterns and BMAD compliance
+
+**Critical Success Factor:** Each task must resolve specific workflow dependency failures identified in TODO comments within the YAML workflow files.
+
 ---
 
 **CORRECTED Document Status**: Infrastructure Complete, Workflows Broken - **CRITICAL REMEDIATION IN PROGRESS**
