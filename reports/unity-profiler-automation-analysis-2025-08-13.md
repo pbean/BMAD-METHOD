@@ -2,7 +2,7 @@
 
 **Analysis Date:** August 13, 2025  
 **Scope:** Unity Expansion Pack Validation Tasks Performance Testing Gaps  
-**Critical Finding:** Enterprise deployment blocked by lack of automated performance testing  
+**Critical Finding:** Enterprise deployment blocked by lack of automated performance testing
 
 ## Executive Summary
 
@@ -11,6 +11,7 @@
 The Unity expansion pack validation framework contains **zero automated performance testing integration** across all validation tasks. This represents a critical gap for enterprise deployment, as identified in remediation plan item 8.3: "Automated Performance Testing - No Unity Profiler automation."
 
 **Impact Assessment:**
+
 - **Deployment Risk:** HIGH - Manual performance validation cannot ensure consistent quality at scale
 - **Enterprise Readiness:** BLOCKED - Automated performance regression detection required
 - **Development Efficiency:** IMPACTED - Manual profiling increases validation time exponentially
@@ -36,7 +37,9 @@ The Unity expansion pack validation framework contains **zero automated performa
 ### Current Validation Tasks Performance Testing Status
 
 #### 1. validate-2d-systems.md
+
 **Section 12: "2D Performance and Memory Validation"**
+
 - ❌ **Manual Only:** "Validate draw call reduction through proper sprite batching"
 - ❌ **No Profiler API:** "Verify efficient texture loading and streaming"
 - ❌ **No Automation:** "Validate Physics2D simulation performance"
@@ -45,7 +48,9 @@ The Unity expansion pack validation framework contains **zero automated performa
 **Missing:** Unity Profiler API integration for 2D rendering performance automation
 
 #### 2. validate-3d-systems.md
+
 **Section 10: "3D Performance Profiling and Optimization Validation"**
+
 - ❌ **Manual Only:** "Validate 3D rendering optimization techniques"
 - ❌ **No Profiler API:** "Verify 3D asset memory usage and optimization"
 - ❌ **No Automation:** "Validate 3D system CPU performance"
@@ -54,7 +59,9 @@ The Unity expansion pack validation framework contains **zero automated performa
 **Missing:** Unity Profiler API integration for 3D rendering and physics performance automation
 
 #### 3. validate-unity-features.md
+
 **Section 6: "Platform and Performance Validation"**
+
 - ❌ **Manual Only:** "Cross-platform compatibility"
 - ❌ **No Profiler API:** "Performance benchmarking"
 - ❌ **No Automation:** "Memory constraints verification"
@@ -63,7 +70,9 @@ The Unity expansion pack validation framework contains **zero automated performa
 **Missing:** Unity Profiler API integration for feature performance validation
 
 #### 4. validate-gaming-services.md
+
 **Section 11: "Gaming Services Performance and Monitoring Validation"**
+
 - ❌ **Manual Only:** "Service response time monitoring"
 - ❌ **No Profiler API:** "Performance regression detection"
 - ❌ **No Automation:** "Service availability monitoring"
@@ -72,24 +81,30 @@ The Unity expansion pack validation framework contains **zero automated performa
 **Missing:** Unity Profiler API integration with Gaming Services performance monitoring
 
 #### 5. Unity-Specific Validation Checklists
+
 **Performance Validation Gaps:**
+
 - **2D Animation Checklist:** Manual performance monitoring only (section 6.3)
 - **Addressables Checklist:** No automated performance regression testing (section 6.2)
 - **Timeline Checklist:** Manual performance validation only (section 4.1-4.3)
 - **XR Readiness Checklist:** No automated frame rate/latency validation (section 6.2)
 
 #### 6. Unity Task Files Analysis
+
 **Unity Editor Automation (unity-editor-automation.md):**
+
 - ✅ Build automation present
 - ❌ **Missing:** Performance profiling automation
 - ❌ **Missing:** Unity Profiler API integration
 
 **Unity Analytics Setup (unity-analytics-setup.md):**
+
 - ✅ Extensive analytics implementation
 - ❌ **Missing:** Unity Profiler integration
 - ❌ **Missing:** Performance metrics automation
 
 **Unity Addressables Advanced (unity-addressables-advanced.md):**
+
 - ✅ Performance monitoring classes
 - ❌ **Missing:** Unity Profiler API automation
 - ❌ **Missing:** Automated regression detection
@@ -114,23 +129,23 @@ public class MemoryProfilerAutomation : MonoBehaviour
     public long maxMemoryUsageMB = 512;
     public long memoryLeakThresholdMB = 50;
     public float gcAllocationThresholdMB = 10.0f;
-    
+
     [Header("Profiling Configuration")]
     public bool enableAutomatedProfiling = true;
     public float profilingIntervalSeconds = 5.0f;
     public int maxSampleCount = 100;
-    
+
     // Unity Profiler Markers
     private static readonly ProfilerMarker s_2DRenderingMarker = new ProfilerMarker("2D.Rendering");
     private static readonly ProfilerMarker s_3DRenderingMarker = new ProfilerMarker("3D.Rendering");
     private static readonly ProfilerMarker s_TimelineMarker = new ProfilerMarker("Timeline.Evaluation");
     private static readonly ProfilerMarker s_AddressablesMarker = new ProfilerMarker("Addressables.Loading");
     private static readonly ProfilerMarker s_GamingServicesMarker = new ProfilerMarker("GamingServices.Network");
-    
+
     // Memory tracking
     private Queue<MemorySnapshot> memorySnapshots = new Queue<MemorySnapshot>();
     private MemoryProfilerValidationResults lastValidationResults;
-    
+
     public struct MemorySnapshot
     {
         public float timestamp;
@@ -141,7 +156,7 @@ public class MemoryProfilerAutomation : MonoBehaviour
         public int gcCollections;
         public Dictionary<string, long> categoryMemory;
     }
-    
+
     public class MemoryProfilerValidationResults
     {
         public bool memoryThresholdPassed;
@@ -151,7 +166,7 @@ public class MemoryProfilerAutomation : MonoBehaviour
         public Dictionary<string, float> categoryPerformance = new Dictionary<string, float>();
         public float overallScore;
     }
-    
+
     private void Start()
     {
         if (enableAutomatedProfiling)
@@ -160,7 +175,7 @@ public class MemoryProfilerAutomation : MonoBehaviour
             StartCoroutine(ContinuousValidationLoop());
         }
     }
-    
+
     private void CaptureMemorySnapshot()
     {
         var snapshot = new MemorySnapshot
@@ -179,42 +194,42 @@ public class MemoryProfilerAutomation : MonoBehaviour
                 ["Scripts"] = Profiler.GetMonoUsedSizeLong() / (1024 * 1024)
             }
         };
-        
+
         memorySnapshots.Enqueue(snapshot);
-        
+
         if (memorySnapshots.Count > maxSampleCount)
         {
             memorySnapshots.Dequeue();
         }
-        
+
         // Validate current snapshot
         ValidateMemorySnapshot(snapshot);
     }
-    
+
     private void ValidateMemorySnapshot(MemorySnapshot snapshot)
     {
         var results = new MemoryProfilerValidationResults();
-        
+
         // Memory threshold validation
         results.memoryThresholdPassed = snapshot.totalMemoryMB <= maxMemoryUsageMB;
         if (!results.memoryThresholdPassed)
         {
             results.performanceIssues.Add($"Memory usage ({snapshot.totalMemoryMB}MB) exceeds threshold ({maxMemoryUsageMB}MB)");
         }
-        
+
         // Memory leak detection
         if (memorySnapshots.Count >= 10)
         {
             var recentSnapshots = new List<MemorySnapshot>(memorySnapshots);
             var memoryTrend = CalculateMemoryTrend(recentSnapshots.GetRange(recentSnapshots.Count - 10, 10));
-            
+
             results.memoryLeakDetected = memoryTrend > memoryLeakThresholdMB;
             if (results.memoryLeakDetected)
             {
                 results.performanceIssues.Add($"Memory leak detected: {memoryTrend:F2}MB/minute growth");
             }
         }
-        
+
         // GC performance validation
         var gcAllocRate = CalculateGCAllocationRate(snapshot);
         results.gcPerformancePassed = gcAllocRate <= gcAllocationThresholdMB;
@@ -222,64 +237,64 @@ public class MemoryProfilerAutomation : MonoBehaviour
         {
             results.performanceIssues.Add($"High GC allocation rate: {gcAllocRate:F2}MB/s");
         }
-        
+
         // Category-specific validation
         foreach (var category in snapshot.categoryMemory)
         {
             var categoryThreshold = GetCategoryMemoryThreshold(category.Key);
             var categoryPassed = category.Value <= categoryThreshold;
             results.categoryPerformance[category.Key] = (float)category.Value / categoryThreshold;
-            
+
             if (!categoryPassed)
             {
                 results.performanceIssues.Add($"{category.Key} memory ({category.Value}MB) exceeds threshold ({categoryThreshold}MB)");
             }
         }
-        
+
         // Calculate overall performance score
         results.overallScore = CalculateOverallScore(results);
-        
+
         lastValidationResults = results;
-        
+
         // Log critical issues
         if (results.performanceIssues.Count > 0)
         {
             Debug.LogError($"Memory Performance Issues: {string.Join(", ", results.performanceIssues)}");
         }
-        
+
         // Trigger alerts for critical issues
         if (results.overallScore < 0.7f)
         {
             TriggerPerformanceAlert("Critical memory performance degradation detected", results);
         }
     }
-    
+
     private float CalculateMemoryTrend(List<MemorySnapshot> snapshots)
     {
         if (snapshots.Count < 2) return 0;
-        
+
         var firstSnapshot = snapshots[0];
         var lastSnapshot = snapshots[snapshots.Count - 1];
         var timeSpan = lastSnapshot.timestamp - firstSnapshot.timestamp;
         var memoryGrowth = lastSnapshot.totalMemoryMB - firstSnapshot.totalMemoryMB;
-        
+
         return memoryGrowth / (timeSpan / 60.0f); // MB per minute
     }
-    
+
     private float CalculateGCAllocationRate(MemorySnapshot snapshot)
     {
         if (memorySnapshots.Count < 2) return 0;
-        
+
         var previousSnapshots = new List<MemorySnapshot>(memorySnapshots);
         if (previousSnapshots.Count < 2) return 0;
-        
+
         var previousSnapshot = previousSnapshots[previousSnapshots.Count - 2];
         var timeSpan = snapshot.timestamp - previousSnapshot.timestamp;
         var gcGrowth = snapshot.gcMemoryMB - previousSnapshot.gcMemoryMB;
-        
+
         return gcGrowth / timeSpan; // MB per second
     }
-    
+
     private long GetCategoryMemoryThreshold(string category)
     {
         return category switch
@@ -292,15 +307,15 @@ public class MemoryProfilerAutomation : MonoBehaviour
             _ => maxMemoryUsageMB * 5 / 100           // 5% default
         };
     }
-    
+
     private float CalculateOverallScore(MemoryProfilerValidationResults results)
     {
         float score = 1.0f;
-        
+
         if (!results.memoryThresholdPassed) score -= 0.4f;
         if (results.memoryLeakDetected) score -= 0.3f;
         if (!results.gcPerformancePassed) score -= 0.2f;
-        
+
         // Category performance impact
         foreach (var categoryPerf in results.categoryPerformance)
         {
@@ -309,96 +324,96 @@ public class MemoryProfilerAutomation : MonoBehaviour
                 score -= 0.1f * (categoryPerf.Value - 1.0f);
             }
         }
-        
+
         return Mathf.Max(0, score);
     }
-    
+
     private void TriggerPerformanceAlert(string message, MemoryProfilerValidationResults results)
     {
         // Integration point for external monitoring systems
         Debug.LogError($"PERFORMANCE ALERT: {message}");
-        
+
         // Could integrate with:
         // - Unity Analytics
         // - Custom telemetry systems
         // - CI/CD notification systems
         // - Development team alerts
-        
+
         // Example: Send to external monitoring
         SendToPerformanceMonitoring(message, results);
     }
-    
+
     private void SendToPerformanceMonitoring(string message, MemoryProfilerValidationResults results)
     {
         // Implementation for external performance monitoring integration
         // This could send data to Unity Analytics, custom telemetry, or CI/CD systems
     }
-    
+
     // Public API for validation tasks integration
     public async Task<MemoryProfilerValidationResults> ValidateScenarioAsync(string scenarioName, System.Func<Task> testScenario)
     {
         Debug.Log($"Starting memory profiling for scenario: {scenarioName}");
-        
+
         // Capture baseline
         CaptureMemorySnapshot();
         var baselineSnapshot = new List<MemorySnapshot>(memorySnapshots)[memorySnapshots.Count - 1];
-        
+
         // Execute test scenario
         using (s_TimelineMarker.Auto()) // Example marker usage
         {
             await testScenario();
         }
-        
+
         // Allow memory to stabilize
         await Task.Delay(2000);
-        
+
         // Capture post-scenario
         CaptureMemorySnapshot();
         var finalSnapshot = new List<MemorySnapshot>(memorySnapshots)[memorySnapshots.Count - 1];
-        
+
         // Analyze scenario impact
         var scenarioResults = AnalyzeScenarioImpact(baselineSnapshot, finalSnapshot, scenarioName);
-        
+
         Debug.Log($"Memory profiling completed for {scenarioName}. Score: {scenarioResults.overallScore:F2}");
-        
+
         return scenarioResults;
     }
-    
+
     private MemoryProfilerValidationResults AnalyzeScenarioImpact(MemorySnapshot baseline, MemorySnapshot final, string scenarioName)
     {
         var results = new MemoryProfilerValidationResults();
-        
+
         var memoryIncrease = final.totalMemoryMB - baseline.totalMemoryMB;
         results.memoryThresholdPassed = memoryIncrease <= memoryLeakThresholdMB;
-        
+
         if (!results.memoryThresholdPassed)
         {
             results.performanceIssues.Add($"Scenario '{scenarioName}' caused {memoryIncrease}MB memory increase");
         }
-        
+
         // Category-specific analysis
         foreach (var category in baseline.categoryMemory.Keys)
         {
             var categoryIncrease = final.categoryMemory[category] - baseline.categoryMemory[category];
             var categoryThreshold = GetCategoryMemoryThreshold(category) * 0.1f; // 10% of category limit
-            
+
             if (categoryIncrease > categoryThreshold)
             {
                 results.performanceIssues.Add($"Scenario '{scenarioName}' caused excessive {category} memory increase: {categoryIncrease}MB");
             }
         }
-        
+
         results.overallScore = CalculateOverallScore(results);
-        
+
         return results;
     }
-    
+
     private System.Collections.IEnumerator ContinuousValidationLoop()
     {
         while (enableAutomatedProfiling)
         {
             yield return new WaitForSeconds(30.0f); // Validate every 30 seconds
-            
+
             if (lastValidationResults != null && lastValidationResults.overallScore < 0.5f)
             {
                 Debug.LogWarning("Continuous performance validation detected critical issues");
@@ -406,7 +421,7 @@ public class MemoryProfilerAutomation : MonoBehaviour
             }
         }
     }
-    
+
     // Integration methods for specific Unity systems
     public async Task<MemoryProfilerValidationResults> Validate2DSystemMemory()
     {
@@ -420,7 +435,7 @@ public class MemoryProfilerAutomation : MonoBehaviour
             }
         });
     }
-    
+
     public async Task<MemoryProfilerValidationResults> Validate3DSystemMemory()
     {
         return await ValidateScenarioAsync("3D System Memory", async () =>
@@ -433,7 +448,7 @@ public class MemoryProfilerAutomation : MonoBehaviour
             }
         });
     }
-    
+
     public async Task<MemoryProfilerValidationResults> ValidateTimelineMemory()
     {
         return await ValidateScenarioAsync("Timeline Memory", async () =>
@@ -446,7 +461,7 @@ public class MemoryProfilerAutomation : MonoBehaviour
             }
         });
     }
-    
+
     public async Task<MemoryProfilerValidationResults> ValidateAddressablesMemory()
     {
         return await ValidateScenarioAsync("Addressables Memory", async () =>
@@ -459,7 +474,7 @@ public class MemoryProfilerAutomation : MonoBehaviour
             }
         });
     }
-    
+
     public async Task<MemoryProfilerValidationResults> ValidateGamingServicesMemory()
     {
         return await ValidateScenarioAsync("Gaming Services Memory", async () =>
@@ -490,45 +505,45 @@ public class FrameRateProfilerAutomation : MonoBehaviour
     [Header("Frame Rate Thresholds")]
     [Tooltip("Minimum acceptable FPS (e.g., 30 for mobile, 60 for desktop)")]
     public float minAcceptableFPS = 60.0f;
-    
+
     [Tooltip("Target FPS for optimal performance")]
     public float targetFPS = 60.0f;
-    
+
     [Tooltip("Frame time threshold in milliseconds")]
     public float maxFrameTimeMS = 16.67f; // 60 FPS = 16.67ms per frame
-    
+
     [Header("XR-Specific Thresholds")]
     [Tooltip("VR requires higher FPS for comfort (90+ Hz)")]
     public float xrMinFPS = 90.0f;
-    
+
     [Tooltip("Maximum acceptable latency for XR (motion-to-photon)")]
     public float xrMaxLatencyMS = 20.0f;
-    
+
     [Header("Platform-Specific Configuration")]
     public bool isMobilePlatform = false;
     public bool isXRPlatform = false;
     public bool isConsolePlatform = false;
-    
+
     [Header("Profiling Settings")]
     public int sampleWindowSize = 120; // 2 seconds at 60 FPS
     public float profilingDurationSeconds = 30.0f;
     public bool enableContinuousProfiling = true;
-    
+
     // Unity Profiler Integration
     private static readonly ProfilerMarker s_2DRenderingFrameTimeMarker = new ProfilerMarker("2D.FrameTime");
     private static readonly ProfilerMarker s_3DRenderingFrameTimeMarker = new ProfilerMarker("3D.FrameTime");
     private static readonly ProfilerMarker s_XRFrameTimeMarker = new ProfilerMarker("XR.FrameTime");
     private static readonly ProfilerMarker s_TimelineFrameTimeMarker = new ProfilerMarker("Timeline.FrameTime");
-    
+
     // Performance tracking
     private Queue<FrameSample> frameSamples = new Queue<FrameSample>();
     private Queue<float> frameTimeHistory = new Queue<float>();
     private FrameRateValidationResults lastValidationResults;
-    
+
     // XR-specific tracking
     private float lastXRFrameTime = 0;
     private Queue<float> xrLatencySamples = new Queue<float>();
-    
+
     public struct FrameSample
     {
         public float timestamp;
@@ -539,7 +554,7 @@ public class FrameRateProfilerAutomation : MonoBehaviour
         public string activeScene;
         public Dictionary<string, float> categoryTimings;
     }
-    
+
     public class FrameRateValidationResults
     {
         public bool fpsThresholdPassed;
@@ -553,24 +568,24 @@ public class FrameRateProfilerAutomation : MonoBehaviour
         public Dictionary<string, float> categoryPerformance = new Dictionary<string, float>();
         public float overallScore;
         public int droppedFrameCount;
-        
+
         // XR-specific results
         public float xrAverageLatency;
         public int xrFrameDrops;
         public bool xrComfortPassed;
     }
-    
+
     private void Start()
     {
         // Set platform-specific thresholds
         ConfigurePlatformThresholds();
-        
+
         if (enableContinuousProfiling)
         {
             StartCoroutine(ContinuousFrameRateProfiling());
         }
     }
-    
+
     private void ConfigurePlatformThresholds()
     {
         if (isMobilePlatform)
@@ -598,17 +613,17 @@ public class FrameRateProfilerAutomation : MonoBehaviour
             maxFrameTimeMS = 16.67f;
         }
     }
-    
+
     private void Update()
     {
         CaptureFrameSample();
     }
-    
+
     private void CaptureFrameSample()
     {
         var currentFPS = 1.0f / Time.deltaTime;
         var frameTimeMS = Time.deltaTime * 1000.0f;
-        
+
         var sample = new FrameSample
         {
             timestamp = Time.time,
@@ -619,34 +634,34 @@ public class FrameRateProfilerAutomation : MonoBehaviour
             activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
             categoryTimings = CaptureDetailedTimings()
         };
-        
+
         frameSamples.Enqueue(sample);
         frameTimeHistory.Enqueue(frameTimeMS);
-        
+
         // Maintain sample window
         if (frameSamples.Count > sampleWindowSize)
         {
             frameSamples.Dequeue();
         }
-        
+
         if (frameTimeHistory.Count > sampleWindowSize)
         {
             frameTimeHistory.Dequeue();
         }
-        
+
         // XR-specific tracking
         if (isXRPlatform)
         {
             CaptureXRMetrics(sample);
         }
-        
+
         // Validate in real-time for critical issues
         if (frameSamples.Count >= 10) // Only validate with sufficient samples
         {
             ValidateRealTimePerformance(sample);
         }
     }
-    
+
     private Dictionary<string, float> CaptureDetailedTimings()
     {
         return new Dictionary<string, float>
@@ -658,18 +673,18 @@ public class FrameRateProfilerAutomation : MonoBehaviour
             ["Audio"] = Profiler.GetCounterValue(ProfilerCounterCategory.Audio, "Audio Sources") * 0.1f
         };
     }
-    
+
     private int CalculateDroppedFrames(float currentFPS)
     {
         if (frameSamples.Count < 2) return 0;
-        
+
         var recentSamples = frameSamples.TakeLast(10).ToList();
         var expectedFrames = (int)(targetFPS * (Time.time - recentSamples.First().timestamp));
         var actualFrames = recentSamples.Count;
-        
+
         return Mathf.Max(0, expectedFrames - actualFrames);
     }
-    
+
     private void CaptureXRMetrics(FrameSample sample)
     {
         // Calculate XR-specific latency
@@ -678,7 +693,7 @@ public class FrameRateProfilerAutomation : MonoBehaviour
         {
             var xrLatency = (currentXRFrameTime - lastXRFrameTime) * 1000.0f;
             xrLatencySamples.Enqueue(xrLatency);
-            
+
             if (xrLatencySamples.Count > sampleWindowSize)
             {
                 xrLatencySamples.Dequeue();
@@ -686,7 +701,7 @@ public class FrameRateProfilerAutomation : MonoBehaviour
         }
         lastXRFrameTime = currentXRFrameTime;
     }
-    
+
     private void ValidateRealTimePerformance(FrameSample currentSample)
     {
         // Check for immediate critical issues
@@ -694,12 +709,12 @@ public class FrameRateProfilerAutomation : MonoBehaviour
         {
             Debug.LogWarning($"Critical FPS drop detected: {currentSample.fps:F1} FPS (threshold: {minAcceptableFPS:F1})");
         }
-        
+
         if (currentSample.frameTimeMS > maxFrameTimeMS * 1.5f)
         {
             Debug.LogWarning($"Critical frame time spike: {currentSample.frameTimeMS:F2}ms (threshold: {maxFrameTimeMS:F2}ms)");
         }
-        
+
         // XR-specific real-time validation
         if (isXRPlatform && xrLatencySamples.Count > 0)
         {
@@ -710,111 +725,111 @@ public class FrameRateProfilerAutomation : MonoBehaviour
             }
         }
     }
-    
+
     // Public API for validation tasks
     public async Task<FrameRateValidationResults> ValidateScenarioFrameRateAsync(string scenarioName, System.Func<Task> testScenario, float durationSeconds = 10.0f)
     {
         Debug.Log($"Starting frame rate profiling for scenario: {scenarioName}");
-        
+
         // Clear previous samples for clean measurement
         frameSamples.Clear();
         frameTimeHistory.Clear();
         if (isXRPlatform) xrLatencySamples.Clear();
-        
+
         // Start profiling
         var startTime = Time.time;
         var profilingTask = testScenario();
-        
+
         // Wait for scenario completion or timeout
         await Task.WhenAny(profilingTask, Task.Delay((int)(durationSeconds * 1000)));
-        
+
         // Allow additional time for samples
         await Task.Delay(1000);
-        
+
         // Analyze collected samples
         var results = AnalyzeFrameRateResults(scenarioName);
-        
+
         Debug.Log($"Frame rate profiling completed for {scenarioName}. Average FPS: {results.averageFPS:F1}, Score: {results.overallScore:F2}");
-        
+
         return results;
     }
-    
+
     private FrameRateValidationResults AnalyzeFrameRateResults(string scenarioName)
     {
         var results = new FrameRateValidationResults();
-        
+
         if (frameSamples.Count == 0)
         {
             results.performanceIssues.Add("No frame samples collected");
             return results;
         }
-        
+
         var samples = frameSamples.ToList();
         var frameTimes = frameTimeHistory.ToList();
-        
+
         // Basic FPS analysis
         results.averageFPS = samples.Average(s => s.fps);
         results.minFPS = samples.Min(s => s.fps);
         results.maxFrameTimeMS = frameTimes.Max();
         results.frameTimeVariance = CalculateVariance(frameTimes);
         results.droppedFrameCount = samples.Sum(s => s.droppedFrames);
-        
+
         // Threshold validation
         results.fpsThresholdPassed = results.averageFPS >= minAcceptableFPS && results.minFPS >= minAcceptableFPS * 0.9f;
         results.frameTimeConsistent = results.frameTimeVariance <= maxFrameTimeMS * 0.5f;
-        
+
         // Performance issues identification
         if (!results.fpsThresholdPassed)
         {
             results.performanceIssues.Add($"Average FPS ({results.averageFPS:F1}) or minimum FPS ({results.minFPS:F1}) below threshold ({minAcceptableFPS:F1})");
         }
-        
+
         if (!results.frameTimeConsistent)
         {
             results.performanceIssues.Add($"Frame time variance too high ({results.frameTimeVariance:F2}ms)");
         }
-        
+
         if (results.droppedFrameCount > 0)
         {
             results.performanceIssues.Add($"Dropped frames detected: {results.droppedFrameCount}");
         }
-        
+
         // Category performance analysis
         AnalyzeCategoryPerformance(samples, results);
-        
+
         // XR-specific analysis
         if (isXRPlatform)
         {
             AnalyzeXRPerformance(results);
         }
-        
+
         // Calculate overall score
         results.overallScore = CalculateFrameRateScore(results);
-        
+
         return results;
     }
-    
+
     private void AnalyzeCategoryPerformance(List<FrameSample> samples, FrameRateValidationResults results)
     {
         var categoryAverages = new Dictionary<string, float>();
-        
+
         foreach (var category in samples.First().categoryTimings.Keys)
         {
             categoryAverages[category] = samples.Average(s => s.categoryTimings.GetValueOrDefault(category, 0));
         }
-        
+
         foreach (var category in categoryAverages)
         {
             var categoryThreshold = GetCategoryThreshold(category.Key);
             results.categoryPerformance[category.Key] = category.Value / categoryThreshold;
-            
+
             if (category.Value > categoryThreshold)
             {
                 results.performanceIssues.Add($"{category.Key} timing excessive: {category.Value:F2}ms (threshold: {categoryThreshold:F2}ms)");
             }
         }
     }
-    
+
     private void AnalyzeXRPerformance(FrameRateValidationResults results)
     {
         if (xrLatencySamples.Count > 0)
@@ -823,19 +838,19 @@ public class FrameRateProfilerAutomation : MonoBehaviour
             results.xrLatencyAcceptable = results.xrAverageLatency <= xrMaxLatencyMS;
             results.xrFrameDrops = frameSamples.Count(s => s.fps < xrMinFPS * 0.95f);
             results.xrComfortPassed = results.xrLatencyAcceptable && results.xrFrameDrops <= 5;
-            
+
             if (!results.xrLatencyAcceptable)
             {
                 results.performanceIssues.Add($"XR latency too high: {results.xrAverageLatency:F2}ms (max: {xrMaxLatencyMS:F2}ms)");
             }
-            
+
             if (results.xrFrameDrops > 5)
             {
                 results.performanceIssues.Add($"Too many XR frame drops: {results.xrFrameDrops} (comfort threshold: 5)");
             }
         }
     }
-    
+
     private float GetCategoryThreshold(string category)
     {
         return category switch
@@ -848,52 +863,52 @@ public class FrameRateProfilerAutomation : MonoBehaviour
             _ => maxFrameTimeMS * 0.1f            // 10% default
         };
     }
-    
+
     private float CalculateVariance(List<float> values)
     {
         if (values.Count <= 1) return 0;
-        
+
         var mean = values.Average();
         var variance = values.Sum(v => Mathf.Pow(v - mean, 2)) / values.Count;
         return Mathf.Sqrt(variance);
     }
-    
+
     private float CalculateFrameRateScore(FrameRateValidationResults results)
     {
         float score = 1.0f;
-        
+
         // FPS score component (40% weight)
         var fpsScore = Mathf.Clamp01(results.averageFPS / targetFPS);
         score *= 0.4f + (fpsScore * 0.6f);
-        
+
         // Consistency score component (30% weight)
         var consistencyScore = results.frameTimeConsistent ? 1.0f : 0.5f;
         score *= 0.7f + (consistencyScore * 0.3f);
-        
+
         // Dropped frames penalty (20% weight)
         var droppedFramesPenalty = Mathf.Clamp01(results.droppedFrameCount / 10.0f);
         score *= 1.0f - (droppedFramesPenalty * 0.2f);
-        
+
         // XR-specific adjustments (10% weight)
         if (isXRPlatform)
         {
             var xrScore = results.xrComfortPassed ? 1.0f : 0.3f;
             score *= 0.9f + (xrScore * 0.1f);
         }
-        
+
         return Mathf.Clamp01(score);
     }
-    
+
     private System.Collections.IEnumerator ContinuousFrameRateProfiling()
     {
         while (enableContinuousProfiling)
         {
             yield return new WaitForSeconds(profilingDurationSeconds);
-            
+
             if (frameSamples.Count >= sampleWindowSize)
             {
                 lastValidationResults = AnalyzeFrameRateResults("Continuous Monitoring");
-                
+
                 if (lastValidationResults.overallScore < 0.7f)
                 {
                     Debug.LogWarning($"Continuous frame rate monitoring detected performance degradation. Score: {lastValidationResults.overallScore:F2}");
@@ -902,21 +917,21 @@ public class FrameRateProfilerAutomation : MonoBehaviour
             }
         }
     }
-    
+
     private void TriggerFrameRateAlert(string message, FrameRateValidationResults results)
     {
         Debug.LogError($"FRAME RATE ALERT: {message}");
-        
+
         // Integration point for external monitoring
         SendFrameRateDataToMonitoring(message, results);
     }
-    
+
     private void SendFrameRateDataToMonitoring(string message, FrameRateValidationResults results)
     {
         // Implementation for external performance monitoring integration
         // Could send to Unity Analytics, CI/CD systems, or custom telemetry
     }
-    
+
     // Validation scenario methods
     public async Task<FrameRateValidationResults> Validate2DFrameRate()
     {
@@ -929,7 +944,7 @@ public class FrameRateProfilerAutomation : MonoBehaviour
             }
         });
     }
-    
+
     public async Task<FrameRateValidationResults> Validate3DFrameRate()
     {
         return await ValidateScenarioFrameRateAsync("3D Frame Rate", async () =>
@@ -941,7 +956,7 @@ public class FrameRateProfilerAutomation : MonoBehaviour
             }
         });
     }
-    
+
     public async Task<FrameRateValidationResults> ValidateXRFrameRate()
     {
         if (!isXRPlatform)
@@ -949,7 +964,7 @@ public class FrameRateProfilerAutomation : MonoBehaviour
             Debug.LogWarning("XR frame rate validation called on non-XR platform");
             return new FrameRateValidationResults { overallScore = 1.0f };
         }
-        
+
         return await ValidateScenarioFrameRateAsync("XR Frame Rate", async () =>
         {
             using (s_XRFrameTimeMarker.Auto())
@@ -959,7 +974,7 @@ public class FrameRateProfilerAutomation : MonoBehaviour
             }
         });
     }
-    
+
     public async Task<FrameRateValidationResults> ValidateTimelineFrameRate()
     {
         return await ValidateScenarioFrameRateAsync("Timeline Frame Rate", async () =>
@@ -995,12 +1010,12 @@ public class PerformanceTestConfiguration
     public float testDurationSeconds = 10.0f;
     public int warmupFrames = 60;
     public bool enableDetailedProfiling = true;
-    
+
     [Header("Thresholds")]
     public float targetFPS = 60.0f;
     public long maxMemoryMB = 512;
     public float maxFrameTimeMS = 16.67f;
-    
+
     [Header("Platform Specific")]
     public RuntimePlatform[] targetPlatforms;
     public bool enableXRValidation = false;
@@ -1013,19 +1028,19 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
     public List<PerformanceTestConfiguration> performanceTests = new List<PerformanceTestConfiguration>();
     public bool enableContinuousMonitoring = true;
     public float monitoringIntervalSeconds = 30.0f;
-    
+
     [Header("Validation Components")]
     public MemoryProfilerAutomation memoryProfiler;
     public FrameRateProfilerAutomation frameRateProfiler;
-    
+
     [Header("Integration Settings")]
     public bool enableUnityAnalyticsIntegration = false;
     public bool enableCI_CDIntegration = false;
     public string performanceReportPath = "Logs/PerformanceReports/";
-    
+
     private Dictionary<string, PerformanceTestResult> testResults = new Dictionary<string, PerformanceTestResult>();
     private List<ProfilerMarker> activeMarkers = new List<ProfilerMarker>();
-    
+
     public class PerformanceTestResult
     {
         public string testName;
@@ -1033,32 +1048,32 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
         public float testDurationSeconds;
         public bool passed;
         public float overallScore;
-        
+
         // Memory results
         public MemoryProfilerAutomation.MemoryProfilerValidationResults memoryResults;
-        
+
         // Frame rate results
         public FrameRateProfilerAutomation.FrameRateValidationResults frameRateResults;
-        
+
         // Combined analysis
         public List<string> criticalIssues = new List<string>();
         public List<string> warnings = new List<string>();
         public Dictionary<string, float> categoryScores = new Dictionary<string, float>();
-        
+
         // Platform-specific results
         public Dictionary<string, object> platformSpecificData = new Dictionary<string, object>();
     }
-    
+
     private void Start()
     {
         InitializeProfilerIntegration();
-        
+
         if (enableContinuousMonitoring)
         {
             InvokeRepeating(nameof(RunContinuousMonitoring), monitoringIntervalSeconds, monitoringIntervalSeconds);
         }
     }
-    
+
     private void InitializeProfilerIntegration()
     {
         // Ensure profiler components are available
@@ -1066,25 +1081,25 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
         {
             memoryProfiler = gameObject.AddComponent<MemoryProfilerAutomation>();
         }
-        
+
         if (frameRateProfiler == null)
         {
             frameRateProfiler = gameObject.AddComponent<FrameRateProfilerAutomation>();
         }
-        
+
         // Configure platform-specific settings
         ConfigurePlatformSettings();
-        
+
         // Initialize Unity Profiler markers for different systems
         InitializeProfilerMarkers();
-        
+
         Debug.Log("Unity Profiler Integration Manager initialized");
     }
-    
+
     private void ConfigurePlatformSettings()
     {
         var currentPlatform = Application.platform;
-        
+
         // Configure memory profiler for platform
         if (currentPlatform == RuntimePlatform.Android || currentPlatform == RuntimePlatform.IPhonePlayer)
         {
@@ -1096,7 +1111,7 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             memoryProfiler.maxMemoryUsageMB = 1024; // Desktop allowance
             frameRateProfiler.isMobilePlatform = false;
         }
-        
+
         // XR platform detection
         if (UnityEngine.XR.XRSettings.isDeviceActive)
         {
@@ -1104,7 +1119,7 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             frameRateProfiler.xrMinFPS = 90.0f;
         }
     }
-    
+
     private void InitializeProfilerMarkers()
     {
         // Create profiler markers for each validation scenario
@@ -1120,54 +1135,54 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             new ProfilerMarker("Validation.Performance.Regression")
         });
     }
-    
+
     // Public API for validation task integration
     public async Task<PerformanceTestResult> RunValidationScenario(string scenarioName, System.Func<Task> validationScenario, PerformanceTestConfiguration config = null)
     {
         if (config == null)
         {
-            config = performanceTests.FirstOrDefault(t => t.testName == scenarioName) 
+            config = performanceTests.FirstOrDefault(t => t.testName == scenarioName)
                      ?? CreateDefaultTestConfiguration(scenarioName);
         }
-        
+
         Debug.Log($"Starting performance validation for scenario: {scenarioName}");
-        
+
         var testResult = new PerformanceTestResult
         {
             testName = scenarioName,
             testTime = DateTime.Now,
             testDurationSeconds = config.testDurationSeconds
         };
-        
+
         try
         {
             // Warmup phase
             await WarmupPhase(config.warmupFrames);
-            
+
             // Run memory profiling
             var memoryTask = memoryProfiler.ValidateScenarioAsync(scenarioName, validationScenario);
-            
+
             // Run frame rate profiling
             var frameRateTask = frameRateProfiler.ValidateScenarioFrameRateAsync(scenarioName, validationScenario, config.testDurationSeconds);
-            
+
             // Wait for both profiling tasks to complete
             await Task.WhenAll(memoryTask, frameRateTask);
-            
+
             // Collect results
             testResult.memoryResults = await memoryTask;
             testResult.frameRateResults = await frameRateTask;
-            
+
             // Analyze combined results
             AnalyzeCombinedResults(testResult, config);
-            
+
             // Store results
             testResults[scenarioName] = testResult;
-            
+
             // Generate detailed report
             await GenerateDetailedReport(testResult);
-            
+
             Debug.Log($"Performance validation completed for {scenarioName}. Overall Score: {testResult.overallScore:F2}");
-            
+
         }
         catch (Exception ex)
         {
@@ -1175,66 +1190,66 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             testResult.passed = false;
             testResult.criticalIssues.Add($"Validation failed: {ex.Message}");
         }
-        
+
         return testResult;
     }
-    
+
     private async Task WarmupPhase(int warmupFrames)
     {
         Debug.Log($"Starting warmup phase: {warmupFrames} frames");
-        
+
         for (int i = 0; i < warmupFrames; i++)
         {
             await Task.Yield();
         }
-        
+
         // Force garbage collection before testing
         System.GC.Collect();
         await Task.Delay(100);
-        
+
         Debug.Log("Warmup phase completed");
     }
-    
+
     private void AnalyzeCombinedResults(PerformanceTestResult testResult, PerformanceTestConfiguration config)
     {
         var memoryResults = testResult.memoryResults;
         var frameRateResults = testResult.frameRateResults;
-        
+
         // Calculate category scores
         testResult.categoryScores["Memory"] = memoryResults?.overallScore ?? 0;
         testResult.categoryScores["FrameRate"] = frameRateResults?.overallScore ?? 0;
-        
+
         // Identify critical issues
         if (memoryResults != null)
         {
             testResult.criticalIssues.AddRange(memoryResults.performanceIssues.Where(issue => issue.Contains("exceeds")));
             testResult.warnings.AddRange(memoryResults.performanceIssues.Where(issue => !issue.Contains("exceeds")));
         }
-        
+
         if (frameRateResults != null)
         {
             testResult.criticalIssues.AddRange(frameRateResults.performanceIssues.Where(issue => issue.Contains("below threshold")));
             testResult.warnings.AddRange(frameRateResults.performanceIssues.Where(issue => !issue.Contains("below threshold")));
         }
-        
+
         // Calculate overall score (weighted average)
         var memoryWeight = 0.4f;
         var frameRateWeight = 0.6f;
-        
-        testResult.overallScore = (testResult.categoryScores["Memory"] * memoryWeight) + 
+
+        testResult.overallScore = (testResult.categoryScores["Memory"] * memoryWeight) +
                                  (testResult.categoryScores["FrameRate"] * frameRateWeight);
-        
+
         // Determine pass/fail status
         testResult.passed = testResult.overallScore >= 0.7f && testResult.criticalIssues.Count == 0;
-        
+
         // Platform-specific analysis
         PerformPlatformSpecificAnalysis(testResult, config);
     }
-    
+
     private void PerformPlatformSpecificAnalysis(PerformanceTestResult testResult, PerformanceTestConfiguration config)
     {
         var currentPlatform = Application.platform;
-        
+
         if (currentPlatform == RuntimePlatform.Android || currentPlatform == RuntimePlatform.IPhonePlayer)
         {
             // Mobile-specific analysis
@@ -1245,13 +1260,13 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             // XR-specific analysis
             AnalyzeXRPerformance(testResult);
         }
-        
+
         testResult.platformSpecificData["Platform"] = currentPlatform.ToString();
         testResult.platformSpecificData["DeviceModel"] = SystemInfo.deviceModel;
         testResult.platformSpecificData["GraphicsDeviceName"] = SystemInfo.graphicsDeviceName;
         testResult.platformSpecificData["SystemMemorySize"] = SystemInfo.systemMemorySize;
     }
-    
+
     private void AnalyzeMobilePerformance(PerformanceTestResult testResult)
     {
         // Mobile-specific performance analysis
@@ -1264,7 +1279,7 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             testResult.categoryScores["MobileFriendly"] = 0.5f;
             testResult.warnings.Add("Memory usage may impact mobile device performance");
         }
-        
+
         // Check for mobile-specific frame rate requirements
         if (testResult.frameRateResults != null && testResult.frameRateResults.averageFPS >= 30.0f)
         {
@@ -1276,7 +1291,7 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             testResult.criticalIssues.Add("Frame rate below mobile minimum requirement (30 FPS)");
         }
     }
-    
+
     private void AnalyzeXRPerformance(PerformanceTestResult testResult)
     {
         // XR-specific performance analysis
@@ -1289,7 +1304,7 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             testResult.categoryScores["XRComfort"] = 0.2f;
             testResult.criticalIssues.Add("XR performance does not meet comfort requirements");
         }
-        
+
         // XR latency analysis
         if (testResult.frameRateResults?.xrLatencyAcceptable == true)
         {
@@ -1301,7 +1316,7 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             testResult.criticalIssues.Add("XR latency exceeds comfort threshold");
         }
     }
-    
+
     private async Task GenerateDetailedReport(PerformanceTestResult testResult)
     {
         var report = $@"
@@ -1343,67 +1358,67 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
 ";
 
         var reportPath = $"{performanceReportPath}{testResult.testName}_{DateTime.Now:yyyyMMdd_HHmmss}.md";
-        
+
         // Ensure directory exists
         var directory = System.IO.Path.GetDirectoryName(reportPath);
         if (!System.IO.Directory.Exists(directory))
         {
             System.IO.Directory.CreateDirectory(directory);
         }
-        
+
         // Write report
         await System.IO.File.WriteAllTextAsync(reportPath, report);
-        
+
         Debug.Log($"Detailed performance report generated: {reportPath}");
-        
+
         // Integration with external systems
         if (enableUnityAnalyticsIntegration)
         {
             await SendToUnityAnalytics(testResult);
         }
-        
+
         if (enableCI_CDIntegration)
         {
             await SendToCI_CD(testResult);
         }
     }
-    
+
     private string GenerateRecommendations(PerformanceTestResult testResult)
     {
         var recommendations = new List<string>();
-        
+
         if (testResult.categoryScores["Memory"] < 0.7f)
         {
             recommendations.Add("- **Memory Optimization:** Review asset loading patterns and implement object pooling");
             recommendations.Add("- **Memory Profiling:** Use Unity Memory Profiler to identify memory hotspots");
         }
-        
+
         if (testResult.categoryScores["FrameRate"] < 0.7f)
         {
             recommendations.Add("- **Frame Rate Optimization:** Optimize rendering pipeline and reduce draw calls");
             recommendations.Add("- **GPU Profiling:** Use Unity Frame Debugger to analyze rendering bottlenecks");
         }
-        
+
         if (testResult.categoryScores.ContainsKey("MobileFriendly") && testResult.categoryScores["MobileFriendly"] < 0.7f)
         {
             recommendations.Add("- **Mobile Optimization:** Reduce texture resolution and implement LOD systems");
             recommendations.Add("- **Mobile Testing:** Test on lower-end devices to ensure compatibility");
         }
-        
+
         if (testResult.categoryScores.ContainsKey("XRComfort") && testResult.categoryScores["XRComfort"] < 0.7f)
         {
             recommendations.Add("- **XR Optimization:** Implement foveated rendering and reduce visual complexity");
             recommendations.Add("- **XR Comfort:** Add comfort settings and motion sickness reduction features");
         }
-        
+
         if (recommendations.Count == 0)
         {
             recommendations.Add("- **Excellent Performance:** No specific recommendations. Continue monitoring.");
         }
-        
+
         return string.Join("\n", recommendations);
     }
-    
+
     private async Task SendToUnityAnalytics(PerformanceTestResult testResult)
     {
         // Implementation for Unity Analytics integration
@@ -1417,13 +1432,13 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             ["platform"] = Application.platform.ToString(),
             ["critical_issues_count"] = testResult.criticalIssues.Count
         };
-        
+
         // Send to Unity Analytics (implementation depends on analytics setup)
         Debug.Log("Performance data sent to Unity Analytics");
-        
+
         await Task.CompletedTask;
     }
-    
+
     private async Task SendToCI_CD(PerformanceTestResult testResult)
     {
         // Implementation for CI/CD integration
@@ -1436,16 +1451,16 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             timestamp = testResult.testTime,
             platform = Application.platform.ToString()
         };
-        
+
         var json = JsonUtility.ToJson(ciData, true);
-        
+
         // Write CI/CD results file for build pipeline
         var ciResultsPath = $"{performanceReportPath}ci_results_{testResult.testName}.json";
         await System.IO.File.WriteAllTextAsync(ciResultsPath, json);
-        
+
         Debug.Log($"CI/CD performance results written: {ciResultsPath}");
     }
-    
+
     private PerformanceTestConfiguration CreateDefaultTestConfiguration(string scenarioName)
     {
         return new PerformanceTestConfiguration
@@ -1460,7 +1475,7 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             targetPlatforms = new[] { Application.platform }
         };
     }
-    
+
     private void RunContinuousMonitoring()
     {
         if (testResults.Count > 0)
@@ -1468,12 +1483,12 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             var recentResults = testResults.Values
                 .Where(r => (DateTime.Now - r.testTime).TotalMinutes < 30)
                 .ToList();
-            
+
             if (recentResults.Count > 0)
             {
                 var averageScore = recentResults.Average(r => r.overallScore);
                 var failingTests = recentResults.Count(r => !r.passed);
-                
+
                 if (averageScore < 0.6f || failingTests > recentResults.Count * 0.3f)
                 {
                     Debug.LogWarning($"Continuous monitoring alert: Average performance score {averageScore:F2}, {failingTests} failing tests");
@@ -1482,20 +1497,20 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             }
         }
     }
-    
+
     private void TriggerPerformanceAlert(string message)
     {
         Debug.LogError($"PERFORMANCE ALERT: {message}");
-        
+
         // Could integrate with:
         // - Slack/Discord notifications
         // - Email alerts
         // - CI/CD pipeline notifications
         // - Custom monitoring dashboards
     }
-    
+
     // Public API methods for validation task integration
-    
+
     public async Task<PerformanceTestResult> ValidateUnity2DSystems()
     {
         return await RunValidationScenario("Unity 2D Systems", async () =>
@@ -1505,7 +1520,7 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             // Could load sprite atlases, trigger 2D physics, animate sprites, etc.
         });
     }
-    
+
     public async Task<PerformanceTestResult> ValidateUnity3DSystems()
     {
         return await RunValidationScenario("Unity 3D Systems", async () =>
@@ -1515,7 +1530,7 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             // Could load 3D models, trigger physics simulation, render complex scenes, etc.
         });
     }
-    
+
     public async Task<PerformanceTestResult> ValidateUnityTimeline()
     {
         return await RunValidationScenario("Unity Timeline", async () =>
@@ -1525,7 +1540,7 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             // Could play Timeline sequences, trigger complex animations, etc.
         });
     }
-    
+
     public async Task<PerformanceTestResult> ValidateUnityAddressables()
     {
         return await RunValidationScenario("Unity Addressables", async () =>
@@ -1535,7 +1550,7 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             // Could load/unload Addressable assets, trigger catalog updates, etc.
         });
     }
-    
+
     public async Task<PerformanceTestResult> ValidateUnityGamingServices()
     {
         return await RunValidationScenario("Unity Gaming Services", async () =>
@@ -1545,7 +1560,7 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             // Could trigger network operations, analytics, authentication, etc.
         });
     }
-    
+
     public async Task<PerformanceTestResult> ValidateUnityXRSystems()
     {
         return await RunValidationScenario("Unity XR Systems", async () =>
@@ -1555,14 +1570,14 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             // Could trigger XR rendering, hand tracking, spatial mapping, etc.
         });
     }
-    
+
     // Batch validation method
     public async Task<Dictionary<string, PerformanceTestResult>> RunAllValidationScenarios()
     {
         var allResults = new Dictionary<string, PerformanceTestResult>();
-        
+
         Debug.Log("Starting comprehensive performance validation suite");
-        
+
         try
         {
             // Run all validation scenarios
@@ -1571,30 +1586,30 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
             allResults["Timeline"] = await ValidateUnityTimeline();
             allResults["Addressables"] = await ValidateUnityAddressables();
             allResults["Gaming Services"] = await ValidateUnityGamingServices();
-            
+
             if (frameRateProfiler.isXRPlatform)
             {
                 allResults["XR Systems"] = await ValidateUnityXRSystems();
             }
-            
+
             // Generate comprehensive report
             await GenerateComprehensiveReport(allResults);
-            
+
         }
         catch (Exception ex)
         {
             Debug.LogError($"Comprehensive validation failed: {ex.Message}");
         }
-        
+
         return allResults;
     }
-    
+
     private async Task GenerateComprehensiveReport(Dictionary<string, PerformanceTestResult> allResults)
     {
         var overallScore = allResults.Values.Average(r => r.overallScore);
         var passedTests = allResults.Values.Count(r => r.passed);
         var totalTests = allResults.Count;
-        
+
         var comprehensiveReport = $@"
 # Comprehensive Performance Validation Report
 
@@ -1618,17 +1633,17 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
 
         var reportPath = $"{performanceReportPath}comprehensive_validation_{DateTime.Now:yyyyMMdd_HHmmss}.md";
         await System.IO.File.WriteAllTextAsync(reportPath, comprehensiveReport);
-        
+
         Debug.Log($"Comprehensive performance report generated: {reportPath}");
     }
-    
+
     private string GenerateEnterpriseRecommendations(Dictionary<string, PerformanceTestResult> allResults)
     {
         var recommendations = new List<string>();
-        
+
         var failedTests = allResults.Where(kvp => !kvp.Value.passed).ToList();
         var lowScoreTests = allResults.Where(kvp => kvp.Value.overallScore < 0.7f).ToList();
-        
+
         if (failedTests.Count == 0 && lowScoreTests.Count == 0)
         {
             recommendations.Add("✅ **Enterprise Ready:** All performance validation tests passed with acceptable scores.");
@@ -1637,20 +1652,20 @@ public class UnityProfilerIntegrationManager : MonoBehaviour
         else
         {
             recommendations.Add("❌ **Enterprise Deployment Blocked:** Performance validation failures detected.");
-            
+
             foreach (var failedTest in failedTests)
             {
                 recommendations.Add($"🔴 **Critical:** {failedTest.Key} validation must be resolved before deployment.");
             }
-            
+
             foreach (var lowScoreTest in lowScoreTests)
             {
                 recommendations.Add($"🟡 **Warning:** {lowScoreTest.Key} performance below optimal (Score: {lowScoreTest.Value.overallScore:F2}).");
             }
-            
+
             recommendations.Add("📋 **Next Steps:** Address critical issues and re-run comprehensive validation.");
         }
-        
+
         return string.Join("\n", recommendations);
     }
 }
@@ -1676,25 +1691,25 @@ public class PerformanceThresholds : ScriptableObject
         public float minimumFPS = 30.0f;
         public float maxFrameTimeMS = 16.67f;
         public float frameTimeVarianceThresholdMS = 8.0f;
-        
+
         [Header("Memory Thresholds")]
         public long maxTotalMemoryMB = 512;
         public long maxTextureMemoryMB = 256;
         public long maxAudioMemoryMB = 64;
         public long maxMeshMemoryMB = 128;
         public float gcAllocationThresholdMBPerSecond = 1.0f;
-        
+
         [Header("XR-Specific Thresholds (if applicable)")]
         public float xrMinFPS = 90.0f;
         public float xrMaxLatencyMS = 20.0f;
         public int xrMaxFrameDropsPerMinute = 5;
-        
+
         [Header("Build Performance Thresholds")]
         public float maxBuildTimeMinutes = 30.0f;
         public long maxBuildSizeMB = 2048;
         public int maxAssetImportTimeMinutes = 10;
     }
-    
+
     [Header("Platform Configurations")]
     public PlatformThresholds mobileThresholds = new PlatformThresholds
     {
@@ -1707,7 +1722,7 @@ public class PerformanceThresholds : ScriptableObject
         maxMeshMemoryMB = 64,
         gcAllocationThresholdMBPerSecond = 0.5f
     };
-    
+
     public PlatformThresholds desktopThresholds = new PlatformThresholds
     {
         targetFPS = 60.0f,
@@ -1719,7 +1734,7 @@ public class PerformanceThresholds : ScriptableObject
         maxMeshMemoryMB = 256,
         gcAllocationThresholdMBPerSecond = 2.0f
     };
-    
+
     public PlatformThresholds consoleThresholds = new PlatformThresholds
     {
         targetFPS = 60.0f,
@@ -1731,7 +1746,7 @@ public class PerformanceThresholds : ScriptableObject
         maxMeshMemoryMB = 512,
         gcAllocationThresholdMBPerSecond = 3.0f
     };
-    
+
     public PlatformThresholds xrThresholds = new PlatformThresholds
     {
         targetFPS = 90.0f,
@@ -1745,7 +1760,7 @@ public class PerformanceThresholds : ScriptableObject
         maxAudioMemoryMB = 128,
         maxMeshMemoryMB = 256
     };
-    
+
     [Header("Scenario-Specific Thresholds")]
     public Dictionary<string, PlatformThresholds> scenarioThresholds = new Dictionary<string, PlatformThresholds>
     {
@@ -1787,16 +1802,16 @@ public class PerformanceThresholds : ScriptableObject
             maxTotalMemoryMB = 1024
         }
     };
-    
+
     public PlatformThresholds GetThresholdsForCurrentPlatform()
     {
         var platform = Application.platform;
-        
+
         if (UnityEngine.XR.XRSettings.isDeviceActive)
         {
             return xrThresholds;
         }
-        
+
         return platform switch
         {
             RuntimePlatform.Android or RuntimePlatform.IPhonePlayer => mobileThresholds,
@@ -1804,14 +1819,14 @@ public class PerformanceThresholds : ScriptableObject
             _ => desktopThresholds
         };
     }
-    
+
     public PlatformThresholds GetThresholdsForScenario(string scenarioName)
     {
         if (scenarioThresholds.TryGetValue(scenarioName, out var thresholds))
         {
             return thresholds;
         }
-        
+
         return GetThresholdsForCurrentPlatform();
     }
 }
@@ -1827,65 +1842,65 @@ name: Unity Performance Validation
 
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   unity-performance-tests:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         platform: [StandaloneWindows64, Android, WebGL]
-        
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - uses: game-ci/unity-builder@v2
-      env:
-        UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-      with:
-        targetPlatform: ${{ matrix.platform }}
-        buildMethod: BuildPipeline.BuildPerformanceTestBuild
-        customParameters: -enablePerformanceProfiling -runAutomatedTests
-        
-    - name: Run Performance Validation
-      run: |
-        ./Builds/${{ matrix.platform }}/PerformanceTestBuild.exe -batchmode -nographics -runPerformanceValidation -logFile performance_log.txt
-        
-    - name: Parse Performance Results
-      run: |
-        python .github/scripts/parse_performance_results.py performance_log.txt
-        
-    - name: Check Performance Thresholds
-      run: |
-        if [ ! -f "performance_passed.flag" ]; then
-          echo "Performance validation failed!"
-          cat performance_issues.txt
-          exit 1
-        fi
-        
-    - name: Upload Performance Reports
-      uses: actions/upload-artifact@v3
-      with:
-        name: performance-reports-${{ matrix.platform }}
-        path: Logs/PerformanceReports/
-        
-    - name: Comment on PR
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const fs = require('fs');
-          const performanceReport = fs.readFileSync('performance_summary.md', 'utf8');
-          
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `## Performance Validation Results - ${{ matrix.platform }}\n\n${performanceReport}`
-          });
+      - uses: actions/checkout@v3
+
+      - uses: game-ci/unity-builder@v2
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          targetPlatform: ${{ matrix.platform }}
+          buildMethod: BuildPipeline.BuildPerformanceTestBuild
+          customParameters: -enablePerformanceProfiling -runAutomatedTests
+
+      - name: Run Performance Validation
+        run: |
+          ./Builds/${{ matrix.platform }}/PerformanceTestBuild.exe -batchmode -nographics -runPerformanceValidation -logFile performance_log.txt
+
+      - name: Parse Performance Results
+        run: |
+          python .github/scripts/parse_performance_results.py performance_log.txt
+
+      - name: Check Performance Thresholds
+        run: |
+          if [ ! -f "performance_passed.flag" ]; then
+            echo "Performance validation failed!"
+            cat performance_issues.txt
+            exit 1
+          fi
+
+      - name: Upload Performance Reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-reports-${{ matrix.platform }}
+          path: Logs/PerformanceReports/
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const performanceReport = fs.readFileSync('performance_summary.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Performance Validation Results - ${{ matrix.platform }}\n\n${performanceReport}`
+            });
 ```
 
 ### Performance Regression Detection System
@@ -1904,15 +1919,15 @@ public class PerformanceRegressionDetector : MonoBehaviour
     public float regressionThresholdPercentage = 10.0f; // 10% performance drop triggers regression
     public int historicalDataPoints = 10; // Number of previous results to compare against
     public bool enableAutomaticRemediation = false;
-    
+
     [Header("Integration Settings")]
     public string baselineDataPath = "PerformanceBaselines/";
     public string ciResultsPath = "CI_Results/";
     public bool enableSlackNotifications = false;
     public bool enableEmailNotifications = false;
-    
+
     private Dictionary<string, List<PerformanceBaseline>> historicalData = new Dictionary<string, List<PerformanceBaseline>>();
-    
+
     [System.Serializable]
     public class PerformanceBaseline
     {
@@ -1926,7 +1941,7 @@ public class PerformanceRegressionDetector : MonoBehaviour
         public RuntimePlatform platform;
         public Dictionary<string, float> categoryScores = new Dictionary<string, float>();
     }
-    
+
     public class RegressionDetectionResult
     {
         public string testName;
@@ -1938,36 +1953,36 @@ public class PerformanceRegressionDetector : MonoBehaviour
         public string regressionSeverity; // "Critical", "Major", "Minor"
         public List<string> recommendedActions = new List<string>();
     }
-    
+
     public async Task<List<RegressionDetectionResult>> DetectRegressions(Dictionary<string, UnityProfilerIntegrationManager.PerformanceTestResult> currentResults)
     {
         var regressionResults = new List<RegressionDetectionResult>();
-        
+
         // Load historical data
         await LoadHistoricalData();
-        
+
         foreach (var currentResult in currentResults)
         {
             var regressionResult = await AnalyzeForRegression(currentResult.Value);
             regressionResults.Add(regressionResult);
-            
+
             // Update historical data
             await UpdateHistoricalData(currentResult.Value);
         }
-        
+
         // Generate regression report
         await GenerateRegressionReport(regressionResults);
-        
+
         // Trigger alerts if regressions detected
         var criticalRegressions = regressionResults.Where(r => r.regressionDetected && r.regressionSeverity == "Critical").ToList();
         if (criticalRegressions.Count > 0)
         {
             await TriggerRegressionAlerts(criticalRegressions);
         }
-        
+
         return regressionResults;
     }
-    
+
     private async Task LoadHistoricalData()
     {
         try
@@ -1975,23 +1990,23 @@ public class PerformanceRegressionDetector : MonoBehaviour
             if (System.IO.Directory.Exists(baselineDataPath))
             {
                 var files = System.IO.Directory.GetFiles(baselineDataPath, "*.json");
-                
+
                 foreach (var file in files)
                 {
                     var json = await System.IO.File.ReadAllTextAsync(file);
                     var baselines = JsonUtility.FromJson<PerformanceBaseline[]>(json);
-                    
+
                     foreach (var baseline in baselines)
                     {
                         if (!historicalData.ContainsKey(baseline.testName))
                         {
                             historicalData[baseline.testName] = new List<PerformanceBaseline>();
                         }
-                        
+
                         historicalData[baseline.testName].Add(baseline);
                     }
                 }
-                
+
                 // Sort historical data by timestamp and keep only recent entries
                 foreach (var testData in historicalData)
                 {
@@ -2008,7 +2023,7 @@ public class PerformanceRegressionDetector : MonoBehaviour
             Debug.LogError($"Failed to load historical performance data: {ex.Message}");
         }
     }
-    
+
     private async Task<RegressionDetectionResult> AnalyzeForRegression(UnityProfilerIntegrationManager.PerformanceTestResult currentResult)
     {
         var result = new RegressionDetectionResult
@@ -2016,7 +2031,7 @@ public class PerformanceRegressionDetector : MonoBehaviour
             testName = currentResult.testName,
             currentScore = currentResult.overallScore
         };
-        
+
         // Get historical baselines for this test
         if (!historicalData.ContainsKey(currentResult.testName))
         {
@@ -2025,24 +2040,24 @@ public class PerformanceRegressionDetector : MonoBehaviour
             Debug.Log($"No historical data available for {currentResult.testName}. Establishing baseline.");
             return result;
         }
-        
+
         var baselines = historicalData[currentResult.testName];
         if (baselines.Count == 0)
         {
             result.regressionDetected = false;
             return result;
         }
-        
+
         // Calculate baseline score (average of recent results)
         var recentBaselines = baselines.TakeLast(Math.Min(5, baselines.Count)).ToList();
         result.baselineScore = recentBaselines.Average(b => b.overallScore);
-        
+
         // Calculate regression percentage
         result.regressionPercentage = ((result.baselineScore - result.currentScore) / result.baselineScore) * 100.0f;
-        
+
         // Determine if regression occurred
         result.regressionDetected = result.regressionPercentage > regressionThresholdPercentage;
-        
+
         if (result.regressionDetected)
         {
             // Determine severity
@@ -2052,56 +2067,56 @@ public class PerformanceRegressionDetector : MonoBehaviour
                 >= 15.0f => "Major",
                 _ => "Minor"
             };
-            
+
             // Analyze affected categories
             AnalyzeAffectedCategories(currentResult, recentBaselines, result);
-            
+
             // Generate recommended actions
             GenerateRecommendedActions(result);
-            
+
             Debug.LogWarning($"Performance regression detected in {currentResult.testName}: {result.regressionPercentage:F1}% drop (Severity: {result.regressionSeverity})");
         }
-        
+
         return result;
     }
-    
+
     private void AnalyzeAffectedCategories(UnityProfilerIntegrationManager.PerformanceTestResult currentResult, List<PerformanceBaseline> baselines, RegressionDetectionResult result)
     {
         var baselineMemoryScore = baselines.Average(b => b.memoryScore);
         var baselineFrameRateScore = baselines.Average(b => b.frameRateScore);
-        
+
         var memoryRegression = ((baselineMemoryScore - currentResult.categoryScores.GetValueOrDefault("Memory", 0)) / baselineMemoryScore) * 100.0f;
         var frameRateRegression = ((baselineFrameRateScore - currentResult.categoryScores.GetValueOrDefault("FrameRate", 0)) / baselineFrameRateScore) * 100.0f;
-        
+
         if (memoryRegression > regressionThresholdPercentage)
         {
             result.affectedCategories.Add($"Memory Performance ({memoryRegression:F1}% regression)");
         }
-        
+
         if (frameRateRegression > regressionThresholdPercentage)
         {
             result.affectedCategories.Add($"Frame Rate Performance ({frameRateRegression:F1}% regression)");
         }
-        
+
         // Analyze other category scores
         foreach (var category in currentResult.categoryScores)
         {
             if (category.Key == "Memory" || category.Key == "FrameRate") continue;
-            
+
             var baselineCategoryScore = baselines.Average(b => b.categoryScores.GetValueOrDefault(category.Key, 1.0f));
             var categoryRegression = ((baselineCategoryScore - category.Value) / baselineCategoryScore) * 100.0f;
-            
+
             if (categoryRegression > regressionThresholdPercentage)
             {
                 result.affectedCategories.Add($"{category.Key} ({categoryRegression:F1}% regression)");
             }
         }
     }
-    
+
     private void GenerateRecommendedActions(RegressionDetectionResult result)
     {
         result.recommendedActions.Clear();
-        
+
         foreach (var affectedCategory in result.affectedCategories)
         {
             if (affectedCategory.Contains("Memory"))
@@ -2110,27 +2125,27 @@ public class PerformanceRegressionDetector : MonoBehaviour
                 result.recommendedActions.Add("Run Unity Memory Profiler to identify memory leaks or excessive allocations");
                 result.recommendedActions.Add("Check for recently added large assets or textures");
             }
-            
+
             if (affectedCategory.Contains("Frame Rate"))
             {
                 result.recommendedActions.Add("Profile rendering performance with Unity Frame Debugger");
                 result.recommendedActions.Add("Check for recently added expensive visual effects or shaders");
                 result.recommendedActions.Add("Review script update loops for performance hotspots");
             }
-            
+
             if (affectedCategory.Contains("XR"))
             {
                 result.recommendedActions.Add("Verify XR-specific optimizations are still in place");
                 result.recommendedActions.Add("Check for changes that might affect motion-to-photon latency");
             }
-            
+
             if (affectedCategory.Contains("Mobile"))
             {
                 result.recommendedActions.Add("Test on lower-end mobile devices to identify platform-specific issues");
                 result.recommendedActions.Add("Review mobile-specific optimization settings");
             }
         }
-        
+
         // General recommendations based on severity
         switch (result.regressionSeverity)
         {
@@ -2139,19 +2154,19 @@ public class PerformanceRegressionDetector : MonoBehaviour
                 result.recommendedActions.Add("🚨 CRITICAL: Review recent commits that might have caused this regression");
                 result.recommendedActions.Add("🚨 CRITICAL: Consider reverting recent changes if root cause cannot be quickly identified");
                 break;
-                
+
             case "Major":
                 result.recommendedActions.Add("⚠️ MAJOR: Investigate and fix before next release");
                 result.recommendedActions.Add("⚠️ MAJOR: Schedule performance optimization work for current sprint");
                 break;
-                
+
             case "Minor":
                 result.recommendedActions.Add("ℹ️ MINOR: Monitor for continued degradation");
                 result.recommendedActions.Add("ℹ️ MINOR: Add to technical debt backlog for future optimization");
                 break;
         }
     }
-    
+
     private async Task UpdateHistoricalData(UnityProfilerIntegrationManager.PerformanceTestResult result)
     {
         var baseline = new PerformanceBaseline
@@ -2166,24 +2181,24 @@ public class PerformanceRegressionDetector : MonoBehaviour
             platform = Application.platform,
             categoryScores = new Dictionary<string, float>(result.categoryScores)
         };
-        
+
         if (!historicalData.ContainsKey(result.testName))
         {
             historicalData[result.testName] = new List<PerformanceBaseline>();
         }
-        
+
         historicalData[result.testName].Add(baseline);
-        
+
         // Keep only recent entries
         if (historicalData[result.testName].Count > historicalDataPoints)
         {
             historicalData[result.testName].RemoveAt(0);
         }
-        
+
         // Save updated historical data
         await SaveHistoricalData(result.testName);
     }
-    
+
     private async Task SaveHistoricalData(string testName)
     {
         try
@@ -2192,11 +2207,11 @@ public class PerformanceRegressionDetector : MonoBehaviour
             {
                 System.IO.Directory.CreateDirectory(baselineDataPath);
             }
-            
+
             var baselines = historicalData[testName].ToArray();
             var json = JsonUtility.ToJson(baselines, true);
             var filePath = $"{baselineDataPath}{testName}_baselines.json";
-            
+
             await System.IO.File.WriteAllTextAsync(filePath, json);
         }
         catch (Exception ex)
@@ -2204,7 +2219,7 @@ public class PerformanceRegressionDetector : MonoBehaviour
             Debug.LogError($"Failed to save historical data for {testName}: {ex.Message}");
         }
     }
-    
+
     private async Task GenerateRegressionReport(List<RegressionDetectionResult> regressionResults)
     {
         var report = $@"
@@ -2240,22 +2255,22 @@ public class PerformanceRegressionDetector : MonoBehaviour
 ";
 
         var reportPath = $"Logs/RegressionReports/regression_analysis_{DateTime.Now:yyyyMMdd_HHmmss}.md";
-        
+
         // Ensure directory exists
         var directory = System.IO.Path.GetDirectoryName(reportPath);
         if (!System.IO.Directory.Exists(directory))
         {
             System.IO.Directory.CreateDirectory(directory);
         }
-        
+
         await System.IO.File.WriteAllTextAsync(reportPath, report);
-        
+
         // Write CI/CD results
         await WriteCI_CDResults(regressionResults);
-        
+
         Debug.Log($"Performance regression report generated: {reportPath}");
     }
-    
+
     private string FormatRegressionResult(RegressionDetectionResult result)
     {
         return $@"### {result.testName} - {result.regressionSeverity} Regression
@@ -2270,11 +2285,11 @@ public class PerformanceRegressionDetector : MonoBehaviour
 **Recommended Actions:**
 {string.Join("\n", result.recommendedActions.Select(action => $"- {action}"))}";
     }
-    
+
     private string GenerateCI_CDStatus(List<RegressionDetectionResult> regressionResults)
     {
         var criticalRegressions = regressionResults.Where(r => r.regressionSeverity == "Critical").ToList();
-        
+
         if (criticalRegressions.Count > 0)
         {
             return @"
@@ -2284,11 +2299,11 @@ Critical performance regressions detected. Deployment should be blocked until is
 
 **Actions Required:**
 - Block merge/deployment
-- Notify development team immediately  
+- Notify development team immediately
 - Review recent commits for performance-impacting changes
 - Run additional performance profiling to identify root cause";
         }
-        
+
         var majorRegressions = regressionResults.Where(r => r.regressionSeverity == "Major").ToList();
         if (majorRegressions.Count > 0)
         {
@@ -2302,18 +2317,18 @@ Major performance regressions detected. Consider delaying deployment for perform
 - Monitor performance in subsequent builds
 - Consider hotfix if regression affects critical user experience";
         }
-        
+
         return @"
 **✅ BUILD APPROVED ✅**
 
 No critical or major performance regressions detected. Build is approved for deployment.";
     }
-    
+
     private async Task WriteCI_CDResults(List<RegressionDetectionResult> regressionResults)
     {
         var criticalRegressions = regressionResults.Where(r => r.regressionSeverity == "Critical").ToList();
         var shouldFailBuild = criticalRegressions.Count > 0;
-        
+
         var ciResults = new
         {
             regression_detected = regressionResults.Any(r => r.regressionDetected),
@@ -2326,17 +2341,17 @@ No critical or major performance regressions detected. Build is approved for dep
             git_commit = GetCurrentGitCommitHash(),
             platform = Application.platform.ToString()
         };
-        
+
         var json = JsonUtility.ToJson(ciResults, true);
-        
+
         if (!System.IO.Directory.Exists(ciResultsPath))
         {
             System.IO.Directory.CreateDirectory(ciResultsPath);
         }
-        
+
         var resultsPath = $"{ciResultsPath}regression_results.json";
         await System.IO.File.WriteAllTextAsync(resultsPath, json);
-        
+
         // Create flag files for CI/CD pipeline
         if (shouldFailBuild)
         {
@@ -2346,10 +2361,10 @@ No critical or major performance regressions detected. Build is approved for dep
         {
             await System.IO.File.WriteAllTextAsync($"{ciResultsPath}regression_passed.flag", "No critical regressions detected");
         }
-        
+
         Debug.Log($"CI/CD regression results written: {resultsPath}");
     }
-    
+
     private async Task TriggerRegressionAlerts(List<RegressionDetectionResult> criticalRegressions)
     {
         var alertMessage = $@"
@@ -2373,21 +2388,21 @@ This is an automated alert from Unity Performance Regression Detector.
 ";
 
         Debug.LogError(alertMessage);
-        
+
         // Integration points for different notification systems
         if (enableSlackNotifications)
         {
             await SendSlackAlert(alertMessage);
         }
-        
+
         if (enableEmailNotifications)
         {
             await SendEmailAlert(alertMessage);
         }
-        
+
         // Custom notification integrations can be added here
     }
-    
+
     private async Task SendSlackAlert(string message)
     {
         // Implementation for Slack webhook integration
@@ -2395,7 +2410,7 @@ This is an automated alert from Unity Performance Regression Detector.
         Debug.Log("Slack alert sent (implementation needed)");
         await Task.CompletedTask;
     }
-    
+
     private async Task SendEmailAlert(string message)
     {
         // Implementation for email notification
@@ -2403,7 +2418,7 @@ This is an automated alert from Unity Performance Regression Detector.
         Debug.Log("Email alert sent (implementation needed)");
         await Task.CompletedTask;
     }
-    
+
     private string GetCurrentGitCommitHash()
     {
         try
@@ -2427,6 +2442,7 @@ This is an automated alert from Unity Performance Regression Detector.
 **Priority: CRITICAL - Deployment Blocker Resolution**
 
 #### 1.1 Memory Profiler Automation Implementation
+
 - [ ] Implement `MemoryProfilerAutomation` class with Unity Profiler API integration
 - [ ] Add memory threshold validation for 2D vs 3D scenarios
 - [ ] Create memory leak detection algorithms
@@ -2434,6 +2450,7 @@ This is an automated alert from Unity Performance Regression Detector.
 - [ ] Add category-specific memory validation (textures, audio, meshes)
 
 #### 1.2 Frame Rate Profiler Automation Implementation
+
 - [ ] Implement `FrameRateProfilerAutomation` class with real-time FPS monitoring
 - [ ] Add platform-specific frame rate thresholds (mobile, desktop, console, XR)
 - [ ] Create frame time consistency validation
@@ -2441,6 +2458,7 @@ This is an automated alert from Unity Performance Regression Detector.
 - [ ] Add dropped frame detection and reporting
 
 #### 1.3 Integration with Existing Validation Tasks
+
 - [ ] Modify `validate-2d-systems.md` to include automated performance testing calls
 - [ ] Modify `validate-3d-systems.md` to include automated performance testing calls
 - [ ] Modify `validate-unity-features.md` to include automated performance testing calls
@@ -2451,6 +2469,7 @@ This is an automated alert from Unity Performance Regression Detector.
 **Priority: HIGH - Enterprise Readiness**
 
 #### 2.1 Comprehensive Unity Profiler Integration Manager
+
 - [ ] Implement `UnityProfilerIntegrationManager` as central coordination system
 - [ ] Add batch validation scenario support
 - [ ] Create detailed performance reporting system
@@ -2458,12 +2477,14 @@ This is an automated alert from Unity Performance Regression Detector.
 - [ ] Add platform-specific performance analysis
 
 #### 2.2 Performance Threshold Configuration System
+
 - [ ] Implement `PerformanceThresholds` ScriptableObject system
 - [ ] Configure platform-specific thresholds (mobile, desktop, console, XR)
 - [ ] Add scenario-specific threshold definitions
 - [ ] Create adaptive threshold adjustment based on hardware capabilities
 
 #### 2.3 Validation Task Integration
+
 - [ ] Update all 9 Unity validation checklists with automated performance testing references
 - [ ] Add performance validation method calls to Unity task files
 - [ ] Create performance validation integration guides
@@ -2474,18 +2495,21 @@ This is an automated alert from Unity Performance Regression Detector.
 **Priority: HIGH - Automated Deployment Pipeline**
 
 #### 3.1 Performance Regression Detection System
+
 - [ ] Implement `PerformanceRegressionDetector` with historical data analysis
 - [ ] Create automated baseline management system
 - [ ] Add regression severity classification (Critical, Major, Minor)
 - [ ] Implement automatic remediation recommendations
 
 #### 3.2 Build Pipeline Integration
+
 - [ ] Create Unity build automation integration for performance testing
 - [ ] Implement CI/CD pipeline YAML configurations
 - [ ] Add automated performance report generation
 - [ ] Create build pass/fail criteria based on performance thresholds
 
 #### 3.3 Notification and Alerting System
+
 - [ ] Implement Slack/Discord integration for critical performance regressions
 - [ ] Add email notification system for development teams
 - [ ] Create GitHub PR comment integration with performance results
@@ -2496,24 +2520,28 @@ This is an automated alert from Unity Performance Regression Detector.
 **Priority: MEDIUM - Complete Coverage**
 
 #### 4.1 Timeline Performance Automation
+
 - [ ] Add Unity Timeline-specific performance profiling
 - [ ] Implement Timeline playback performance validation
 - [ ] Create Timeline memory usage monitoring
 - [ ] Add Timeline asset loading performance testing
 
 #### 4.2 Addressables Performance Automation
+
 - [ ] Add Addressables loading performance profiling
 - [ ] Implement asset bundle loading time validation
 - [ ] Create memory usage monitoring for Addressables operations
 - [ ] Add CDN delivery performance testing
 
 #### 4.3 Gaming Services Performance Automation
+
 - [ ] Add Unity Gaming Services network performance monitoring
 - [ ] Implement authentication service performance validation
 - [ ] Create analytics service performance profiling
 - [ ] Add cloud save service performance testing
 
 #### 4.4 XR Performance Automation
+
 - [ ] Add XR-specific frame rate and latency monitoring
 - [ ] Implement motion-to-photon latency measurements
 - [ ] Create XR comfort validation automation
@@ -2524,18 +2552,21 @@ This is an automated alert from Unity Performance Regression Detector.
 **Priority: MEDIUM - Long-term Operational Excellence**
 
 #### 5.1 Performance Dashboard Development
+
 - [ ] Create web-based performance monitoring dashboard
 - [ ] Implement real-time performance metrics display
 - [ ] Add historical performance trend analysis
 - [ ] Create performance regression visualization
 
 #### 5.2 Advanced Analytics Integration
+
 - [ ] Implement Unity Analytics custom events for performance data
 - [ ] Add performance data export capabilities
 - [ ] Create performance benchmark comparison tools
 - [ ] Implement predictive performance analysis
 
 #### 5.3 Team Workflow Integration
+
 - [ ] Create performance validation workflow documentation
 - [ ] Implement performance testing training materials
 - [ ] Add performance optimization guidelines integration
@@ -2587,4 +2618,3 @@ The Unity expansion pack validation framework currently lacks **automated perfor
 5. **Create enterprise monitoring dashboard** (Phase 5 - Week 5)
 
 This comprehensive automated performance testing framework will resolve the critical deployment blocker and enable enterprise-scale Unity game development with systematic performance validation, regression detection, and continuous monitoring capabilities.
-
