@@ -126,7 +126,14 @@ class AgentTransformer extends BaseTransformer {
 
       // Inject context awareness into content using the context injector
       const agentId = frontMatter.agent?.id || path.basename(inputPath, '.md');
-      const contextAwareContent = this.contextInjector.injectAutomaticContextReferences(markdownContent, agentId);
+      const contextAwareContent = this.contextInjector.injectAutomaticContextReferences(
+        markdownContent, 
+        agentId,
+        {
+          expansionPack: options.expansionPack,
+          enableExpansionPackFeatures: options.enableExpansionPackFeatures
+        }
+      );
 
       // Add steering integration with expansion pack rules
       const steeringIntegratedContent = this.addSteeringIntegrationWithExpansionPack(contextAwareContent, options);
@@ -165,7 +172,14 @@ class AgentTransformer extends BaseTransformer {
 
       // Inject context awareness into content using the context injector
       const agentId = frontMatter.agent?.id || path.basename(inputPath, '.md');
-      const contextAwareContent = this.contextInjector.injectAutomaticContextReferences(markdownContent, agentId);
+      const contextAwareContent = this.contextInjector.injectAutomaticContextReferences(
+        markdownContent, 
+        agentId,
+        {
+          expansionPack: options.expansionPack || null,
+          enableExpansionPackFeatures: options.enableExpansionPackFeatures || false
+        }
+      );
 
       // Add steering integration
       const steeringIntegratedContent = this.addSteeringIntegration(contextAwareContent);

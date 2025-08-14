@@ -68,16 +68,17 @@ class ContextInjector extends BaseTransformer {
    * Inject automatic context references into agent prompts
    * @param {string} content - Agent content
    * @param {string} agentId - BMad agent identifier
+   * @param {Object} options - Injection options including expansion pack info
    * @returns {string} - Content with context injection
    */
-  injectAutomaticContextReferences(content, agentId) {
+  injectAutomaticContextReferences(content, agentId, options = {}) {
     const requirements = this.agentContextRequirements[agentId];
     if (!requirements) {
       return content;
     }
 
-    // Create context awareness section
-    const contextSection = this._generateContextAwarenessSection(requirements);
+    // Create context awareness section with expansion pack support
+    const contextSection = this._generateContextAwarenessSection(requirements, options);
     
     // Find insertion point after agent definition but before main content
     const yamlEndMatch = content.match(/```\s*$/m);
@@ -231,17 +232,28 @@ class ContextInjector extends BaseTransformer {
    * Generate context awareness section for agent content
    * @private
    */
-  _generateContextAwarenessSection(requirements) {
+  _generateContextAwarenessSection(requirements, options = {}) {
     const { primary, secondary, description } = requirements;
     
-    return `## Context Awareness
+    let contextSection = `## Context Awareness
 
 ${description}
 
 ### Automatic Context Access
 I automatically access your current project context through:
 ${primary.map(ctx => `- ${ctx} (primary context)`).join('\n')}
-${secondary.map(ctx => `- ${ctx} (secondary context)`).join('\n')}
+${secondary.map(ctx => `- ${ctx} (secondary context)`).join('\n')}`;
+
+    // Add expansion pack specific context if applicable
+    if (options.expansionPack) {
+      const expansionContext = this._getExpansionPackContext(options.expansionPack);
+      if (expansionContext.length > 0) {
+        contextSection += `\n\n### Domain-Specific Context (${options.expansionPack})
+${expansionContext.map(ctx => `- ${ctx}`).join('\n')}`;
+      }
+    }
+
+    contextSection += `
 
 ### Context Integration
 When working on tasks, I will:
@@ -249,6 +261,15 @@ When working on tasks, I will:
 2. Provide context-aware guidance based on your current project state
 3. Request additional context if needed for specific tasks
 4. Fall back to manual context gathering when automatic context is unavailable`;
+
+    // Add expansion pack specific integration notes
+    if (options.expansionPack) {
+      contextSection += `
+5. Apply ${options.expansionPack} domain-specific patterns and best practices
+6. Integrate with ${options.expansionPack} tooling and workflows when available`;
+    }
+
+    return contextSection;
   }
 
   /**
@@ -389,6 +410,276 @@ When working on tasks, I will:
         ? 'Critical context missing - agent effectiveness will be limited'
         : 'Can proceed with available context, though additional context would be helpful'
     };
+  }
+
+  /**
+   * Get expansion pack specific context providers
+   * @private
+   */
+  _getExpansionPackContext(expansionPack) {
+    const expansionContextMap = {
+      'bmad-2d-phaser-game-dev': [
+        'Game assets and sprite configurations',
+        'Phaser.js scene and state management',
+        'Game physics and collision detection setup',
+        'Audio and animation asset references'
+      ],
+      'bmad-2d-unity-game-dev': [
+        'Unity project structure and prefabs',
+        'Scene hierarchy and component relationships',
+        'Unity asset pipeline and import settings',
+        'Animation controllers and state machines'
+      ],
+      'bmad-infrastructure-devops': [
+        'Infrastructure as Code templates',
+        'CI/CD pipeline configurations',
+        'Container and orchestration manifests',
+        'Monitoring and alerting configurations'
+      ]
+    };
+
+    return expansionContextMap[expansionPack] || [];
+  }
+
+  /**
+   * Generate steering rules for converted agents
+   * @param {Object} agentMetadata - Agent metadata from discovery
+   * @param {Object} options - Generation options
+   * @returns {Object} - Steering rule configuration
+   */
+  generateSteeringRules(agentMetadata, options = {}) {
+    const { id, source, expansionPack, persona, dependencies } = agentMetadata;
+    
+    const steeringRules = {
+      agentId: id,
+      rules: [],
+      expansionPackRules: [],
+      contextIntegration: this._generateContextIntegrationRules(agentMetadata),
+      dependencyRules: this._generateDependencyRules(dependencies)
+    };
+
+    // Add core steering rules
+    steeringRules.rules.push(
+      'product.md',
+      'tech.md', 
+      'structure.md'
+    );
+
+    // Add agent-specific steering rules
+    const agentSpecificRule = this._generateAgentSpecificSteeringRule(agentMetadata);
+    if (agentSpecificRule) {
+      steeringRules.rules.push(`bmad-${id}.md`);
+    }
+
+    // Add expansion pack steering rules
+    if (expansionPack) {
+      steeringRules.expansionPackRules.push(`${expansionPack}.md`);
+      steeringRules.expansionPackRules.push(`${expansionPack}-${id}.md`);
+    }
+
+    return steeringRules;
+  }
+
+  /**
+   * Generate context integration rules for steering
+   * @private
+   */
+  _generateContextIntegrationRules(agentMetadata) {
+    const { id, persona } = agentMetadata;
+    const requirements = this.agentContextRequirements[id];
+    
+    if (!requirements) {
+      return {
+        primary: ['#File', '#Folder'],
+        secondary: ['#Codebase'],
+        fallbackStrategy: 'request-manual-context'
+      };
+    }
+
+    return {
+      primary: requirements.primary,
+      secondary: requirements.secondary,
+      description: requirements.description,
+      fallbackStrategy: 'request-manual-context',
+      personaAlignment: persona.focus || 'general development support'
+    };
+  }
+
+  /**
+   * Generate dependency rules for steering
+   * @private
+   */
+  _generateDependencyRules(dependencies) {
+    const rules = {
+      autoLoad: [],
+      onDemand: [],
+      validation: []
+    };
+
+    // Auto-load critical dependencies
+    if (dependencies.tasks && dependencies.tasks.length > 0) {
+      rules.autoLoad.push(...dependencies.tasks.slice(0, 3)); // Limit to first 3
+    }
+
+    // On-demand loading for templates and checklists
+    if (dependencies.templates) {
+      rules.onDemand.push(...dependencies.templates);
+    }
+    if (dependencies.checklists) {
+      rules.onDemand.push(...dependencies.checklists);
+    }
+
+    // Validation rules
+    rules.validation.push('validate-dependencies-before-activation');
+    rules.validation.push('report-missing-dependencies');
+
+    return rules;
+  }
+
+  /**
+   * Generate agent-specific steering rule content
+   * @private
+   */
+  _generateAgentSpecificSteeringRule(agentMetadata) {
+    const { id, name, persona, commands, dependencies } = agentMetadata;
+    
+    return {
+      filename: `bmad-${id}.md`,
+      content: `# ${name} Agent Steering Rules
+
+## Agent Identity
+- **Role**: ${persona.role || 'Development Assistant'}
+- **Focus**: ${persona.focus || 'General development support'}
+- **Style**: ${persona.style || 'Professional and helpful'}
+
+## Core Principles
+${persona.core_principles ? persona.core_principles.map(p => `- ${p}`).join('\n') : '- Follow BMad Method structured approach\n- Maintain quality and consistency\n- Provide actionable guidance'}
+
+## Available Commands
+${commands.map(cmd => `- \`*${cmd.name}\`: ${cmd.description || 'No description available'}`).join('\n')}
+
+## Context Requirements
+- Always request relevant project context before providing guidance
+- Validate understanding of current project state
+- Adapt recommendations to project-specific constraints
+
+## Dependency Management
+- Ensure all required BMad dependencies are available
+- Validate dependency versions and compatibility
+- Report missing dependencies clearly to user
+
+## Quality Standards
+- Follow established coding standards and conventions
+- Provide comprehensive documentation
+- Include testing considerations in all recommendations
+- Maintain consistency with existing project patterns
+`
+    };
+  }
+
+  /**
+   * Create context prompts that integrate with Kiro's file understanding
+   * @param {Object} agentMetadata - Agent metadata
+   * @param {Object} options - Creation options
+   * @returns {Array} - Array of context prompt configurations
+   */
+  createContextPrompts(agentMetadata, options = {}) {
+    const { id, persona, expansionPack } = agentMetadata;
+    const requirements = this.agentContextRequirements[id];
+    
+    const prompts = [];
+
+    // File understanding prompts
+    prompts.push({
+      trigger: 'file-opened',
+      prompt: `Analyze the current file in the context of ${persona.role || 'development work'}. Consider:
+- File purpose and role in the project
+- Code quality and adherence to standards
+- Potential improvements or issues
+- Relationship to other project components`,
+      contextProviders: ['#File', '#Folder']
+    });
+
+    // Project structure prompts
+    prompts.push({
+      trigger: 'folder-selected',
+      prompt: `Evaluate the project structure from a ${persona.role || 'development'} perspective:
+- Architecture and organization patterns
+- Compliance with best practices
+- Potential structural improvements
+- Missing components or documentation`,
+      contextProviders: ['#Folder', '#Codebase']
+    });
+
+    // Problem analysis prompts
+    if (requirements && requirements.primary.includes('#Problems')) {
+      prompts.push({
+        trigger: 'problems-detected',
+        prompt: `Analyze current issues as a ${persona.role || 'development specialist'}:
+- Root cause analysis
+- Impact assessment
+- Recommended solutions
+- Prevention strategies`,
+        contextProviders: ['#Problems', '#File', '#Terminal']
+      });
+    }
+
+    // Expansion pack specific prompts
+    if (expansionPack) {
+      const expansionPrompts = this._generateExpansionPackPrompts(expansionPack, agentMetadata);
+      prompts.push(...expansionPrompts);
+    }
+
+    return prompts;
+  }
+
+  /**
+   * Generate expansion pack specific context prompts
+   * @private
+   */
+  _generateExpansionPackPrompts(expansionPack, agentMetadata) {
+    const { id, persona } = agentMetadata;
+    
+    const expansionPromptMap = {
+      'bmad-2d-phaser-game-dev': [
+        {
+          trigger: 'game-file-opened',
+          prompt: `Analyze this game development file for Phaser.js best practices:
+- Scene management and lifecycle
+- Asset loading and optimization
+- Game state and data flow
+- Performance considerations`,
+          contextProviders: ['#File', '#Folder'],
+          filePatterns: ['*.js', '*.ts', '*.json']
+        }
+      ],
+      'bmad-2d-unity-game-dev': [
+        {
+          trigger: 'unity-file-opened',
+          prompt: `Review this Unity project file for 2D game development:
+- Component architecture and relationships
+- Unity-specific patterns and conventions
+- Performance and optimization opportunities
+- Asset pipeline considerations`,
+          contextProviders: ['#File', '#Folder'],
+          filePatterns: ['*.cs', '*.unity', '*.prefab', '*.asset']
+        }
+      ],
+      'bmad-infrastructure-devops': [
+        {
+          trigger: 'infrastructure-file-opened',
+          prompt: `Evaluate this infrastructure configuration:
+- Infrastructure as Code best practices
+- Security and compliance considerations
+- Scalability and maintainability
+- Cost optimization opportunities`,
+          contextProviders: ['#File', '#Folder'],
+          filePatterns: ['*.tf', '*.yaml', '*.yml', '*.json', 'Dockerfile', '*.sh']
+        }
+      ]
+    };
+
+    return expansionPromptMap[expansionPack] || [];
   }
 }
 

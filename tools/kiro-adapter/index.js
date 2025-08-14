@@ -4,6 +4,7 @@
  */
 
 const KiroDetector = require('./kiro-detector');
+const AgentDiscovery = require('./agent-discovery');
 const AgentTransformer = require('./agent-transformer');
 const SpecGenerator = require('./spec-generator');
 const ContextInjector = require('./context-injector');
@@ -14,6 +15,7 @@ class KiroAdapter {
   constructor(options = {}) {
     this.options = options;
     this.detector = new KiroDetector();
+    this.agentDiscovery = new AgentDiscovery(options);
     this.agentTransformer = new AgentTransformer();
     this.specGenerator = new SpecGenerator();
     this.contextInjector = new ContextInjector();
@@ -50,6 +52,41 @@ class KiroAdapter {
    */
   async getWorkspaceInfo(projectPath) {
     return await this.detector.getWorkspaceInfo(projectPath);
+  }
+
+  /**
+   * Discover all BMad agents (core and expansion packs)
+   * @param {string} projectPath - Path to the project directory
+   * @returns {Promise<Array>} - Array of discovered agent metadata
+   */
+  async discoverAgents(projectPath) {
+    this.agentDiscovery.options.rootPath = projectPath;
+    return await this.agentDiscovery.scanAllAgents();
+  }
+
+  /**
+   * Get agent discovery statistics
+   * @returns {Object} - Discovery statistics
+   */
+  getAgentDiscoveryStats() {
+    return this.agentDiscovery.getStatistics();
+  }
+
+  /**
+   * Get discovered agent by ID
+   * @param {string} agentId - Agent ID
+   * @returns {Object|null} - Agent metadata or null
+   */
+  getDiscoveredAgent(agentId) {
+    return this.agentDiscovery.getAgent(agentId);
+  }
+
+  /**
+   * Get all discovered agents
+   * @returns {Map} - Map of agent ID to metadata
+   */
+  getAllDiscoveredAgents() {
+    return this.agentDiscovery.getDiscoveredAgents();
   }
 }
 
