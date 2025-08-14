@@ -5,8 +5,8 @@
 **Timeline**: 4-6 weeks  
 **Priority**: HIGH - Strategic Realignment Required
 **Last Updated**: 2025-08-14  
-**Status**: 🎉 PRODUCTION MILESTONE - Priority 2 HIGH IMPACT COMPLETED  
-**Accurate Completion**: ~95% Infrastructure, 85% Core Task Functionality (11/16 critical tasks)
+**Status**: ⚠️ PARTIAL OPERATIONAL - Priority 2 Created But Needs Remediation
+**Accurate Completion**: ~95% Infrastructure, 68% Core Task Functionality (11/16 tasks created, 5 production-ready)
 
 ## Executive Summary
 
@@ -51,9 +51,20 @@ Phase 2.2 focuses on addressing the **35% gap** in modern Unity features identif
   - ✅ playmode-tests.md (COMPLETED 2025-08-13) - Component workflow **UNBLOCKED**
   - ✅ pixel-perfect-camera.md (COMPLETED 2025-08-13) - Unity 2D workflow **UNBLOCKED**
 
-- 🔥 **PRIORITY 2** (HIGH IMPACT): 6 Unity core tasks missing
-  - ❌ sprite-atlasing.md, interface-design.md, scriptableobject-setup.md
-  - ❌ integration-tests.md, editor-validation.md, sprite-library-creation.md
+- ✅ **PRIORITY 2** (HIGH IMPACT): 6/6 Unity core tasks **CREATED - REQUIRE PRODUCTION REMEDIATION**
+  - ✅ sprite-atlasing.md (CREATED 2025-08-14) - **Needs: Test coverage, BMAD compliance**
+  - ✅ interface-design.md (CREATED 2025-08-14) - **Needs: Test coverage, LLM enhancement**
+  - ✅ scriptableobject-setup.md (CREATED 2025-08-14) - **Needs: Test coverage, self-containment**
+  - ✅ integration-tests.md (CREATED 2025-08-14) - **Needs: Unity Test Framework implementation**
+  - ✅ editor-validation.md (CREATED 2025-08-14) - **Needs: Automation testing, CI/CD integration**
+  - ✅ sprite-library-creation.md (CREATED 2025-08-14) - **Needs: Test coverage, performance tests**
+  
+  **Sub-Agent Review Findings (2025-08-14):**
+  - **YAML Quality**: 9.2/10 - Technically excellent ✅
+  - **Template Quality**: 6-8/10 - BMAD compliance gaps ⚠️
+  - **Test Coverage**: 0% - DEPLOYMENT BLOCKER ❌
+  - **Agent Dependencies**: Missing in game-architect.md ⚠️
+  - **Overall Completion**: 60% - Functional for dev, not production-ready
 
 - 🔥 **PRIORITY 3** (WORKFLOW COMPLETION): 5 Unity core tasks missing
   - ❌ 2d-performance-profiling.md, custom-inspector-creation.md, animator-setup.md
@@ -1020,7 +1031,117 @@ The completion of Unity workflows revealed a **critical dependency gap** that re
 
 **Expected Outcome**: Transform expansion pack from "partially operational" to "production-ready Unity development framework with complete workflow functionality"
 
+## Priority 2 Remediation Plan (NEW SESSION REQUIRED)
+
+### 🔍 Sub-Agent Review Summary (2025-08-14)
+
+**Critical Finding**: Priority 2 tasks were CREATED but not reviewed by sub-agents, revealing significant production readiness gaps.
+
+**5 Sub-Agent Reports Generated:**
+- `yaml-validation-priority-2-tasks-20250814-111500.md` - 9.2/10 quality ✅
+- `template-quality-review-priority-2-20250814-173545.md` - 6-8/10 needs BMAD compliance ⚠️
+- `test-coverage-validation-priority-2-20250814-172030.md` - 0% coverage BLOCKER ❌
+- `agent-dependency-analysis-priority-2-20250814-200130.md` - Missing deps ⚠️
+- `priority-2-synthesis-final-assessment-20250814-202900.md` - 60% complete overall
+
+### 🛠️ Priority 2 Remediation Requirements
+
+#### Phase 1: Critical Fixes (Week 1)
+1. **Update Agent Dependencies**
+   - Add all 6 Priority 2 tasks to game-architect.md dependencies
+   - Validate agent command mappings work correctly
+   - Test agent execution with Priority 2 task references
+
+2. **Unity Test Framework Foundation**
+   - Create test harness for each Priority 2 task
+   - Implement EditMode tests for editor tasks
+   - Implement PlayMode tests for runtime tasks
+   - Target 70% code coverage minimum
+
+#### Phase 2: BMAD Compliance (Weeks 2-3)
+1. **Enhanced LLM Instructions**
+   - Upgrade from basic `[[LLM: analyze...]]` to adaptive BMAD patterns
+   - Add conditional logic, error handling, multi-path processing
+   - Implement self-containment with project discovery
+
+2. **Template Quality Enhancement**
+   - Add sophisticated code generation patterns
+   - Implement production-ready error handling
+   - Create integration with existing project structures
+
+#### Phase 3: Production Hardening (Week 4)
+1. **Performance Testing**
+   - Unity Profiler API integration
+   - Regression detection framework
+   - CI/CD pipeline integration
+
+2. **Documentation & Validation**
+   - Complete API documentation
+   - Integration testing across workflows
+   - Enterprise deployment checklist
+
+### 📋 Specific Task Remediation Details
+
+**sprite-atlasing.md**
+- Add Unity Test Framework tests for atlas generation
+- Enhance LLM instructions for adaptive atlas optimization
+- Implement performance benchmarking
+
+**interface-design.md**
+- Create test coverage for interface patterns
+- Add BMAD-compliant code generation
+- Fix forward dependency on component-architecture.md
+
+**scriptableobject-setup.md**
+- Implement comprehensive data architecture tests
+- Add self-contained project discovery
+- Create performance validation suite
+
+**integration-tests.md**
+- CRITICAL: Implement actual Unity Test Framework
+- Add EditMode/PlayMode test examples
+- Create CI/CD integration templates
+
+**editor-validation.md**
+- Add automated validation testing
+- Implement Unity Profiler integration
+- Create regression detection framework
+
+**sprite-library-creation.md**
+- Add 2D animation test coverage
+- Implement performance testing
+- Create sprite management validation
+
+### 🎯 Success Metrics for Remediation
+
+- **Test Coverage**: Achieve 70% minimum across all tasks
+- **BMAD Compliance**: All tasks meet framework standards
+- **Agent Integration**: 100% command-task mapping success
+- **Performance**: All tasks execute within benchmarks
+- **Documentation**: Complete API docs and examples
+
+### 📅 Timeline & Resources
+
+**Total Timeline**: 4 weeks focused effort
+**Priority**: CRITICAL for production deployment
+**Dependencies**: Existing Priority 1 tasks remain stable
+**Risk**: Without remediation, expansion pack remains dev-only
+
 ## Next Steps for New Session (IMMEDIATE PRIORITIES)
+
+### 🚀 START HERE FOR NEW SESSION
+
+**ACTION REQUIRED**: Implement Priority 2 Remediation Plan (see section above)
+
+**Current Status**:
+- ✅ Priority 1: COMPLETED (5/5 tasks production-ready)
+- ⚠️ Priority 2: CREATED but needs remediation (6/6 tasks at 60% readiness)
+- ❌ Priority 3: NOT STARTED (5 tasks pending)
+
+**Next Session Focus**: Priority 2 Remediation Phase 1 - Critical Fixes
+1. Update game-architect.md agent dependencies
+2. Implement Unity Test Framework for all 6 Priority 2 tasks
+3. Begin BMAD compliance improvements
 
 ### ✅ BREAKTHROUGH: Priority 1 Task Creation **COMPLETED**
 
