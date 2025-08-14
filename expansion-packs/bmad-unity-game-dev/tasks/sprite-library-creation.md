@@ -19,7 +19,68 @@ To establish comprehensive sprite library systems that enable efficient sprite o
 
 #### 1.1 Core Sprite Library System and Management
 
-[[LLM: Analyze the project's 2D animation requirements, character customization needs, and sprite organization patterns to design a comprehensive sprite library system. Consider Unity's Sprite Library Asset capabilities, runtime performance requirements, and editor workflow optimization. Design systems that enable efficient sprite variant management, category organization, and runtime customization while maintaining animation consistency and performance.]]
+[[LLM: Analyze project 2D animation complexity (simple character swapping vs complex character customization) and design sprite library architecture accordingly. IF existing animation system detected THEN integrate with current workflows, ELSE establish foundation patterns. Scale library management based on project size (indie: simple variant swapping, AAA: complex runtime generation). Include performance optimization strategies based on target platform detection.
+
+PROJECT COMPLEXITY ANALYSIS:
+IF simple character swapping project:
+  - Design basic variant management system
+  - Focus on editor workflow efficiency
+  - Implement straightforward runtime swapping
+  - Optimize for fast iteration and asset organization
+ELSE IF complex character customization project:
+  - Design sophisticated runtime generation system
+  - Implement advanced caching and performance optimization
+  - Create modular component-based architecture
+  - Add dynamic asset loading and streaming capabilities
+
+EXISTING SYSTEM INTEGRATION:
+IF existing animation system detected:
+  - Analyze current sprite management workflows
+  - Identify integration points and enhancement opportunities
+  - Design migration strategy for existing assets
+  - Preserve current animation timelines and configurations
+ELSE:
+  - Establish comprehensive sprite library foundation
+  - Create optimal organization and naming conventions
+  - Design scalable architecture for future expansion
+
+PROJECT SCALE OPTIMIZATION:
+IF indie/small project (< 50 sprite variants):
+  - Optimize for simplicity and rapid prototyping
+  - Use single library approach with smart categorization
+  - Focus on artist-friendly workflows and iteration speed
+ELSE IF medium project (50-500 variants):
+  - Implement multi-library organization system
+  - Add automated validation and optimization tools
+  - Include performance monitoring and caching
+ELSE IF AAA/large project (500+ variants):
+  - Design enterprise-scale library management
+  - Implement advanced runtime generation and streaming
+  - Add sophisticated performance optimization and memory management
+  - Include automated asset pipeline integration
+
+PLATFORM-SPECIFIC OPTIMIZATION:
+IF mobile platform:
+  - Prioritize memory efficiency and load times
+  - Implement aggressive caching and unloading strategies
+  - Add platform-specific compression and optimization
+ELSE IF desktop platform:
+  - Focus on feature richness and visual quality
+  - Implement advanced runtime customization capabilities
+ELSE IF console platform:
+  - Optimize for console-specific memory and loading patterns
+  - Add platform-specific streaming and caching strategies
+
+ERROR HANDLING AND VALIDATION:
+IF missing Unity 2D Animation package:
+  - Provide automatic package installation guidance
+  - Include manual installation fallback instructions
+IF incompatible Unity version:
+  - Provide version-specific implementation alternatives
+  - Include upgrade recommendations and migration paths
+IF insufficient project structure:
+  - Create automated project setup scripts
+  - Provide step-by-step manual configuration guide]]
 
 **Core Sprite Library Management System**:
 

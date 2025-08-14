@@ -20,7 +20,54 @@ To establish comprehensive sprite atlasing and 2D texture optimization workflows
 
 #### 1.1 Atlas Generation System Foundation
 
-[[LLM: Analyze the project's 2D assets, animation requirements, and performance targets to design an optimal sprite atlasing strategy. Consider texture memory constraints, draw call optimization, platform-specific requirements, and runtime loading patterns. Design atlas grouping strategies that minimize texture switching while optimizing memory usage.]]
+[[LLM: IF project has existing sprite atlas system THEN analyze current optimization gaps and integration points, ELSE design comprehensive atlasing architecture from scratch. Detect project scale (indie/mobile/AAA) and adjust optimization strategies accordingly. Include error handling for missing dependencies and alternative approaches for different Unity versions. Validate prerequisites and provide specific remediation steps if not met.
+
+CONDITIONAL PROCESSING:
+IF existing atlases detected:
+  - Analyze current atlas packing efficiency and memory usage
+  - Identify optimization opportunities and performance bottlenecks
+  - Design integration strategy for enhanced atlas management
+  - Preserve existing workflows while adding advanced features
+ELSE:
+  - Design comprehensive atlas architecture from foundation
+  - Establish optimal atlas grouping and organization patterns
+  - Create performance-oriented atlas generation workflows
+
+PROJECT SCALE DETECTION:
+IF indie/small project (< 500 sprites):
+  - Optimize for simplicity and fast iteration
+  - Use single atlas approach with smart grouping
+  - Focus on editor workflow efficiency
+ELSE IF mobile project:
+  - Prioritize memory optimization and load times
+  - Implement platform-specific compression strategies
+  - Add runtime atlas streaming capabilities
+ELSE IF AAA/large project (> 2000 sprites):
+  - Design complex multi-atlas management system
+  - Implement advanced performance monitoring
+  - Add sophisticated caching and streaming
+
+UNITY VERSION COMPATIBILITY:
+IF Unity 2022.3+ LTS:
+  - Use latest SpriteAtlas APIs and features
+  - Leverage improved compression options
+ELSE IF Unity 2021.3 LTS:
+  - Use compatible atlas management approaches
+  - Implement fallback compression strategies
+ELSE:
+  - Provide upgrade recommendations
+  - Use legacy-compatible atlas patterns
+
+ERROR HANDLING:
+IF missing Unity 2D packages:
+  - Provide automatic package installation scripts
+  - Guide through manual installation process
+IF insufficient project setup:
+  - Create project structure setup automation
+  - Provide step-by-step configuration guide
+IF incompatible platform settings:
+  - Auto-configure platform-specific settings
+  - Provide manual configuration alternatives]]
 
 **Core Atlas Management System**:
 
