@@ -228,7 +228,7 @@ namespace {{project_namespace}}.Testing
 
                 test.Initialize();
                 activeTests[testId] = test;
-                
+
                 Debug.Log($"[RuntimeTestFramework] Registered test: {testId}");
             }
             catch (Exception ex)
@@ -258,16 +258,16 @@ namespace {{project_namespace}}.Testing
         {
             // Performance monitoring test
             RegisterTest("performance_monitor", new PerformanceMonitorTest(performanceValidator));
-            
+
             // Gameplay validation test
             RegisterTest("gameplay_validator", new GameplayValidationTest(gameplayValidator));
-            
+
             // System stability test
             RegisterTest("system_stability", new SystemStabilityTest(systemValidator));
-            
+
             // Memory leak detection test
             RegisterTest("memory_leak_detector", new MemoryLeakDetectionTest());
-            
+
             // Frame rate consistency test
             RegisterTest("framerate_consistency", new FrameRateConsistencyTest());
         }
@@ -350,7 +350,7 @@ namespace {{project_namespace}}.Testing
             while (enableContinuousMonitoring)
             {
                 yield return new WaitForSeconds(testUpdateInterval);
-                
+
                 try
                 {
                     ProcessContinuousValidation();
@@ -485,7 +485,7 @@ namespace {{project_namespace}}.Testing
             {
                 result.TestId = testId;
                 result.Timestamp = Time.time;
-                
+
                 testResults.Add(result);
 
                 // Limit history size
@@ -540,7 +540,7 @@ namespace {{project_namespace}}.Testing
 
                 var report = GenerateTestReport();
                 var json = JsonUtility.ToJson(report, true);
-                
+
                 File.WriteAllText(filepath, json);
                 Debug.Log($"[RuntimeTestFramework] Test results saved to: {filepath}");
             }
@@ -644,7 +644,7 @@ namespace {{project_namespace}}.Testing
 
                 activeTests.Clear();
                 testResults.Clear();
-                
+
                 Debug.Log("[RuntimeTestFramework] Framework cleaned up");
             }
             catch (Exception ex)
@@ -818,7 +818,7 @@ namespace {{project_namespace}}.Testing
             {
                 status = TestStatus.Running;
                 startTime = Time.time;
-                
+
                 OnStart();
                 SendMessage($"Test {testName} started");
             }
@@ -833,7 +833,7 @@ namespace {{project_namespace}}.Testing
             try
             {
                 OnStop();
-                
+
                 if (status == TestStatus.Running)
                 {
                     status = TestStatus.Passed;
@@ -900,7 +900,7 @@ namespace {{project_namespace}}.Testing
         public virtual IEnumerator Execute()
         {
             Start();
-            
+
             while (status == TestStatus.Running)
             {
                 var result = Update();
@@ -910,7 +910,7 @@ namespace {{project_namespace}}.Testing
                 }
                 yield return null;
             }
-            
+
             Stop();
         }
 
@@ -960,7 +960,7 @@ namespace {{project_namespace}}.Testing
             {
                 SendMessage(message);
             }
-            
+
             CompleteTest();
         }
 
@@ -1071,7 +1071,7 @@ namespace {{project_namespace}}.Testing
         private PerformanceValidator validator;
         private List<float> frameTimeHistory = new List<float>();
         private List<float> memoryUsageHistory = new List<float>();
-        
+
         private float lastFrameRateCheck;
         private float frameRateCheckInterval = 1.0f;
         private int frameCount;
@@ -1079,7 +1079,7 @@ namespace {{project_namespace}}.Testing
 
         private const int HISTORY_SIZE = 100;
 
-        public PerformanceMonitorTest(PerformanceValidator performanceValidator) 
+        public PerformanceMonitorTest(PerformanceValidator performanceValidator)
             : base("Performance Monitor", "Monitors runtime performance metrics and validates against thresholds")
         {
             validator = performanceValidator;
@@ -1209,7 +1209,7 @@ namespace {{project_namespace}}.Testing
         protected override void OnUpdateMetrics()
         {
             var metrics = validator.GetMetrics();
-            
+
             SetMetric("DrawCalls", metrics.DrawCalls);
             SetMetric("Batches", metrics.Batches);
             SetMetric("ActiveGameObjects", metrics.ActiveGameObjects);
@@ -1245,7 +1245,7 @@ namespace {{project_namespace}}.Testing
     {
         private GameplayValidationConfig config;
         private List<ValidationResult> validationHistory = new List<ValidationResult>();
-        
+
         private Vector3 lastPlayerPosition;
         private float lastPlayerMovementTime;
         private float playerMovementThreshold = 0.1f;
@@ -1499,7 +1499,7 @@ namespace {{project_namespace}}.Testing
                     return new ValidationResult(false, "Physics system validation failed", "System Health");
                 }
 
-                // Check rendering system  
+                // Check rendering system
                 if (!ValidateRenderingSystem())
                 {
                     return new ValidationResult(false, "Rendering system validation failed", "System Health");
@@ -1637,7 +1637,7 @@ namespace {{project_namespace}}.Testing
                 // Force garbage collection and check again
                 GC.Collect();
                 long memoryAfterGC = GC.GetTotalMemory(true);
-                
+
                 // Check for memory leaks (significant difference before/after GC)
                 long memoryDifference = totalMemory - memoryAfterGC;
                 if (memoryDifference > 100 * 1024 * 1024) // 100MB difference
@@ -1684,7 +1684,7 @@ namespace {{project_namespace}}.Testing
         public ValidationResult[] GetResults()
         {
             var results = new List<ValidationResult>();
-            
+
             foreach (var metric in systemMetrics.Values)
             {
                 results.Add(new ValidationResult(true, $"{metric.Category}: {metric.Value}", "System Metrics"));
@@ -1728,14 +1728,14 @@ namespace {{project_namespace}}.Testing
     {
         private List<MemorySnapshot> memorySnapshots = new List<MemorySnapshot>();
         private Dictionary<string, List<long>> categoryMemoryHistory = new Dictionary<string, List<long>>();
-        
+
         private float snapshotInterval = 10.0f;
         private float lastSnapshotTime;
         private int maxSnapshotHistory = 50;
         private long baselineMemory;
         private bool baselineSet = false;
 
-        public MemoryLeakDetectionTest() 
+        public MemoryLeakDetectionTest()
             : base("Memory Leak Detection", "Detects potential memory leaks through runtime memory analysis")
         {
             timeout = float.MaxValue; // Continuous monitoring
@@ -1745,11 +1745,11 @@ namespace {{project_namespace}}.Testing
         {
             memorySnapshots.Clear();
             categoryMemoryHistory.Clear();
-            
+
             TakeMemorySnapshot();
             baselineMemory = GetTotalMemory();
             baselineSet = true;
-            
+
             SetMetric("BaselineMemory", baselineMemory);
             lastSnapshotTime = Time.time;
         }
@@ -1867,7 +1867,7 @@ namespace {{project_namespace}}.Testing
             // Calculate trend using linear regression
             int n = Math.Min(10, history.Count); // Use recent samples
             var recentHistory = history.Skip(history.Count - n).ToList();
-            
+
             float slope = CalculateSlope(recentHistory);
             float averageMemory = recentHistory.Average();
             float growthRate = slope / averageMemory;
@@ -2017,7 +2017,7 @@ namespace {{project_namespace}}.Testing
         public Dictionary<string, float> GetCategoryGrowthRates()
         {
             var growthRates = new Dictionary<string, float>();
-            
+
             foreach (var category in categoryMemoryHistory.Keys)
             {
                 var trend = AnalyzeCategoryTrend(category);
@@ -2058,7 +2058,7 @@ namespace {{project_namespace}}.Testing
 ### Runtime Testing Framework Validation ✅
 
 - **Test Framework Architecture**: Complete runtime testing foundation with non-intrusive monitoring
-- **Performance Monitoring**: Comprehensive frame rate, memory, and system performance validation  
+- **Performance Monitoring**: Comprehensive frame rate, memory, and system performance validation
 - **Gameplay Validation**: Real-time validation of player movement, game state, UI, and audio systems
 - **Memory Leak Detection**: Advanced memory analysis with trend detection and leak identification
 - **System Integration**: Complete validation of physics, rendering, scene management, and memory systems

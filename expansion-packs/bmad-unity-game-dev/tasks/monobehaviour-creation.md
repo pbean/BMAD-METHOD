@@ -74,12 +74,12 @@ namespace {{project_namespace}}.MonoBehaviours
             ComponentId = $"{GetType().Name}_{GetInstanceID()}";
             ValidateConfiguration();
             InitializeUtilities();
-            
+
             if (autoInitializeOnAwake)
             {
                 InternalInitialize();
             }
-            
+
             OnAwakeCustom();
             LogDebug("Awake completed");
         }
@@ -90,12 +90,12 @@ namespace {{project_namespace}}.MonoBehaviours
             {
                 InternalInitialize();
             }
-            
+
             if (autoStartOnEnable)
             {
                 InternalStart();
             }
-            
+
             OnStartCustom();
             LogDebug("Start completed");
         }
@@ -103,12 +103,12 @@ namespace {{project_namespace}}.MonoBehaviours
         protected virtual void OnEnable()
         {
             isEnabled = true;
-            
+
             if (isInitialized && autoStartOnEnable && !isStarted)
             {
                 InternalStart();
             }
-            
+
             RegisterEventHandlers();
             SubscribeToEvents();
             OnEnableCustom();
@@ -194,14 +194,14 @@ namespace {{project_namespace}}.MonoBehaviours
         protected virtual void OnDestroy()
         {
             isDestroyed = true;
-            
+
             StopAllManagedCoroutines();
             UnregisterEventHandlers();
             UnsubscribeFromEvents();
-            
+
             OnDestroyCustom();
             OnDestroyed?.Invoke();
-            
+
             LogDebug("OnDestroy completed");
         }
 
@@ -223,7 +223,7 @@ namespace {{project_namespace}}.MonoBehaviours
                 CacheComponentReferences();
                 InitializeSubsystems();
                 OnInitializeCustom();
-                
+
                 isInitialized = true;
                 OnInitialized?.Invoke();
                 LogDebug("Initialization completed successfully");
@@ -255,7 +255,7 @@ namespace {{project_namespace}}.MonoBehaviours
                 SetupInitialState();
                 RegisterWithSystems();
                 OnStartCustom();
-                
+
                 isStarted = true;
                 OnStarted?.Invoke();
                 LogDebug("Start completed successfully");
@@ -577,7 +577,7 @@ namespace {{project_namespace}}.MonoBehaviours
             {
                 var data = frameData[frameName];
                 var frameTime = Time.realtimeSinceStartup - data.StartTime;
-                
+
                 data.TotalTime += frameTime;
                 data.FrameCount++;
                 data.AverageTime = data.TotalTime / data.FrameCount;
@@ -683,7 +683,7 @@ namespace {{project_namespace}}.MonoBehaviours
                     if (instance == null)
                     {
                         instance = FindObjectOfType<T>();
-                        
+
                         if (instance == null)
                         {
                             var singletonObject = new GameObject($"{typeof(T).Name} (Singleton)");
@@ -740,7 +740,7 @@ namespace {{project_namespace}}.MonoBehaviours
     /// <summary>
     /// Data-driven MonoBehaviour that loads configuration from ScriptableObjects
     /// </summary>
-    public abstract class DataDrivenMonoBehaviour<TConfig> : GameMonoBehaviourBase 
+    public abstract class DataDrivenMonoBehaviour<TConfig> : GameMonoBehaviourBase
         where TConfig : ScriptableObject
     {
         [Header("Data Configuration")]
@@ -754,7 +754,7 @@ namespace {{project_namespace}}.MonoBehaviours
         protected override void ValidateConfiguration()
         {
             base.ValidateConfiguration();
-            
+
             if (configuration == null && loadConfigurationAtRuntime && !string.IsNullOrEmpty(configurationResourcePath))
             {
                 LoadConfigurationFromResources();
@@ -814,7 +814,7 @@ namespace {{project_namespace}}.MonoBehaviours
 
             configuration = newConfig;
             ValidateConfigurationData(configuration);
-            
+
             if (isInitialized)
             {
                 ApplyConfiguration(configuration);
@@ -841,7 +841,7 @@ namespace {{project_namespace}}.MonoBehaviours
         protected float timeInCurrentState;
 
         protected Dictionary<TState, StateInfo> stateInfo = new Dictionary<TState, StateInfo>();
-        
+
         public TState CurrentState => currentState;
         public TState PreviousState => previousState;
         public float TimeInCurrentState => timeInCurrentState;
@@ -894,7 +894,7 @@ namespace {{project_namespace}}.MonoBehaviours
             }
 
             var oldState = currentState;
-            
+
             // Exit current state
             if (isInitialized)
             {
@@ -921,10 +921,10 @@ namespace {{project_namespace}}.MonoBehaviours
 
             // Enter new state
             OnEnterState(newState);
-            
+
             // Notify observers
             OnStateChanged?.Invoke(oldState, newState);
-            
+
             if (logStateChanges)
             {
                 LogDebug($"State changed: {oldState} -> {newState}");
@@ -976,7 +976,7 @@ namespace {{project_namespace}}.MonoBehaviours
             parentPool = pool;
             isPooled = true;
             isActive = true;
-            
+
             gameObject.SetActive(true);
             OnSpawn();
             LogDebug("Spawned from pool");
@@ -985,19 +985,19 @@ namespace {{project_namespace}}.MonoBehaviours
         public virtual void OnReturnToPool()
         {
             isActive = false;
-            
+
             OnDespawn();
-            
+
             if (resetOnReturn)
             {
                 ResetToDefault();
             }
-            
+
             if (disableOnReturn)
             {
                 gameObject.SetActive(false);
             }
-            
+
             LogDebug("Returned to pool");
         }
 
@@ -1069,7 +1069,7 @@ namespace {{project_namespace}}.MonoBehaviours
         public T GetObject()
         {
             T obj;
-            
+
             if (pool.Count > 0)
             {
                 obj = pool.Dequeue();
@@ -1142,12 +1142,12 @@ namespace {{project_namespace}}.MonoBehaviours
     /// Custom property attributes for enhanced Inspector experience
     /// </summary>
     public class ReadOnlyAttribute : PropertyAttribute { }
-    
+
     public class ConditionalFieldAttribute : PropertyAttribute
     {
         public string ConditionalSourceField;
         public object CompareValue;
-        
+
         public ConditionalFieldAttribute(string conditionalSourceField, object compareValue = null)
         {
             ConditionalSourceField = conditionalSourceField;
@@ -1159,7 +1159,7 @@ namespace {{project_namespace}}.MonoBehaviours
     {
         public float Min;
         public float Max;
-        
+
         public MinMaxSliderAttribute(float min, float max)
         {
             Min = min;
@@ -1172,13 +1172,13 @@ namespace {{project_namespace}}.MonoBehaviours
     {
         public float Min;
         public float Max;
-        
+
         public MinMaxFloat(float min = 0f, float max = 1f)
         {
             Min = min;
             Max = max;
         }
-        
+
         public float GetRandomValue()
         {
             return UnityEngine.Random.Range(Min, Max);
@@ -1257,7 +1257,7 @@ namespace {{project_namespace}}.MonoBehaviours
         protected override void ValidateConfiguration()
         {
             base.ValidateConfiguration();
-            
+
             if (validateOnAwake)
             {
                 PerformSerializationValidation();
@@ -1267,11 +1267,11 @@ namespace {{project_namespace}}.MonoBehaviours
         protected virtual void PerformSerializationValidation()
         {
             validationErrors.Clear();
-            
+
             ValidateSerializedFields();
             ValidateRequiredReferences();
             ValidateValueRanges();
-            
+
             if (validationErrors.Count > 0 && logValidationErrors)
             {
                 foreach (var error in validationErrors)
@@ -1336,18 +1336,18 @@ namespace {{project_namespace}}.MonoBehaviours
         public bool enableDebugMode = false;
         public bool enablePerformanceTracking = false;
         public LogLevel logLevel = LogLevel.Warning;
-        
+
         [Header("Update Settings")]
         public bool useUpdate = true;
         public bool useFixedUpdate = false;
         public bool useLateUpdate = false;
-        
+
         [Header("Performance")]
         [Range(1, 120)]
         public int targetFrameRate = 60;
         [Range(0.001f, 0.1f)]
         public float maxFrameTime = 0.016f;
-        
+
         public enum LogLevel
         {
             None,
@@ -1362,7 +1362,7 @@ namespace {{project_namespace}}.MonoBehaviours
     {
         [Header("Component Settings")]
         [SerializeField] protected ComponentSettings settings = new ComponentSettings();
-        
+
         public ComponentSettings Settings => settings;
 
         protected override void OnInitializeCustom()
@@ -1377,7 +1377,7 @@ namespace {{project_namespace}}.MonoBehaviours
             enableUpdate = newSettings.useUpdate;
             enableFixedUpdate = newSettings.useFixedUpdate;
             enableLateUpdate = newSettings.useLateUpdate;
-            
+
             // Apply target frame rate if this is the main component
             if (Application.targetFrameRate != newSettings.targetFrameRate)
             {
@@ -1454,7 +1454,7 @@ namespace {{project_namespace}}.MonoBehaviours.Testing
             // Create test environment
             testGameObject = new GameObject("TestObject");
             createdObjects.Add(testGameObject);
-            
+
             // Create test camera if needed
             var cameraObject = new GameObject("TestCamera");
             testCamera = cameraObject.AddComponent<Camera>();
@@ -1544,12 +1544,12 @@ namespace {{project_namespace}}.MonoBehaviours.Testing
             // Act - Disable and enable
             testComponent.gameObject.SetActive(false);
             yield return null;
-            
+
             Assert.IsTrue(testComponent.DisableCalled, "OnDisable should be called");
-            
+
             testComponent.gameObject.SetActive(true);
             yield return null;
-            
+
             Assert.IsTrue(testComponent.EnableCalled, "OnEnable should be called");
         }
 
@@ -1558,7 +1558,7 @@ namespace {{project_namespace}}.MonoBehaviours.Testing
         {
             // Arrange
             var transform = testComponent.GetComponent<Transform>();
-            
+
             // Act & Assert
             Assert.DoesNotThrow(() => {
                 var retrievedTransform = testComponent.TestGetRequiredComponent<Transform>();
@@ -1584,12 +1584,12 @@ namespace {{project_namespace}}.MonoBehaviours.Testing
             // Act
             var coroutine = testComponent.TestStartManagedCoroutine();
             yield return WaitForFrames(5);
-            
+
             Assert.IsTrue(testComponent.CoroutineStarted, "Coroutine should start");
-            
+
             testComponent.TestStopManagedCoroutine(coroutine);
             yield return WaitForFrames(2);
-            
+
             Assert.IsTrue(testComponent.CoroutineStopped, "Coroutine should stop");
         }
 
@@ -1736,7 +1736,7 @@ namespace {{project_namespace}}.MonoBehaviours.Testing
         {
             // Arrange
             var originalInstance = TestSingleton.Instance;
-            
+
             // Act - Create duplicate
             var duplicateGO = new GameObject("Duplicate");
             var duplicateInstance = duplicateGO.AddComponent<TestSingleton>();
@@ -1755,7 +1755,7 @@ namespace {{project_namespace}}.MonoBehaviours.Testing
             {
                 UnityEngine.Object.DestroyImmediate(TestSingleton.Instance.gameObject);
             }
-            
+
             base.TearDown();
         }
     }
@@ -1861,16 +1861,16 @@ namespace {{project_namespace}}.MonoBehaviours.Testing
 
             // Act - Let the system run for a few frames
             yield return WaitForFrames(10);
-            
+
             var startTime = Time.realtimeSinceStartup;
             yield return WaitForSeconds(1f);
             var endTime = Time.realtimeSinceStartup;
-            
+
             var actualTime = endTime - startTime;
             var estimatedFPS = 1f / (actualTime / 60f); // Approximate based on frame time
 
             // Assert
-            Assert.Greater(estimatedFPS, minFPS, 
+            Assert.Greater(estimatedFPS, minFPS,
                 $"Performance test failed: FPS {estimatedFPS:F1} < minimum {minFPS}");
         }
 
@@ -1883,18 +1883,18 @@ namespace {{project_namespace}}.MonoBehaviours.Testing
 
             // Act
             var startTime = Time.realtimeSinceStartup;
-            
+
             for (int i = 0; i < componentCount; i++)
             {
                 var obj = CreateTestGameObject($"PerfTest_{i}");
                 obj.AddComponent<TestGameMonoBehaviour>();
             }
-            
+
             var endTime = Time.realtimeSinceStartup;
             var totalTime = endTime - startTime;
 
             // Assert
-            Assert.LessOrEqual(totalTime, maxTimeSeconds, 
+            Assert.LessOrEqual(totalTime, maxTimeSeconds,
                 $"Component creation performance: {totalTime:F3}s > {maxTimeSeconds}s for {componentCount} components");
         }
     }
@@ -1919,6 +1919,7 @@ This Unity MonoBehaviour Creation Task provides:
 ## Integration Points
 
 This task integrates with:
+
 - `component-architecture.md` - Extends component architecture patterns
 - `unity-package-setup.md` - Requires Unity packages and project structure
 - `scriptableobject-setup.md` - Data-driven component configuration patterns

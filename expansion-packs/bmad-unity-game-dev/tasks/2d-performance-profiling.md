@@ -70,7 +70,7 @@ namespace {{project_namespace}}.Profiling
         private List<Performance2DSample> performanceSamples = new List<Performance2DSample>();
         private Performance2DAnalyzer analyzer;
         private Performance2DReporter reporter;
-        
+
         private float lastSampleTime;
         private bool isProfilingActive = false;
         private int currentSampleIndex = 0;
@@ -91,7 +91,7 @@ namespace {{project_namespace}}.Profiling
             InitializeProfilers();
             analyzer = new Performance2DAnalyzer();
             reporter = new Performance2DReporter();
-            
+
             ValidateOutputDirectory();
         }
 
@@ -110,7 +110,7 @@ namespace {{project_namespace}}.Profiling
                 CaptureSample();
                 lastSampleTime = Time.time;
             }
-            
+
             MonitorRealTimeThresholds();
         }
 
@@ -168,7 +168,7 @@ namespace {{project_namespace}}.Profiling
                 lastSampleTime = Time.time;
                 currentSampleIndex = 0;
                 performanceSamples.Clear();
-                
+
                 if (enableDeepProfiling)
                 {
                     Profiler.enabled = true;
@@ -196,7 +196,7 @@ namespace {{project_namespace}}.Profiling
             try
             {
                 isProfilingActive = false;
-                
+
                 if (enableDeepProfiling)
                 {
                     Profiler.enableBinaryLog = false;
@@ -292,7 +292,7 @@ namespace {{project_namespace}}.Profiling
             if (!monitorSpriteRendering) return null;
 
             spriteRenderingMarker.Begin();
-            
+
             try
             {
                 var spriteRenderers = FindObjectsOfType<SpriteRenderer>();
@@ -310,7 +310,7 @@ namespace {{project_namespace}}.Profiling
                     if (renderer.isVisible)
                     {
                         data.VisibleSprites++;
-                        
+
                         if (renderer.sprite != null && renderer.sprite.texture != null)
                         {
                             data.UniqueTextures.Add(renderer.sprite.texture);
@@ -337,12 +337,12 @@ namespace {{project_namespace}}.Profiling
             if (!monitor2DPhysics) return null;
 
             physics2DMarker.Begin();
-            
+
             try
             {
                 var rigidbodies = FindObjectsOfType<Rigidbody2D>();
                 var colliders = FindObjectsOfType<Collider2D>();
-                
+
                 var data = new Physics2DData
                 {
                     ActiveRigidbodies = 0,
@@ -392,7 +392,7 @@ namespace {{project_namespace}}.Profiling
             if (!monitorBatching) return null;
 
             batchingMarker.Begin();
-            
+
             try
             {
                 var data = new BatchingData
@@ -441,7 +441,7 @@ namespace {{project_namespace}}.Profiling
                             data.TextureChanges++;
                             data.BatchBreaks++;
                         }
-                        else if (currentSortingLayer != lastSortingLayer || 
+                        else if (currentSortingLayer != lastSortingLayer ||
                                 Math.Abs(currentSortingOrder - lastSortingOrder) > 1)
                         {
                             data.ZOrderChanges++;
@@ -459,7 +459,7 @@ namespace {{project_namespace}}.Profiling
                     lastSortingOrder = currentSortingOrder;
                 }
 
-                data.BatchingEfficiency = spriteRenderers.Length > 0 ? 
+                data.BatchingEfficiency = spriteRenderers.Length > 0 ?
                     (float)data.BatchableSprites / spriteRenderers.Length : 1.0f;
 
                 return data;
@@ -485,14 +485,14 @@ namespace {{project_namespace}}.Profiling
             for (int i = 0; i < renderers.Length; i++)
             {
                 if (!renderers[i].isVisible) continue;
-                
+
                 var bounds1 = renderers[i].bounds;
                 if (!screenBounds.Intersects(bounds1)) continue;
 
                 for (int j = i + 1; j < renderers.Length; j++)
                 {
                     if (!renderers[j].isVisible) continue;
-                    
+
                     var bounds2 = renderers[j].bounds;
                     if (bounds1.Intersects(bounds2))
                     {
@@ -509,14 +509,14 @@ namespace {{project_namespace}}.Profiling
         {
             var min = Vector3.Max(a.min, b.min);
             var max = Vector3.Min(a.max, b.max);
-            
+
             if (min.x <= max.x && min.y <= max.y && min.z <= max.z)
             {
                 var center = (min + max) * 0.5f;
                 var size = max - min;
                 return new Bounds(center, size);
             }
-            
+
             return new Bounds();
         }
 
@@ -579,7 +579,7 @@ namespace {{project_namespace}}.Profiling
         private void CheckSampleThresholds(Performance2DSample sample)
         {
             // Additional per-sample threshold checking logic
-            if (sample.Physics2DData != null && 
+            if (sample.Physics2DData != null &&
                 sample.Physics2DData.ActiveRigidbodies + sample.Physics2DData.DynamicColliders > max2DPhysicsContacts)
             {
                 OnPerformanceWarning?.Invoke(new Performance2DWarning
@@ -603,9 +603,9 @@ namespace {{project_namespace}}.Profiling
             {
                 var report = analyzer.AnalyzePerformanceData(performanceSamples.ToArray());
                 var reportPath = reporter.GenerateReport(report, profilingOutputPath);
-                
+
                 OnProfilingReportGenerated?.Invoke(report);
-                
+
                 Debug.Log($"[Unity2DProfiler] Performance report generated: {reportPath}");
             }
             catch (Exception ex)
@@ -821,7 +821,7 @@ namespace {{project_namespace}}.Profiling
                     {
                         var result = rule.Analyze(samples, this);
                         report.DetailedAnalysis.Add(result);
-                        
+
                         if (result.Recommendations != null)
                         {
                             report.Recommendations.AddRange(result.Recommendations);
@@ -835,7 +835,7 @@ namespace {{project_namespace}}.Profiling
 
                 // Sort recommendations by priority
                 report.Recommendations.Sort((a, b) => b.Priority.CompareTo(a.Priority));
-                
+
                 // Generate overall score
                 report.OverallPerformanceScore = CalculateOverallScore(report);
 
@@ -860,14 +860,14 @@ namespace {{project_namespace}}.Profiling
                 MinFrameTime = frameTimes.Min(),
                 MaxFrameTime = frameTimes.Max(),
                 FrameTimeVariance = CalculateVariance(frameTimes),
-                
+
                 AverageDrawCalls = drawCalls.Average(),
                 MinDrawCalls = drawCalls.Min(),
                 MaxDrawCalls = drawCalls.Max(),
-                
+
                 AverageTextureMemory = textureMemory.Average(),
                 MaxTextureMemory = textureMemory.Max(),
-                
+
                 FramesAboveTarget = frameTimes.Count(ft => ft > frameTimeTarget),
                 PercentFramesAboveTarget = (float)frameTimes.Count(ft => ft > frameTimeTarget) / frameTimes.Length * 100f
             };
@@ -876,7 +876,7 @@ namespace {{project_namespace}}.Profiling
         private TrendAnalysis AnalyzeTrends(Performance2DSample[] samples)
         {
             const int windowSize = 10;
-            
+
             var frameTimeTrend = CalculateTrend(samples.Select(s => s.FrameTime).ToArray(), windowSize);
             var drawCallTrend = CalculateTrend(samples.Select(s => (float)s.DrawCalls).ToArray(), windowSize);
             var memoryTrend = CalculateTrend(samples.Select(s => s.TextureMemoryMB).ToArray(), windowSize);
@@ -896,9 +896,9 @@ namespace {{project_namespace}}.Profiling
 
             var firstWindowAvg = values.Take(windowSize).Average();
             var lastWindowAvg = values.Skip(values.Length - windowSize).Average();
-            
+
             var change = (lastWindowAvg - firstWindowAvg) / firstWindowAvg;
-            
+
             if (change > 0.1f) return TrendDirection.Increasing;
             if (change < -0.1f) return TrendDirection.Decreasing;
             return TrendDirection.Stable;
@@ -918,13 +918,13 @@ namespace {{project_namespace}}.Profiling
         private float CalculateOverallScore(Performance2DReport report)
         {
             float score = 100f;
-            
+
             // Deduct points for performance issues
             if (report.Summary.PercentFramesAboveTarget > 0)
             {
                 score -= report.Summary.PercentFramesAboveTarget * 0.5f;
             }
-            
+
             // Deduct for high priority recommendations
             foreach (var rec in report.Recommendations)
             {
@@ -964,7 +964,7 @@ namespace {{project_namespace}}.Profiling
             var avgFrameTime = frameTimes.Average();
             var maxFrameTime = frameTimes.Max();
             var framesAboveTarget = frameTimes.Count(ft => ft > analyzer.frameTimeTarget);
-            
+
             var result = new PerformanceAnalysisResult
             {
                 Category = "Frame Time Analysis",
@@ -1003,7 +1003,7 @@ namespace {{project_namespace}}.Profiling
             var drawCalls = samples.Select(s => s.DrawCalls).ToArray();
             var avgDrawCalls = drawCalls.Average();
             var maxDrawCalls = drawCalls.Max();
-            
+
             var result = new PerformanceAnalysisResult
             {
                 Category = "Draw Call Analysis",
@@ -1052,7 +1052,7 @@ namespace {{project_namespace}}.Profiling
 
             var avgEfficiency = batchingData.Average(b => b.BatchingEfficiency);
             var avgBatchBreaks = batchingData.Average(b => b.BatchBreaks);
-            
+
             var result = new PerformanceAnalysisResult
             {
                 Category = "Batching Analysis",
@@ -1092,7 +1092,7 @@ namespace {{project_namespace}}.Profiling
             var avgMemory = textureMemory.Average();
             var maxMemory = textureMemory.Max();
             var memoryGrowth = textureMemory.Last() - textureMemory.First();
-            
+
             var result = new PerformanceAnalysisResult
             {
                 Category = "Texture Memory Analysis",
@@ -1142,7 +1142,7 @@ namespace {{project_namespace}}.Profiling
             var avgRigidbodies = physics2DData.Average(p => p.ActiveRigidbodies);
             var avgColliders = physics2DData.Average(p => p.DynamicColliders + p.StaticColliders);
             var maxPhysicsObjects = physics2DData.Max(p => p.ActiveRigidbodies + p.DynamicColliders);
-            
+
             var result = new PerformanceAnalysisResult
             {
                 Category = "2D Physics Analysis",
@@ -1191,7 +1191,7 @@ namespace {{project_namespace}}.Profiling
 
             var avgOverdraw = spriteData.Average(s => s.EstimatedOverdraw);
             var maxOverdraw = spriteData.Max(s => s.EstimatedOverdraw);
-            
+
             var result = new PerformanceAnalysisResult
             {
                 Category = "Overdraw Analysis",
@@ -1388,14 +1388,14 @@ namespace {{project_namespace}}.Profiling
                 var htmlContent = GenerateHTMLReport(report);
                 var fileName = $"2D_Performance_Report_{DateTime.Now:yyyyMMdd_HHmmss}.html";
                 var fullPath = Path.Combine(outputPath, fileName);
-                
+
                 File.WriteAllText(fullPath, htmlContent);
-                
+
                 // Also generate JSON report for programmatic access
                 var jsonReport = JsonUtility.ToJson(report, true);
                 var jsonPath = Path.Combine(outputPath, fileName.Replace(".html", ".json"));
                 File.WriteAllText(jsonPath, jsonReport);
-                
+
                 Debug.Log($"[Performance2DReporter] Reports generated: {fullPath}, {jsonPath}");
                 return fullPath;
             }
@@ -1410,35 +1410,35 @@ namespace {{project_namespace}}.Profiling
         {
             var content = new StringBuilder();
             var charts = new StringBuilder();
-            
+
             // Header
             content.AppendLine("<div class='header'>");
             content.AppendLine($"<h1>Unity 2D Performance Report</h1>");
             content.AppendLine($"<p>Generated: {report.GeneratedAt:yyyy-MM-dd HH:mm:ss}</p>");
             content.AppendLine($"<p>Samples: {report.SampleCount} | Duration: {report.AnalysisDuration:F1}s</p>");
             content.AppendLine("</div>");
-            
+
             // Overall Score
             var scoreClass = GetScoreClass(report.OverallPerformanceScore);
             content.AppendLine($"<div class='score {scoreClass}'>");
             content.AppendLine($"Performance Score: {report.OverallPerformanceScore:F1}/100");
             content.AppendLine("</div>");
-            
+
             // Performance Summary
             GeneratePerformanceSummary(content, report.Summary);
-            
+
             // Charts
             GeneratePerformanceCharts(charts, report);
-            
+
             // Detailed Analysis
             GenerateDetailedAnalysis(content, report.DetailedAnalysis);
-            
+
             // Recommendations
             GenerateRecommendations(content, report.Recommendations);
-            
+
             // Trend Analysis
             GenerateTrendAnalysis(content, report.TrendAnalysis);
-            
+
             return HTML_TEMPLATE
                 .Replace("{REPORT_CONTENT}", content.ToString())
                 .Replace("{CHART_SCRIPTS}", charts.ToString());
@@ -1450,18 +1450,18 @@ namespace {{project_namespace}}.Profiling
             content.AppendLine("<h2>Performance Summary</h2>");
             content.AppendLine("<table>");
             content.AppendLine("<tr><th>Metric</th><th>Average</th><th>Min</th><th>Max</th><th>Status</th></tr>");
-            
+
             var frameTimeStatus = summary.AverageFrameTime <= 16.67f ? "Good" : "Warning";
             content.AppendLine($"<tr><td>Frame Time (ms)</td><td>{summary.AverageFrameTime:F2}</td><td>{summary.MinFrameTime:F2}</td><td>{summary.MaxFrameTime:F2}</td><td class='{frameTimeStatus.ToLower()}'>{frameTimeStatus}</td></tr>");
-            
+
             var drawCallStatus = summary.AverageDrawCalls <= 50 ? "Good" : "Warning";
             content.AppendLine($"<tr><td>Draw Calls</td><td>{summary.AverageDrawCalls:F1}</td><td>{summary.MinDrawCalls:F1}</td><td>{summary.MaxDrawCalls:F1}</td><td class='{drawCallStatus.ToLower()}'>{drawCallStatus}</td></tr>");
-            
+
             var memoryStatus = summary.MaxTextureMemory <= 256 ? "Good" : "Warning";
             content.AppendLine($"<tr><td>Texture Memory (MB)</td><td>{summary.AverageTextureMemory:F1}</td><td>-</td><td>{summary.MaxTextureMemory:F1}</td><td class='{memoryStatus.ToLower()}'>{memoryStatus}</td></tr>");
-            
+
             content.AppendLine("</table>");
-            
+
             if (summary.PercentFramesAboveTarget > 0)
             {
                 var warningClass = summary.PercentFramesAboveTarget > 10 ? "critical" : "warning";
@@ -1469,7 +1469,7 @@ namespace {{project_namespace}}.Profiling
                 content.AppendLine($"<strong>Performance Warning:</strong> {summary.FramesAboveTarget} frames ({summary.PercentFramesAboveTarget:F1}%) exceeded target frame time");
                 content.AppendLine("</div>");
             }
-            
+
             content.AppendLine("</div>");
         }
 
@@ -1518,7 +1518,7 @@ Plotly.newPlot('drawCallChart', drawCallData, drawCallLayout);");
         {
             content.AppendLine("<div class='section'>");
             content.AppendLine("<h2>Detailed Analysis</h2>");
-            
+
             foreach (var result in analysis)
             {
                 var sectionClass = result.Status.ToString().ToLower();
@@ -1528,7 +1528,7 @@ Plotly.newPlot('drawCallChart', drawCallData, drawCallLayout);");
                 content.AppendLine($"<p>{result.Details}</p>");
                 content.AppendLine("</div>");
             }
-            
+
             content.AppendLine("</div>");
         }
 
@@ -1536,7 +1536,7 @@ Plotly.newPlot('drawCallChart', drawCallData, drawCallLayout);");
         {
             content.AppendLine("<div class='section'>");
             content.AppendLine("<h2>Optimization Recommendations</h2>");
-            
+
             if (recommendations.Count == 0)
             {
                 content.AppendLine("<p>No specific optimizations needed. Performance is within acceptable parameters.</p>");
@@ -1550,7 +1550,7 @@ Plotly.newPlot('drawCallChart', drawCallData, drawCallLayout);");
                     content.AppendLine($"<h3 class='priority-{priorityClass}'>{rec.Title} ({rec.Priority} Priority)</h3>");
                     content.AppendLine($"<p><strong>Category:</strong> {rec.Category}</p>");
                     content.AppendLine($"<p>{rec.Description}</p>");
-                    
+
                     if (rec.Actions != null && rec.Actions.Length > 0)
                     {
                         content.AppendLine("<h4>Recommended Actions:</h4>");
@@ -1561,11 +1561,11 @@ Plotly.newPlot('drawCallChart', drawCallData, drawCallLayout);");
                         }
                         content.AppendLine("</ul>");
                     }
-                    
+
                     content.AppendLine("</div>");
                 }
             }
-            
+
             content.AppendLine("</div>");
         }
 
@@ -1576,11 +1576,11 @@ Plotly.newPlot('drawCallChart', drawCallData, drawCallLayout);");
             content.AppendLine($"<p><strong>Analysis Confidence:</strong> {trends.TrendAnalysisConfidence:P0}</p>");
             content.AppendLine("<table>");
             content.AppendLine("<tr><th>Metric</th><th>Trend</th><th>Interpretation</th></tr>");
-            
+
             content.AppendLine($"<tr><td>Frame Time</td><td>{trends.FrameTimeTrend}</td><td>{GetTrendInterpretation(trends.FrameTimeTrend, "frame time")}</td></tr>");
             content.AppendLine($"<tr><td>Draw Calls</td><td>{trends.DrawCallTrend}</td><td>{GetTrendInterpretation(trends.DrawCallTrend, "draw calls")}</td></tr>");
             content.AppendLine($"<tr><td>Memory Usage</td><td>{trends.MemoryTrend}</td><td>{GetTrendInterpretation(trends.MemoryTrend, "memory usage")}</td></tr>");
-            
+
             content.AppendLine("</table>");
             content.AppendLine("</div>");
         }
@@ -1626,6 +1626,7 @@ This Unity 2D Performance Profiling Task provides:
 ## Integration Points
 
 This task integrates with:
+
 - `unity-2d-workflow.yaml` - 2D optimization phase (line 61)
 - `sprite-atlasing.md` - Complements sprite optimization efforts
 - `2d-physics-setup.md` - Provides physics performance validation

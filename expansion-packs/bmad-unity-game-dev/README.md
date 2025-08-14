@@ -329,11 +329,13 @@ The Unity expansion pack provides comprehensive Unity development capabilities w
 The expansion pack works out-of-the-box for Unity game development:
 
 1. **Install the expansion pack**:
+
    ```bash
    npx bmad-method install
    ```
 
 2. **Start developing**: Use Unity-focused agents, workflows, and templates immediately
+
    - Game-Architect for Unity architecture and technical setup
    - Game-Developer for Unity implementation and debugging
    - Game-Designer for game design documents and level design
@@ -347,22 +349,22 @@ For teams that want advanced automation, enable enterprise features in `config.y
 ```yaml
 # Optional Enterprise Features Configuration
 enterpriseFeatures:
-  enabled: true                    # Enable advanced automation
-  profilerIntegration: true        # Unity Profiler API automation
-  performanceMonitoring: true      # Performance regression detection
-  cicdIntegration: true            # CI/CD pipeline template generation
+  enabled: true # Enable advanced automation
+  profilerIntegration: true # Unity Profiler API automation
+  performanceMonitoring: true # Performance regression detection
+  cicdIntegration: true # CI/CD pipeline template generation
 
-# Testing Framework Configuration  
+# Testing Framework Configuration
 testingFramework:
-  mode: "enterprise"               # Options: basic, automated, enterprise
-  unityTestFramework: true         # Unity Test Framework integration
-  performanceTesting: true         # Automated performance testing
+  mode: "enterprise" # Options: basic, automated, enterprise
+  unityTestFramework: true # Unity Test Framework integration
+  performanceTesting: true # Automated performance testing
 
 # CI/CD Template Configuration
 cicdTemplates:
-  enabled: true                    # Generate CI/CD templates
-  platforms: ["github", "azure"]   # Generate for specific platforms
-  performanceTesting: true         # Include performance testing stages
+  enabled: true # Generate CI/CD templates
+  platforms: ["github", "azure"] # Generate for specific platforms
+  performanceTesting: true # Include performance testing stages
 ```
 
 ### Enterprise Feature Benefits
@@ -384,6 +386,7 @@ When enterprise features are enabled:
 4. **Follow setup guides** for your CI/CD platform
 
 **Available CI/CD Templates**:
+
 - GitHub Actions (basic build + performance testing)
 - Azure DevOps (enterprise pipelines)
 - GitLab CI (build and test automation)
@@ -391,6 +394,7 @@ When enterprise features are enabled:
 ### Configuration File Structure
 
 The `config.yaml` file contains all settings with clear documentation:
+
 - **Basic setup**: Works immediately with default values
 - **Enterprise features**: Optional sections for advanced automation
 - **CI/CD templates**: User-customizable pipeline generation

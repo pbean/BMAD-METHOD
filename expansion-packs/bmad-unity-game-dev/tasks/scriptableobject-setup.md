@@ -42,90 +42,90 @@ namespace {{project_namespace}}.Data.Core
         [SerializeField] protected string displayName = "";
         [SerializeField] protected string description = "";
         [SerializeField] protected int version = 1;
-        
+
         [Header("Runtime Settings")]
         [SerializeField] protected bool enableRuntimeValidation = true;
         [SerializeField] protected bool enableDebugLogging = false;
-        
+
         [Header("Editor Settings")]
         [SerializeField] protected bool autoGenerateId = true;
         [SerializeField] protected Color inspectorColor = Color.white;
-        
+
         private bool isInitialized = false;
         private DateTime lastValidationTime = DateTime.MinValue;
         private ValidationResult lastValidationResult;
-        
+
         /// <summary>
         /// Unique identifier for this ScriptableObject
         /// </summary>
-        public string Id 
-        { 
+        public string Id
+        {
             get => string.IsNullOrEmpty(objectId) ? name : objectId;
             protected set => objectId = value;
         }
-        
+
         /// <summary>
         /// Display name for this ScriptableObject
         /// </summary>
-        public string DisplayName 
-        { 
+        public string DisplayName
+        {
             get => string.IsNullOrEmpty(displayName) ? name : displayName;
             protected set => displayName = value;
         }
-        
+
         /// <summary>
         /// Description of this ScriptableObject's purpose
         /// </summary>
-        public string Description 
-        { 
+        public string Description
+        {
             get => description;
             protected set => description = value;
         }
-        
+
         /// <summary>
         /// Version number for data migration support
         /// </summary>
-        public int Version 
-        { 
+        public int Version
+        {
             get => version;
             protected set => version = value;
         }
-        
+
         /// <summary>
         /// Whether this ScriptableObject has been initialized
         /// </summary>
         public bool IsInitialized => isInitialized;
-        
+
         /// <summary>
         /// Last validation result
         /// </summary>
         public ValidationResult LastValidationResult => lastValidationResult;
-        
+
         /// <summary>
         /// Event fired when this ScriptableObject is initialized
         /// </summary>
         public event Action<BaseScriptableObject> OnInitialized;
-        
+
         /// <summary>
         /// Event fired when validation state changes
         /// </summary>
         public event Action<ValidationResult> OnValidationChanged;
-        
+
         #region Unity Lifecycle
-        
+
         protected virtual void OnEnable()
         {
             if (!isInitialized)
             {
                 InitializeObject();
             }
-            
+
             if (enableRuntimeValidation)
             {
                 ValidateIfNeeded();
             }
         }
-        
+
         protected virtual void OnValidate()
         {
             #if UNITY_EDITOR
@@ -133,22 +133,22 @@ namespace {{project_namespace}}.Data.Core
             {
                 objectId = GenerateUniqueId();
             }
-            
+
             // Ensure display name is set
             if (string.IsNullOrEmpty(displayName))
             {
                 displayName = name;
             }
-            
+
             // Perform editor-time validation
             ValidateInEditor();
             #endif
         }
-        
+
         #endregion
-        
+
         #region Initialization and Validation
-        
+
         /// <summary>
         /// Initialize this ScriptableObject
         /// </summary>
@@ -159,7 +159,7 @@ namespace {{project_namespace}}.Data.Core
                 LogWarning("Attempting to initialize already initialized ScriptableObject");
                 return;
             }
-            
+
             try
             {
                 OnInitialize();
@@ -173,7 +173,7 @@ namespace {{project_namespace}}.Data.Core
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Override this method to implement custom initialization logic
         /// </summary>
@@ -181,28 +181,28 @@ namespace {{project_namespace}}.Data.Core
         {
             // Base implementation - override in derived classes
         }
-        
+
         /// <summary>
         /// Validate this ScriptableObject
         /// </summary>
         public virtual ValidationResult Validate()
         {
             var result = new ValidationResult();
-            
+
             try
             {
                 // Validate base properties
                 ValidateBaseProperties(result);
-                
+
                 // Validate derived class properties
                 ValidateCustomProperties(result);
-                
+
                 // Cache validation result
                 lastValidationResult = result;
                 lastValidationTime = DateTime.UtcNow;
-                
+
                 OnValidationChanged?.Invoke(result);
-                
+
                 if (result.IsValid)
                 {
                     LogDebug($"Validation passed for {DisplayName}");
@@ -217,10 +217,10 @@ namespace {{project_namespace}}.Data.Core
                 result.AddError($"Exception during validation: {ex.Message}");
                 LogError($"Validation exception for {DisplayName}: {ex.Message}");
             }
-            
+
             return result;
         }
-        
+
         /// <summary>
         /// Override this method to implement custom validation logic
         /// </summary>
@@ -228,43 +228,43 @@ namespace {{project_namespace}}.Data.Core
         {
             // Base implementation - override in derived classes
         }
-        
+
         private void ValidateBaseProperties(ValidationResult result)
         {
             if (string.IsNullOrEmpty(objectId))
             {
                 result.AddError("Object ID cannot be empty");
             }
-            
+
             if (string.IsNullOrEmpty(displayName))
             {
                 result.AddWarning("Display name is empty, using asset name");
                 displayName = name;
             }
-            
+
             if (version <= 0)
             {
                 result.AddError("Version must be greater than 0");
             }
         }
-        
+
         private void ValidateIfNeeded()
         {
             if (!enableRuntimeValidation)
                 return;
-                
+
             // Validate if never validated or if validation is stale
-            if (lastValidationResult == null || 
+            if (lastValidationResult == null ||
                 (DateTime.UtcNow - lastValidationTime).TotalMinutes > 5)
             {
                 Validate();
             }
         }
-        
+
         #endregion
-        
+
         #region Utility Methods
-        
+
         /// <summary>
         /// Create a copy of this ScriptableObject
         /// </summary>
@@ -279,7 +279,7 @@ namespace {{project_namespace}}.Data.Core
             }
             return copy;
         }
-        
+
         /// <summary>
         /// Get data as JSON string
         /// </summary>
@@ -295,7 +295,7 @@ namespace {{project_namespace}}.Data.Core
                 return string.Empty;
             }
         }
-        
+
         /// <summary>
         /// Load data from JSON string
         /// </summary>
@@ -311,7 +311,7 @@ namespace {{project_namespace}}.Data.Core
                 LogError($"Failed to deserialize {DisplayName} from JSON: {ex.Message}");
             }
         }
-        
+
         /// <summary>
         /// Generate a unique identifier
         /// </summary>
@@ -319,7 +319,7 @@ namespace {{project_namespace}}.Data.Core
         {
             return $"{GetType().Name}_{Guid.NewGuid().ToString("N")[..8]}";
         }
-        
+
         /// <summary>
         /// Get hash code based on content
         /// </summary>
@@ -327,24 +327,24 @@ namespace {{project_namespace}}.Data.Core
         {
             return HashCode.Combine(objectId, displayName, description, version);
         }
-        
+
         #endregion
-        
+
         #region Editor Support
-        
+
         #if UNITY_EDITOR
         private void ValidateInEditor()
         {
             if (Application.isPlaying)
                 return;
-                
+
             var result = Validate();
             if (!result.IsValid)
             {
                 Debug.LogWarning($"Validation issues in {name}: {result.GetErrorSummary()}", this);
             }
         }
-        
+
         private void InitializeObject()
         {
             if (!isInitialized && !Application.isPlaying)
@@ -353,11 +353,11 @@ namespace {{project_namespace}}.Data.Core
             }
         }
         #endif
-        
+
         #endregion
-        
+
         #region Logging
-        
+
         protected void LogDebug(string message)
         {
             if (enableDebugLogging)
@@ -365,25 +365,25 @@ namespace {{project_namespace}}.Data.Core
                 Debug.Log($"[{GetType().Name}] {message}", this);
             }
         }
-        
+
         protected void LogWarning(string message)
         {
             Debug.LogWarning($"[{GetType().Name}] {message}", this);
         }
-        
+
         protected void LogError(string message)
         {
             Debug.LogError($"[{GetType().Name}] {message}", this);
         }
-        
+
         #endregion
-        
+
         public override string ToString()
         {
             return $"{GetType().Name}: {DisplayName} (ID: {Id}, Version: {Version})";
         }
     }
-    
+
     /// <summary>
     /// Generic base class for typed ScriptableObjects
     /// </summary>
@@ -391,25 +391,25 @@ namespace {{project_namespace}}.Data.Core
     {
         [Header("Typed Configuration")]
         [SerializeField] protected T data;
-        
+
         /// <summary>
         /// Strongly typed data access
         /// </summary>
-        public T Data 
-        { 
+        public T Data
+        {
             get => data;
             protected set => data = value;
         }
-        
+
         /// <summary>
         /// Check if data is valid
         /// </summary>
         public bool HasValidData => data != null;
-        
+
         protected override void ValidateCustomProperties(ValidationResult result)
         {
             base.ValidateCustomProperties(result);
-            
+
             if (data == null)
             {
                 result.AddError("Data cannot be null");
@@ -419,7 +419,7 @@ namespace {{project_namespace}}.Data.Core
                 ValidateTypedData(result);
             }
         }
-        
+
         /// <summary>
         /// Override this method to validate the typed data
         /// </summary>
@@ -427,7 +427,7 @@ namespace {{project_namespace}}.Data.Core
         {
             // Base implementation - override in derived classes
         }
-        
+
         public override int GetContentHashCode()
         {
             return HashCode.Combine(base.GetContentHashCode(), data?.GetHashCode() ?? 0);
@@ -466,22 +466,22 @@ namespace {{project_namespace}}.Data.Configuration
         [SerializeField] private ConfigurationScope defaultScope = ConfigurationScope.Development;
         [SerializeField] private bool enableHotReload = true;
         [SerializeField] private bool enableConfigurationValidation = true;
-        
+
         [Header("Runtime Settings")]
         [SerializeField] private bool allowRuntimeModification = true;
         [SerializeField] private bool persistRuntimeChanges = false;
         [SerializeField] private float configurationCheckInterval = 5.0f;
-        
+
         private Dictionary<string, ConfigurationValue> runtimeOverrides = new Dictionary<string, ConfigurationValue>();
         private Dictionary<string, ConfigurationValue> cachedValues = new Dictionary<string, ConfigurationValue>();
         private ConfigurationScope currentScope = ConfigurationScope.Development;
         private DateTime lastConfigurationCheck = DateTime.MinValue;
-        
+
         /// <summary>
         /// Current configuration scope
         /// </summary>
-        public ConfigurationScope CurrentScope 
-        { 
+        public ConfigurationScope CurrentScope
+        {
             get => currentScope;
             private set
             {
@@ -494,29 +494,29 @@ namespace {{project_namespace}}.Data.Configuration
                 }
             }
         }
-        
+
         /// <summary>
         /// Whether runtime modification is allowed
         /// </summary>
         public bool AllowsRuntimeModification => allowRuntimeModification;
-        
+
         /// <summary>
         /// Event fired when configuration value changes
         /// </summary>
         public event Action<string, object, object> OnValueChanged;
-        
+
         /// <summary>
         /// Event fired when configuration scope changes
         /// </summary>
         public event Action<ConfigurationScope, ConfigurationScope> OnScopeChanged;
-        
+
         /// <summary>
         /// Event fired when configuration is reloaded
         /// </summary>
         public event Action OnConfigurationReloaded;
-        
+
         #region IConfigurationManager Implementation
-        
+
         public T GetValue<T>(string key, T defaultValue = default)
         {
             if (string.IsNullOrEmpty(key))
@@ -524,7 +524,7 @@ namespace {{project_namespace}}.Data.Configuration
                 LogWarning("Configuration key cannot be null or empty");
                 return defaultValue;
             }
-            
+
             // Check runtime overrides first
             if (runtimeOverrides.TryGetValue(key, out var runtimeValue))
             {
@@ -533,7 +533,7 @@ namespace {{project_namespace}}.Data.Configuration
                     return convertedValue;
                 }
             }
-            
+
             // Check cached values
             if (cachedValues.TryGetValue(key, out var cachedValue))
             {
@@ -542,7 +542,7 @@ namespace {{project_namespace}}.Data.Configuration
                     return convertedCachedValue;
                 }
             }
-            
+
             // Search through configuration layers
             foreach (var layer in GetOrderedLayers())
             {
@@ -556,11 +556,11 @@ namespace {{project_namespace}}.Data.Configuration
                     }
                 }
             }
-            
+
             LogDebug($"Configuration key '{key}' not found, returning default value");
             return defaultValue;
         }
-        
+
         public void SetValue<T>(string key, T value)
         {
             if (!allowRuntimeModification)
@@ -568,13 +568,13 @@ namespace {{project_namespace}}.Data.Configuration
                 LogWarning("Runtime modification is disabled");
                 return;
             }
-            
+
             if (string.IsNullOrEmpty(key))
             {
                 LogWarning("Configuration key cannot be null or empty");
                 return;
             }
-            
+
             var oldValue = GetValue<object>(key);
             var configValue = new ConfigurationValue
             {
@@ -584,35 +584,35 @@ namespace {{project_namespace}}.Data.Configuration
                 Scope = currentScope,
                 Timestamp = DateTime.UtcNow
             };
-            
+
             runtimeOverrides[key] = configValue;
-            
+
             // Update cache
             cachedValues[key] = configValue;
-            
+
             OnValueChanged?.Invoke(key, oldValue, value);
             LogDebug($"Set configuration value: {key} = {value}");
-            
+
             if (persistRuntimeChanges)
             {
                 PersistRuntimeChange(key, configValue);
             }
         }
-        
+
         public bool HasKey(string key)
         {
             if (string.IsNullOrEmpty(key))
                 return false;
-                
+
             if (runtimeOverrides.ContainsKey(key))
                 return true;
-                
+
             if (cachedValues.ContainsKey(key))
                 return true;
-                
+
             return GetOrderedLayers().Any(layer => layer.HasKey(key, currentScope));
         }
-        
+
         public void RemoveKey(string key)
         {
             if (!allowRuntimeModification)
@@ -620,9 +620,9 @@ namespace {{project_namespace}}.Data.Configuration
                 LogWarning("Runtime modification is disabled");
                 return;
             }
-            
+
             var oldValue = GetValue<object>(key);
-            
+
             if (runtimeOverrides.Remove(key))
             {
                 cachedValues.Remove(key);
@@ -630,7 +630,7 @@ namespace {{project_namespace}}.Data.Configuration
                 LogDebug($"Removed configuration key: {key}");
             }
         }
-        
+
         public void LoadConfiguration(string filePath)
         {
             try
@@ -639,12 +639,12 @@ namespace {{project_namespace}}.Data.Configuration
                 {
                     var json = System.IO.File.ReadAllText(filePath);
                     var configData = JsonUtility.FromJson<ConfigurationData>(json);
-                    
+
                     foreach (var kvp in configData.Values)
                     {
                         SetValue(kvp.Key, kvp.Value.Value);
                     }
-                    
+
                     LogDebug($"Loaded configuration from: {filePath}");
                 }
                 else
@@ -657,17 +657,17 @@ namespace {{project_namespace}}.Data.Configuration
                 LogError($"Failed to load configuration from {filePath}: {ex.Message}");
             }
         }
-        
+
         public void SaveConfiguration(string filePath)
         {
             try
             {
                 var configData = new ConfigurationData();
                 configData.Values = new Dictionary<string, ConfigurationValue>(runtimeOverrides);
-                
+
                 var json = JsonUtility.ToJson(configData, true);
                 System.IO.File.WriteAllText(filePath, json);
-                
+
                 LogDebug($"Saved configuration to: {filePath}");
             }
             catch (Exception ex)
@@ -675,7 +675,7 @@ namespace {{project_namespace}}.Data.Configuration
                 LogError($"Failed to save configuration to {filePath}: {ex.Message}");
             }
         }
-        
+
         public void ResetToDefaults()
         {
             runtimeOverrides.Clear();
@@ -684,17 +684,17 @@ namespace {{project_namespace}}.Data.Configuration
             OnConfigurationReloaded?.Invoke();
             LogDebug("Reset configuration to defaults");
         }
-        
+
         public IEnumerable<string> GetAllKeys()
         {
             var keys = new HashSet<string>();
-            
+
             // Add runtime override keys
             foreach (var key in runtimeOverrides.Keys)
             {
                 keys.Add(key);
             }
-            
+
             // Add keys from all layers
             foreach (var layer in configurationLayers)
             {
@@ -703,14 +703,14 @@ namespace {{project_namespace}}.Data.Configuration
                     keys.Add(key);
                 }
             }
-            
+
             return keys;
         }
-        
+
         #endregion
-        
+
         #region Public API
-        
+
         /// <summary>
         /// Set the current configuration scope
         /// </summary>
@@ -718,7 +718,7 @@ namespace {{project_namespace}}.Data.Configuration
         {
             CurrentScope = scope;
         }
-        
+
         /// <summary>
         /// Add a configuration layer
         /// </summary>
@@ -732,7 +732,7 @@ namespace {{project_namespace}}.Data.Configuration
                 LogDebug($"Added configuration layer: {layer.LayerName}");
             }
         }
-        
+
         /// <summary>
         /// Remove a configuration layer
         /// </summary>
@@ -744,24 +744,24 @@ namespace {{project_namespace}}.Data.Configuration
                 LogDebug($"Removed configuration layer: {layer.LayerName}");
             }
         }
-        
+
         /// <summary>
         /// Reload configuration from all layers
         /// </summary>
         public void ReloadConfiguration()
         {
             cachedValues.Clear();
-            
+
             foreach (var layer in configurationLayers)
             {
                 layer.Reload();
             }
-            
+
             RefreshCache();
             OnConfigurationReloaded?.Invoke();
             LogDebug("Reloaded configuration");
         }
-        
+
         /// <summary>
         /// Get configuration statistics
         /// </summary>
@@ -777,61 +777,61 @@ namespace {{project_namespace}}.Data.Configuration
                 TotalKeyCount = GetAllKeys().Count()
             };
         }
-        
+
         #endregion
-        
+
         #region Unity Lifecycle and Initialization
-        
+
         protected override void OnInitialize()
         {
             base.OnInitialize();
-            
+
             // Set initial scope
             CurrentScope = defaultScope;
-            
+
             // Initialize configuration layers
             foreach (var layer in configurationLayers)
             {
                 layer.Initialize();
             }
-            
+
             // Build initial cache
             RefreshCache();
-            
+
             if (enableHotReload)
             {
-                InvokeRepeating(nameof(CheckForConfigurationChanges), 
+                InvokeRepeating(nameof(CheckForConfigurationChanges),
                     configurationCheckInterval, configurationCheckInterval);
             }
         }
-        
+
         private void OnDestroy()
         {
             CancelInvoke();
         }
-        
+
         #endregion
-        
+
         #region Private Methods
-        
+
         private IEnumerable<ConfigurationLayer> GetOrderedLayers()
         {
             return configurationLayers.OrderBy(layer => layer.Priority);
         }
-        
+
         private bool TryConvertValue<T>(object value, out T result)
         {
             result = default;
-            
+
             if (value == null)
                 return false;
-                
+
             if (value is T directValue)
             {
                 result = directValue;
                 return true;
             }
-            
+
             try
             {
                 result = (T)Convert.ChangeType(value, typeof(T));
@@ -842,7 +842,7 @@ namespace {{project_namespace}}.Data.Configuration
                 return false;
             }
         }
-        
+
         private void CacheValue(string key, object value)
         {
             cachedValues[key] = new ConfigurationValue
@@ -854,20 +854,20 @@ namespace {{project_namespace}}.Data.Configuration
                 Timestamp = DateTime.UtcNow
             };
         }
-        
+
         private void RefreshCache()
         {
             cachedValues.Clear();
             lastConfigurationCheck = DateTime.UtcNow;
         }
-        
+
         private void CheckForConfigurationChanges()
         {
             if (!enableHotReload)
                 return;
-                
+
             bool hasChanges = false;
-            
+
             foreach (var layer in configurationLayers)
             {
                 if (layer.HasChanges())
@@ -876,7 +876,7 @@ namespace {{project_namespace}}.Data.Configuration
                     layer.Reload();
                 }
             }
-            
+
             if (hasChanges)
             {
                 RefreshCache();
@@ -884,22 +884,22 @@ namespace {{project_namespace}}.Data.Configuration
                 LogDebug("Detected configuration changes, reloaded");
             }
         }
-        
+
         private void PersistRuntimeChange(string key, ConfigurationValue value)
         {
             // Implementation would depend on persistence strategy
             // Could save to PlayerPrefs, file system, or remote storage
             LogDebug($"Persisting runtime change: {key} = {value.Value}");
         }
-        
+
         #endregion
-        
+
         #region Validation
-        
+
         protected override void ValidateCustomProperties(ValidationResult result)
         {
             base.ValidateCustomProperties(result);
-            
+
             if (configurationLayers == null || configurationLayers.Count == 0)
             {
                 result.AddWarning("No configuration layers defined");
@@ -914,14 +914,14 @@ namespace {{project_namespace}}.Data.Configuration
                         result.AddError("Null configuration layer found");
                         continue;
                     }
-                    
+
                     var layerResult = layer.Validate();
                     if (!layerResult.IsValid)
                     {
                         result.AddError($"Layer '{layer.LayerName}' validation failed: {layerResult.GetErrorSummary()}");
                     }
                 }
-                
+
                 // Check for duplicate priorities
                 var priorities = configurationLayers.GroupBy(l => l.Priority);
                 foreach (var group in priorities.Where(g => g.Count() > 1))
@@ -929,16 +929,16 @@ namespace {{project_namespace}}.Data.Configuration
                     result.AddWarning($"Multiple layers have priority {group.Key}: {string.Join(", ", group.Select(l => l.LayerName))}");
                 }
             }
-            
+
             if (configurationCheckInterval <= 0)
             {
                 result.AddError("Configuration check interval must be greater than 0");
             }
         }
-        
+
         #endregion
     }
-    
+
     /// <summary>
     /// Configuration layer for hierarchical settings
     /// </summary>
@@ -950,53 +950,53 @@ namespace {{project_namespace}}.Data.Configuration
         [SerializeField] private int priority = 0;
         [SerializeField] private ConfigurationScope supportedScopes = ConfigurationScope.All;
         [SerializeField] private bool isReadOnly = false;
-        
+
         [Header("Configuration Values")]
         [SerializeField] private List<ConfigurationEntry> entries = new List<ConfigurationEntry>();
-        
+
         private Dictionary<string, Dictionary<ConfigurationScope, object>> valueCache;
         private DateTime lastModificationTime = DateTime.MinValue;
-        
+
         /// <summary>
         /// Name of this configuration layer
         /// </summary>
         public string LayerName => string.IsNullOrEmpty(layerName) ? name : layerName;
-        
+
         /// <summary>
         /// Priority of this layer (lower = higher priority)
         /// </summary>
         public int Priority => priority;
-        
+
         /// <summary>
         /// Whether this layer is read-only
         /// </summary>
         public bool IsReadOnly => isReadOnly;
-        
+
         protected override void OnInitialize()
         {
             base.OnInitialize();
             BuildValueCache();
         }
-        
+
         /// <summary>
         /// Try to get a value for the specified key and scope
         /// </summary>
         public bool TryGetValue(string key, ConfigurationScope scope, out object value)
         {
             value = null;
-            
+
             if (valueCache == null)
             {
                 BuildValueCache();
             }
-            
+
             if (!valueCache.TryGetValue(key, out var scopeValues))
                 return false;
-                
+
             // Try exact scope match first
             if (scopeValues.TryGetValue(scope, out value))
                 return true;
-                
+
             // Try fallback to more general scopes
             var fallbackScopes = GetFallbackScopes(scope);
             foreach (var fallbackScope in fallbackScopes)
@@ -1004,10 +1004,10 @@ namespace {{project_namespace}}.Data.Configuration
                 if (scopeValues.TryGetValue(fallbackScope, out value))
                     return true;
             }
-            
+
             return false;
         }
-        
+
         /// <summary>
         /// Check if this layer has a specific key
         /// </summary>
@@ -1015,7 +1015,7 @@ namespace {{project_namespace}}.Data.Configuration
         {
             return TryGetValue(key, scope, out _);
         }
-        
+
         /// <summary>
         /// Get all keys for a specific scope
         /// </summary>
@@ -1025,10 +1025,10 @@ namespace {{project_namespace}}.Data.Configuration
             {
                 BuildValueCache();
             }
-            
+
             return valueCache.Keys.Where(key => HasKey(key, scope));
         }
-        
+
         /// <summary>
         /// Check if this layer has changes that need reloading
         /// </summary>
@@ -1038,7 +1038,7 @@ namespace {{project_namespace}}.Data.Configuration
             // database timestamps, or other change detection mechanisms
             return false;
         }
-        
+
         /// <summary>
         /// Reload this configuration layer
         /// </summary>
@@ -1047,11 +1047,11 @@ namespace {{project_namespace}}.Data.Configuration
             BuildValueCache();
             lastModificationTime = DateTime.UtcNow;
         }
-        
+
         private void BuildValueCache()
         {
             valueCache = new Dictionary<string, Dictionary<ConfigurationScope, object>>();
-            
+
             foreach (var entry in entries)
             {
                 if (!valueCache.TryGetValue(entry.Key, out var scopeValues))
@@ -1059,11 +1059,11 @@ namespace {{project_namespace}}.Data.Configuration
                     scopeValues = new Dictionary<ConfigurationScope, object>();
                     valueCache[entry.Key] = scopeValues;
                 }
-                
+
                 scopeValues[entry.Scope] = entry.Value;
             }
         }
-        
+
         private IEnumerable<ConfigurationScope> GetFallbackScopes(ConfigurationScope scope)
         {
             switch (scope)
@@ -1085,7 +1085,7 @@ namespace {{project_namespace}}.Data.Configuration
             }
         }
     }
-    
+
     /// <summary>
     /// Configuration scope enumeration
     /// </summary>
@@ -1098,7 +1098,7 @@ namespace {{project_namespace}}.Data.Configuration
         Production = 8,
         All = Default | Development | Staging | Production
     }
-    
+
     /// <summary>
     /// Individual configuration entry
     /// </summary>
@@ -1110,17 +1110,17 @@ namespace {{project_namespace}}.Data.Configuration
         [SerializeField] private string valueType = "";
         [SerializeField] private string serializedValue = "";
         [SerializeField] private string description = "";
-        
+
         /// <summary>
         /// Configuration key
         /// </summary>
         public string Key => key;
-        
+
         /// <summary>
         /// Configuration scope
         /// </summary>
         public ConfigurationScope Scope => scope;
-        
+
         /// <summary>
         /// Configuration value
         /// </summary>
@@ -1130,11 +1130,11 @@ namespace {{project_namespace}}.Data.Configuration
             {
                 if (string.IsNullOrEmpty(serializedValue) || string.IsNullOrEmpty(valueType))
                     return null;
-                    
+
                 var type = Type.GetType(valueType);
                 if (type == null)
                     return serializedValue;
-                    
+
                 try
                 {
                     return JsonUtility.FromJson(serializedValue, type);
@@ -1145,13 +1145,13 @@ namespace {{project_namespace}}.Data.Configuration
                 }
             }
         }
-        
+
         /// <summary>
         /// Configuration description
         /// </summary>
         public string Description => description;
     }
-    
+
     /// <summary>
     /// Configuration value wrapper
     /// </summary>
@@ -1164,7 +1164,7 @@ namespace {{project_namespace}}.Data.Configuration
         public ConfigurationScope Scope;
         public DateTime Timestamp;
     }
-    
+
     /// <summary>
     /// Configuration data container for serialization
     /// </summary>
@@ -1173,7 +1173,7 @@ namespace {{project_namespace}}.Data.Configuration
     {
         public Dictionary<string, ConfigurationValue> Values = new Dictionary<string, ConfigurationValue>();
     }
-    
+
     /// <summary>
     /// Configuration statistics
     /// </summary>
@@ -1219,57 +1219,57 @@ namespace {{project_namespace}}.Data.Events
         [SerializeField] private bool enableLogging = false;
         [SerializeField] private bool enablePersistence = false;
         [SerializeField] private int maxHistorySize = 100;
-        
+
         [Header("Performance Settings")]
         [SerializeField] private bool enableAsyncDelivery = false;
         [SerializeField] private int maxListenersPerFrame = 50;
         [SerializeField] private float deliveryTimeoutSeconds = 5.0f;
-        
+
         private readonly List<IGameEventListener> listeners = new List<IGameEventListener>();
         private readonly Queue<GameEventData> eventHistory = new Queue<GameEventData>();
         private readonly Dictionary<Type, List<IGameEventListener>> typedListeners = new Dictionary<Type, List<IGameEventListener>>();
-        
+
         private bool isDelivering = false;
         private int eventsRaisedThisFrame = 0;
         private DateTime lastEventTime = DateTime.MinValue;
-        
+
         /// <summary>
         /// Number of registered listeners
         /// </summary>
         public int ListenerCount => listeners.Count;
-        
+
         /// <summary>
         /// Number of events in history
         /// </summary>
         public int HistoryCount => eventHistory.Count;
-        
+
         /// <summary>
         /// Whether this channel is currently delivering events
         /// </summary>
         public bool IsDelivering => isDelivering;
-        
+
         /// <summary>
         /// Last time an event was raised on this channel
         /// </summary>
         public DateTime LastEventTime => lastEventTime;
-        
+
         /// <summary>
         /// Event fired when a listener is added
         /// </summary>
         public event Action<IGameEventListener> OnListenerAdded;
-        
+
         /// <summary>
         /// Event fired when a listener is removed
         /// </summary>
         public event Action<IGameEventListener> OnListenerRemoved;
-        
+
         /// <summary>
         /// Event fired when an event is raised
         /// </summary>
         public event Action<GameEventData> OnEventRaised;
-        
+
         #region Event Management
-        
+
         /// <summary>
         /// Add an event listener
         /// </summary>
@@ -1280,15 +1280,15 @@ namespace {{project_namespace}}.Data.Events
                 LogWarning("Cannot add null listener");
                 return;
             }
-            
+
             if (listeners.Contains(listener))
             {
                 LogWarning($"Listener {listener} is already registered");
                 return;
             }
-            
+
             listeners.Add(listener);
-            
+
             // Add to typed listener dictionary for faster lookup
             var listenerType = listener.GetType();
             if (!typedListeners.TryGetValue(listenerType, out var typeList))
@@ -1297,11 +1297,11 @@ namespace {{project_namespace}}.Data.Events
                 typedListeners[listenerType] = typeList;
             }
             typeList.Add(listener);
-            
+
             OnListenerAdded?.Invoke(listener);
             LogDebug($"Added listener: {listener}");
         }
-        
+
         /// <summary>
         /// Remove an event listener
         /// </summary>
@@ -1309,7 +1309,7 @@ namespace {{project_namespace}}.Data.Events
         {
             if (listener == null)
                 return;
-                
+
             if (listeners.Remove(listener))
             {
                 // Remove from typed listener dictionary
@@ -1322,12 +1322,12 @@ namespace {{project_namespace}}.Data.Events
                         typedListeners.Remove(listenerType);
                     }
                 }
-                
+
                 OnListenerRemoved?.Invoke(listener);
                 LogDebug($"Removed listener: {listener}");
             }
         }
-        
+
         /// <summary>
         /// Remove all listeners
         /// </summary>
@@ -1336,15 +1336,15 @@ namespace {{project_namespace}}.Data.Events
             var listenersCopy = new List<IGameEventListener>(listeners);
             listeners.Clear();
             typedListeners.Clear();
-            
+
             foreach (var listener in listenersCopy)
             {
                 OnListenerRemoved?.Invoke(listener);
             }
-            
+
             LogDebug("Cleared all listeners");
         }
-        
+
         /// <summary>
         /// Raise an event on this channel
         /// </summary>
@@ -1355,14 +1355,14 @@ namespace {{project_namespace}}.Data.Events
                 LogWarning("Cannot raise null event");
                 return;
             }
-            
+
             lastEventTime = DateTime.UtcNow;
             eventData.Timestamp = lastEventTime;
             eventData.ChannelId = Id;
-            
+
             // Add to history
             AddToHistory(eventData);
-            
+
             // Deliver event
             if (enableAsyncDelivery)
             {
@@ -1372,11 +1372,11 @@ namespace {{project_namespace}}.Data.Events
             {
                 DeliverEvent(eventData);
             }
-            
+
             OnEventRaised?.Invoke(eventData);
             LogDebug($"Raised event: {eventData.EventType}");
         }
-        
+
         /// <summary>
         /// Raise a typed event
         /// </summary>
@@ -1384,7 +1384,7 @@ namespace {{project_namespace}}.Data.Events
         {
             RaiseEvent(eventData as GameEventData);
         }
-        
+
         /// <summary>
         /// Get event listeners of a specific type
         /// </summary>
@@ -1396,7 +1396,7 @@ namespace {{project_namespace}}.Data.Events
             }
             return Enumerable.Empty<T>();
         }
-        
+
         /// <summary>
         /// Check if a specific listener is registered
         /// </summary>
@@ -1404,7 +1404,7 @@ namespace {{project_namespace}}.Data.Events
         {
             return listeners.Contains(listener);
         }
-        
+
         /// <summary>
         /// Get recent event history
         /// </summary>
@@ -1412,10 +1412,10 @@ namespace {{project_namespace}}.Data.Events
         {
             if (count < 0)
                 return eventHistory.ToArray();
-                
+
             return eventHistory.ToArray().TakeLast(count);
         }
-        
+
         /// <summary>
         /// Clear event history
         /// </summary>
@@ -1424,11 +1424,11 @@ namespace {{project_namespace}}.Data.Events
             eventHistory.Clear();
             LogDebug("Cleared event history");
         }
-        
+
         #endregion
-        
+
         #region Event Delivery
-        
+
         private void DeliverEvent(GameEventData eventData)
         {
             if (isDelivering)
@@ -1436,14 +1436,14 @@ namespace {{project_namespace}}.Data.Events
                 LogWarning("Recursive event delivery detected");
                 return;
             }
-            
+
             isDelivering = true;
             eventsRaisedThisFrame++;
-            
+
             try
             {
                 var listenersToNotify = new List<IGameEventListener>(listeners);
-                
+
                 foreach (var listener in listenersToNotify)
                 {
                     try
@@ -1464,64 +1464,64 @@ namespace {{project_namespace}}.Data.Events
                 isDelivering = false;
             }
         }
-        
+
         private void DeliverEventAsync(GameEventData eventData)
         {
             // In a real implementation, this would use Unity's coroutine system
             // or a custom async delivery mechanism
             DeliverEvent(eventData);
         }
-        
+
         private void AddToHistory(GameEventData eventData)
         {
             if (!enablePersistence)
                 return;
-                
+
             eventHistory.Enqueue(eventData);
-            
+
             while (eventHistory.Count > maxHistorySize)
             {
                 eventHistory.Dequeue();
             }
         }
-        
+
         #endregion
-        
+
         #region Unity Lifecycle
-        
+
         private void Update()
         {
             eventsRaisedThisFrame = 0;
         }
-        
+
         #endregion
-        
+
         #region Validation
-        
+
         protected override void ValidateCustomProperties(ValidationResult result)
         {
             base.ValidateCustomProperties(result);
-            
+
             if (maxHistorySize < 0)
             {
                 result.AddError("Max history size cannot be negative");
             }
-            
+
             if (maxListenersPerFrame <= 0)
             {
                 result.AddWarning("Max listeners per frame should be greater than 0");
             }
-            
+
             if (deliveryTimeoutSeconds <= 0)
             {
                 result.AddError("Delivery timeout must be greater than 0");
             }
         }
-        
+
         #endregion
-        
+
         #region Debugging and Statistics
-        
+
         /// <summary>
         /// Get channel statistics
         /// </summary>
@@ -1539,10 +1539,10 @@ namespace {{project_namespace}}.Data.Events
                 ChannelType = channelType
             };
         }
-        
+
         #endregion
     }
-    
+
     /// <summary>
     /// Event channel type enumeration
     /// </summary>
@@ -1555,7 +1555,7 @@ namespace {{project_namespace}}.Data.Events
         Audio,
         Gameplay
     }
-    
+
     /// <summary>
     /// Base class for game event data
     /// </summary>
@@ -1566,70 +1566,70 @@ namespace {{project_namespace}}.Data.Events
         [SerializeField] protected string sourceId = "";
         [SerializeField] protected EventPriority priority = EventPriority.Normal;
         [SerializeField] protected bool canCancel = false;
-        
+
         private DateTime timestamp = DateTime.UtcNow;
         private string channelId = "";
         private bool isCancelled = false;
-        
+
         /// <summary>
         /// Type identifier for this event
         /// </summary>
-        public string EventType 
-        { 
+        public string EventType
+        {
             get => string.IsNullOrEmpty(eventType) ? GetType().Name : eventType;
             protected set => eventType = value;
         }
-        
+
         /// <summary>
         /// ID of the source that raised this event
         /// </summary>
-        public string SourceId 
-        { 
+        public string SourceId
+        {
             get => sourceId;
             set => sourceId = value;
         }
-        
+
         /// <summary>
         /// Priority of this event
         /// </summary>
-        public EventPriority Priority 
-        { 
+        public EventPriority Priority
+        {
             get => priority;
             set => priority = value;
         }
-        
+
         /// <summary>
         /// Whether this event can be cancelled
         /// </summary>
         public bool CanCancel => canCancel;
-        
+
         /// <summary>
         /// Whether this event has been cancelled
         /// </summary>
-        public bool IsCancelled 
-        { 
+        public bool IsCancelled
+        {
             get => isCancelled;
             set => isCancelled = value && canCancel;
         }
-        
+
         /// <summary>
         /// Timestamp when this event was created
         /// </summary>
-        public DateTime Timestamp 
-        { 
+        public DateTime Timestamp
+        {
             get => timestamp;
             internal set => timestamp = value;
         }
-        
+
         /// <summary>
         /// ID of the channel this event was raised on
         /// </summary>
-        public string ChannelId 
-        { 
+        public string ChannelId
+        {
             get => channelId;
             internal set => channelId = value;
         }
-        
+
         /// <summary>
         /// Cancel this event if cancellation is allowed
         /// </summary>
@@ -1640,13 +1640,13 @@ namespace {{project_namespace}}.Data.Events
                 isCancelled = true;
             }
         }
-        
+
         public override string ToString()
         {
             return $"{EventType} [Priority: {Priority}, Source: {SourceId}, Cancelled: {IsCancelled}]";
         }
     }
-    
+
     /// <summary>
     /// Event priority enumeration
     /// </summary>
@@ -1657,7 +1657,7 @@ namespace {{project_namespace}}.Data.Events
         High = 2,
         Critical = 3
     }
-    
+
     /// <summary>
     /// Interface for event listeners
     /// </summary>
@@ -1667,23 +1667,23 @@ namespace {{project_namespace}}.Data.Events
         /// Priority of this listener (higher values processed first)
         /// </summary>
         int ListenerPriority { get; }
-        
+
         /// <summary>
         /// Whether this listener is currently active
         /// </summary>
         bool IsActive { get; }
-        
+
         /// <summary>
         /// Check if this listener can receive a specific event
         /// </summary>
         bool CanReceiveEvent(GameEventData eventData);
-        
+
         /// <summary>
         /// Called when an event is received
         /// </summary>
         void OnEventReceived(GameEventData eventData);
     }
-    
+
     /// <summary>
     /// Event channel statistics
     /// </summary>
@@ -1719,6 +1719,7 @@ This Unity ScriptableObject Setup and Data Architecture Task provides:
 ## Integration Points
 
 This task integrates with:
+
 - `interface-design.md` - Implements interface contracts with ScriptableObject-based data systems
 - `component-architecture.md` - Provides data architecture foundation for component systems
 - `monobehaviour-creation.md` - Supplies configuration and event data for MonoBehaviour components

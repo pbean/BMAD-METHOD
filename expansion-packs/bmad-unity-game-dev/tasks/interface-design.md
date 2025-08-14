@@ -40,40 +40,40 @@ namespace {{project_namespace}}.Interfaces.Core
         /// Unique identifier for this component system
         /// </summary>
         string SystemId { get; }
-        
+
         /// <summary>
         /// Current state of the component system
         /// </summary>
         SystemState State { get; }
-        
+
         /// <summary>
         /// Priority for system initialization order (lower = earlier)
         /// </summary>
         int InitializationPriority { get; }
-        
+
         /// <summary>
         /// Initialize the component system
         /// </summary>
         /// <param name="context">Initialization context with required dependencies</param>
         /// <returns>True if initialization succeeded</returns>
         bool Initialize(ISystemContext context);
-        
+
         /// <summary>
         /// Shutdown the component system and clean up resources
         /// </summary>
         void Shutdown();
-        
+
         /// <summary>
         /// Check if the system is in a valid state for operation
         /// </summary>
         bool IsValid();
-        
+
         /// <summary>
         /// Event fired when system state changes
         /// </summary>
         event Action<SystemState> OnStateChanged;
     }
-    
+
     /// <summary>
     /// System state enumeration for lifecycle management
     /// </summary>
@@ -88,7 +88,7 @@ namespace {{project_namespace}}.Interfaces.Core
         Shutdown,
         Error
     }
-    
+
     /// <summary>
     /// Context interface for system initialization
     /// </summary>
@@ -98,17 +98,17 @@ namespace {{project_namespace}}.Interfaces.Core
         /// Get a service by type
         /// </summary>
         T GetService<T>() where T : class;
-        
+
         /// <summary>
         /// Check if a service is available
         /// </summary>
         bool HasService<T>() where T : class;
-        
+
         /// <summary>
         /// Configuration data for the system
         /// </summary>
         ISystemConfiguration Configuration { get; }
-        
+
         /// <summary>
         /// Logger for the system
         /// </summary>
@@ -136,48 +136,48 @@ namespace {{project_namespace}}.Interfaces.Unity
         /// Associated GameObject for this component
         /// </summary>
         GameObject GameObject { get; }
-        
+
         /// <summary>
         /// Transform of the associated GameObject
         /// </summary>
         Transform Transform { get; }
-        
+
         /// <summary>
         /// Whether this component is active and enabled
         /// </summary>
         bool IsActiveAndEnabled { get; }
-        
+
         /// <summary>
         /// Called when the component is first created
         /// </summary>
         void OnComponentAwake();
-        
+
         /// <summary>
         /// Called on the first frame after creation
         /// </summary>
         void OnComponentStart();
-        
+
         /// <summary>
         /// Called when the component is enabled
         /// </summary>
         void OnComponentEnable();
-        
+
         /// <summary>
         /// Called when the component is disabled
         /// </summary>
         void OnComponentDisable();
-        
+
         /// <summary>
         /// Called when the component is destroyed
         /// </summary>
         void OnComponentDestroy();
-        
+
         /// <summary>
         /// Validate component configuration and dependencies
         /// </summary>
         ValidationResult ValidateComponent();
     }
-    
+
     /// <summary>
     /// Interface for components that can be updated each frame
     /// </summary>
@@ -187,28 +187,28 @@ namespace {{project_namespace}}.Interfaces.Unity
         /// Update frequency for this component
         /// </summary>
         UpdateFrequency UpdateFrequency { get; }
-        
+
         /// <summary>
         /// Whether this component should be updated
         /// </summary>
         bool ShouldUpdate { get; }
-        
+
         /// <summary>
         /// Called every frame for regular updates
         /// </summary>
         void OnUpdate(float deltaTime);
-        
+
         /// <summary>
         /// Called at fixed intervals for physics updates
         /// </summary>
         void OnFixedUpdate(float fixedDeltaTime);
-        
+
         /// <summary>
         /// Called after all Update calls for late updates
         /// </summary>
         void OnLateUpdate(float deltaTime);
     }
-    
+
     /// <summary>
     /// Update frequency options for updatable components
     /// </summary>
@@ -220,7 +220,7 @@ namespace {{project_namespace}}.Interfaces.Unity
         Custom,
         Never
     }
-    
+
     /// <summary>
     /// Interface for components that need physics collision handling
     /// </summary>
@@ -230,43 +230,43 @@ namespace {{project_namespace}}.Interfaces.Unity
         /// Layer mask for collision detection
         /// </summary>
         LayerMask CollisionLayers { get; }
-        
+
         /// <summary>
         /// Whether collision events are enabled
         /// </summary>
         bool CollisionEventsEnabled { get; }
-        
+
         /// <summary>
         /// Called when a collision starts
         /// </summary>
         void OnCollisionEntered(Collision collision);
-        
+
         /// <summary>
         /// Called while collision is ongoing
         /// </summary>
         void OnCollisionStay(Collision collision);
-        
+
         /// <summary>
         /// Called when collision ends
         /// </summary>
         void OnCollisionExited(Collision collision);
-        
+
         /// <summary>
         /// Called when a trigger is entered
         /// </summary>
         void OnTriggerEntered(Collider other);
-        
+
         /// <summary>
         /// Called while inside a trigger
         /// </summary>
         void OnTriggerStay(Collider other);
-        
+
         /// <summary>
         /// Called when exiting a trigger
         /// </summary>
         void OnTriggerExited(Collider other);
     }
-    
+
     /// <summary>
     /// Interface for components that handle input
     /// </summary>
@@ -276,35 +276,35 @@ namespace {{project_namespace}}.Interfaces.Unity
         /// Input priority (higher values processed first)
         /// </summary>
         int InputPriority { get; }
-        
+
         /// <summary>
         /// Whether this input handler is currently active
         /// </summary>
         bool InputEnabled { get; }
-        
+
         /// <summary>
         /// Input context for filtering input events
         /// </summary>
         InputContext Context { get; }
-        
+
         /// <summary>
         /// Handle input event
         /// </summary>
         /// <param name="inputEvent">Input event data</param>
         /// <returns>True if input was consumed and should not propagate</returns>
         bool HandleInput(IInputEvent inputEvent);
-        
+
         /// <summary>
         /// Called when input handler is registered
         /// </summary>
         void OnInputRegistered();
-        
+
         /// <summary>
         /// Called when input handler is unregistered
         /// </summary>
         void OnInputUnregistered();
     }
-    
+
     /// <summary>
     /// Input context enumeration for filtering input events
     /// </summary>
@@ -344,58 +344,58 @@ namespace {{project_namespace}}.Interfaces.Services
         /// Register a service instance
         /// </summary>
         void RegisterService<T>(T instance) where T : class;
-        
+
         /// <summary>
         /// Register a service with a factory function
         /// </summary>
         void RegisterService<T>(Func<T> factory) where T : class;
-        
+
         /// <summary>
         /// Register a service with lifecycle management
         /// </summary>
         void RegisterService<T>(T instance, ServiceLifetime lifetime) where T : class;
-        
+
         /// <summary>
         /// Get a service instance
         /// </summary>
         T GetService<T>() where T : class;
-        
+
         /// <summary>
         /// Try to get a service instance
         /// </summary>
         bool TryGetService<T>(out T service) where T : class;
-        
+
         /// <summary>
         /// Check if a service is registered
         /// </summary>
         bool IsServiceRegistered<T>() where T : class;
-        
+
         /// <summary>
         /// Unregister a service
         /// </summary>
         void UnregisterService<T>() where T : class;
-        
+
         /// <summary>
         /// Get all services of a specific type
         /// </summary>
         IEnumerable<T> GetServices<T>() where T : class;
-        
+
         /// <summary>
         /// Clear all services
         /// </summary>
         void ClearServices();
-        
+
         /// <summary>
         /// Event fired when a service is registered
         /// </summary>
         event Action<Type, object> OnServiceRegistered;
-        
+
         /// <summary>
         /// Event fired when a service is unregistered
         /// </summary>
         event Action<Type> OnServiceUnregistered;
     }
-    
+
     /// <summary>
     /// Service lifetime management options
     /// </summary>
@@ -406,7 +406,7 @@ namespace {{project_namespace}}.Interfaces.Services
         Scoped,
         UnityLifetime
     }
-    
+
     /// <summary>
     /// Interface for services that need initialization
     /// </summary>
@@ -416,18 +416,18 @@ namespace {{project_namespace}}.Interfaces.Services
         /// Initialize the service
         /// </summary>
         void Initialize();
-        
+
         /// <summary>
         /// Whether the service is initialized
         /// </summary>
         bool IsInitialized { get; }
-        
+
         /// <summary>
         /// Event fired when service is initialized
         /// </summary>
         event Action OnInitialized;
     }
-    
+
     /// <summary>
     /// Interface for services that need cleanup
     /// </summary>
@@ -437,13 +437,13 @@ namespace {{project_namespace}}.Interfaces.Services
         /// Whether the service has been disposed
         /// </summary>
         bool IsDisposed { get; }
-        
+
         /// <summary>
         /// Event fired when service is disposed
         /// </summary>
         event Action OnDisposed;
     }
-    
+
     /// <summary>
     /// Interface for dependency injection container
     /// </summary>
@@ -453,34 +453,34 @@ namespace {{project_namespace}}.Interfaces.Services
         /// Inject dependencies into an object
         /// </summary>
         void InjectDependencies(object target);
-        
+
         /// <summary>
         /// Resolve dependencies for a type
         /// </summary>
         T Resolve<T>() where T : class;
-        
+
         /// <summary>
         /// Create instance with dependency injection
         /// </summary>
         T CreateInstance<T>() where T : class, new();
-        
+
         /// <summary>
         /// Register a dependency mapping
         /// </summary>
-        void RegisterDependency<TInterface, TImplementation>() 
+        void RegisterDependency<TInterface, TImplementation>()
             where TImplementation : class, TInterface;
-        
+
         /// <summary>
         /// Check if dependencies can be resolved for a type
         /// </summary>
         bool CanResolve<T>() where T : class;
-        
+
         /// <summary>
         /// Get dependency information for debugging
         /// </summary>
         DependencyInfo GetDependencyInfo<T>() where T : class;
     }
-    
+
     /// <summary>
     /// Dependency information for debugging and validation
     /// </summary>
@@ -514,28 +514,28 @@ namespace {{project_namespace}}.Interfaces.Services
         /// Associated GameObject for this service
         /// </summary>
         GameObject ServiceGameObject { get; }
-        
+
         /// <summary>
         /// Whether this service should persist across scene loads
         /// </summary>
         bool PersistAcrossScenes { get; }
-        
+
         /// <summary>
         /// Called when Unity application is paused
         /// </summary>
         void OnApplicationPause(bool pauseStatus);
-        
+
         /// <summary>
         /// Called when Unity application focus changes
         /// </summary>
         void OnApplicationFocus(bool hasFocus);
-        
+
         /// <summary>
         /// Called when Unity application is quitting
         /// </summary>
         void OnApplicationQuit();
     }
-    
+
     /// <summary>
     /// Interface for services that provide coroutine functionality
     /// </summary>
@@ -545,43 +545,43 @@ namespace {{project_namespace}}.Interfaces.Services
         /// Start a coroutine
         /// </summary>
         Coroutine StartCoroutine(IEnumerator routine);
-        
+
         /// <summary>
         /// Start a coroutine with a name for tracking
         /// </summary>
         Coroutine StartCoroutine(string methodName, IEnumerator routine);
-        
+
         /// <summary>
         /// Stop a specific coroutine
         /// </summary>
         void StopCoroutine(Coroutine coroutine);
-        
+
         /// <summary>
         /// Stop all coroutines with a specific name
         /// </summary>
         void StopCoroutine(string methodName);
-        
+
         /// <summary>
         /// Stop all coroutines managed by this service
         /// </summary>
         void StopAllCoroutines();
-        
+
         /// <summary>
         /// Get count of active coroutines
         /// </summary>
         int ActiveCoroutineCount { get; }
-        
+
         /// <summary>
         /// Event fired when a coroutine starts
         /// </summary>
         event Action<string> OnCoroutineStarted;
-        
+
         /// <summary>
         /// Event fired when a coroutine completes
         /// </summary>
         event Action<string> OnCoroutineCompleted;
     }
-    
+
     /// <summary>
     /// Interface for logging service
     /// </summary>
@@ -591,53 +591,53 @@ namespace {{project_namespace}}.Interfaces.Services
         /// Current log level
         /// </summary>
         LogLevel LogLevel { get; set; }
-        
+
         /// <summary>
         /// Whether logging is enabled
         /// </summary>
         bool LoggingEnabled { get; set; }
-        
+
         /// <summary>
         /// Log a debug message
         /// </summary>
         void LogDebug(string message, object context = null);
-        
+
         /// <summary>
         /// Log an info message
         /// </summary>
         void LogInfo(string message, object context = null);
-        
+
         /// <summary>
         /// Log a warning message
         /// </summary>
         void LogWarning(string message, object context = null);
-        
+
         /// <summary>
         /// Log an error message
         /// </summary>
         void LogError(string message, object context = null);
-        
+
         /// <summary>
         /// Log an exception
         /// </summary>
         void LogException(Exception exception, object context = null);
-        
+
         /// <summary>
         /// Add a log listener
         /// </summary>
         void AddLogListener(ILogListener listener);
-        
+
         /// <summary>
         /// Remove a log listener
         /// </summary>
         void RemoveLogListener(ILogListener listener);
-        
+
         /// <summary>
         /// Clear all log listeners
         /// </summary>
         void ClearLogListeners();
     }
-    
+
     /// <summary>
     /// Log level enumeration
     /// </summary>
@@ -650,7 +650,7 @@ namespace {{project_namespace}}.Interfaces.Services
         Debug = 4,
         All = 5
     }
-    
+
     /// <summary>
     /// Interface for log listeners
     /// </summary>
@@ -661,7 +661,7 @@ namespace {{project_namespace}}.Interfaces.Services
         /// </summary>
         void OnLogReceived(LogLevel level, string message, object context);
     }
-    
+
     /// <summary>
     /// Interface for event bus service
     /// </summary>
@@ -671,38 +671,38 @@ namespace {{project_namespace}}.Interfaces.Services
         /// Subscribe to an event
         /// </summary>
         void Subscribe<T>(Action<T> handler) where T : IGameEvent;
-        
+
         /// <summary>
         /// Unsubscribe from an event
         /// </summary>
         void Unsubscribe<T>(Action<T> handler) where T : IGameEvent;
-        
+
         /// <summary>
         /// Publish an event
         /// </summary>
         void Publish<T>(T gameEvent) where T : IGameEvent;
-        
+
         /// <summary>
         /// Publish an event with delay
         /// </summary>
         void PublishDelayed<T>(T gameEvent, float delay) where T : IGameEvent;
-        
+
         /// <summary>
         /// Clear all subscriptions
         /// </summary>
         void ClearSubscriptions();
-        
+
         /// <summary>
         /// Get subscription count for an event type
         /// </summary>
         int GetSubscriptionCount<T>() where T : IGameEvent;
-        
+
         /// <summary>
         /// Event fired when an event is published
         /// </summary>
         event Action<IGameEvent> OnEventPublished;
     }
-    
+
     /// <summary>
     /// Base interface for all game events
     /// </summary>
@@ -712,17 +712,17 @@ namespace {{project_namespace}}.Interfaces.Services
         /// Timestamp when the event was created
         /// </summary>
         DateTime Timestamp { get; }
-        
+
         /// <summary>
         /// Source of the event
         /// </summary>
         object Source { get; }
-        
+
         /// <summary>
         /// Whether this event can be cancelled
         /// </summary>
         bool CanCancel { get; }
-        
+
         /// <summary>
         /// Whether this event has been cancelled
         /// </summary>
@@ -756,68 +756,68 @@ namespace {{project_namespace}}.Interfaces.GameLogic
         /// Current active game state
         /// </summary>
         IGameState CurrentState { get; }
-        
+
         /// <summary>
         /// Previous game state
         /// </summary>
         IGameState PreviousState { get; }
-        
+
         /// <summary>
         /// Whether a state transition is in progress
         /// </summary>
         bool IsTransitioning { get; }
-        
+
         /// <summary>
         /// Change to a new game state
         /// </summary>
         void ChangeState<T>() where T : IGameState;
-        
+
         /// <summary>
         /// Change to a new game state with data
         /// </summary>
         void ChangeState<T>(object transitionData) where T : IGameState;
-        
+
         /// <summary>
         /// Return to the previous state
         /// </summary>
         void ReturnToPreviousState();
-        
+
         /// <summary>
         /// Check if a state is registered
         /// </summary>
         bool IsStateRegistered<T>() where T : IGameState;
-        
+
         /// <summary>
         /// Register a game state
         /// </summary>
         void RegisterState<T>(T state) where T : IGameState;
-        
+
         /// <summary>
         /// Unregister a game state
         /// </summary>
         void UnregisterState<T>() where T : IGameState;
-        
+
         /// <summary>
         /// Get all registered states
         /// </summary>
         IEnumerable<IGameState> GetAllStates();
-        
+
         /// <summary>
         /// Event fired before state change
         /// </summary>
         event Action<IGameState, IGameState> OnBeforeStateChange;
-        
+
         /// <summary>
         /// Event fired after state change
         /// </summary>
         event Action<IGameState, IGameState> OnAfterStateChange;
-        
+
         /// <summary>
         /// Event fired when state transition fails
         /// </summary>
         event Action<IGameState, IGameState, string> OnStateTransitionFailed;
     }
-    
+
     /// <summary>
     /// Interface for individual game states
     /// </summary>
@@ -827,63 +827,63 @@ namespace {{project_namespace}}.Interfaces.GameLogic
         /// Unique identifier for this state
         /// </summary>
         string StateId { get; }
-        
+
         /// <summary>
         /// Display name for this state
         /// </summary>
         string StateName { get; }
-        
+
         /// <summary>
         /// Whether this state allows pausing
         /// </summary>
         bool AllowsPausing { get; }
-        
+
         /// <summary>
         /// Whether this state can be interrupted
         /// </summary>
         bool CanBeInterrupted { get; }
-        
+
         /// <summary>
         /// Called when entering this state
         /// </summary>
         void OnEnter(IGameState previousState, object transitionData = null);
-        
+
         /// <summary>
         /// Called when exiting this state
         /// </summary>
         void OnExit(IGameState nextState);
-        
+
         /// <summary>
         /// Called every frame while this state is active
         /// </summary>
         void OnUpdate(float deltaTime);
-        
+
         /// <summary>
         /// Called when the state is paused
         /// </summary>
         void OnPause();
-        
+
         /// <summary>
         /// Called when the state is resumed
         /// </summary>
         void OnResume();
-        
+
         /// <summary>
         /// Check if transition to another state is allowed
         /// </summary>
         bool CanTransitionTo(IGameState targetState);
-        
+
         /// <summary>
         /// Get the transition data for moving to another state
         /// </summary>
         object GetTransitionData(IGameState targetState);
-        
+
         /// <summary>
         /// Validate the current state
         /// </summary>
         ValidationResult ValidateState();
     }
-    
+
     /// <summary>
     /// Interface for data persistence and save/load functionality
     /// </summary>
@@ -893,68 +893,68 @@ namespace {{project_namespace}}.Interfaces.GameLogic
         /// Save data to persistent storage
         /// </summary>
         void SaveData<T>(string key, T data) where T : ISaveable;
-        
+
         /// <summary>
         /// Load data from persistent storage
         /// </summary>
         T LoadData<T>(string key) where T : ISaveable;
-        
+
         /// <summary>
         /// Check if data exists for a key
         /// </summary>
         bool HasData(string key);
-        
+
         /// <summary>
         /// Delete data for a key
         /// </summary>
         void DeleteData(string key);
-        
+
         /// <summary>
         /// Get all available save keys
         /// </summary>
         IEnumerable<string> GetAllKeys();
-        
+
         /// <summary>
         /// Clear all saved data
         /// </summary>
         void ClearAllData();
-        
+
         /// <summary>
         /// Save data asynchronously
         /// </summary>
         void SaveDataAsync<T>(string key, T data, Action<bool> onComplete = null) where T : ISaveable;
-        
+
         /// <summary>
         /// Load data asynchronously
         /// </summary>
         void LoadDataAsync<T>(string key, Action<T> onComplete) where T : ISaveable;
-        
+
         /// <summary>
         /// Get data size in bytes
         /// </summary>
         long GetDataSize(string key);
-        
+
         /// <summary>
         /// Get total size of all saved data
         /// </summary>
         long GetTotalDataSize();
-        
+
         /// <summary>
         /// Event fired when data is saved
         /// </summary>
         event Action<string> OnDataSaved;
-        
+
         /// <summary>
         /// Event fired when data is loaded
         /// </summary>
         event Action<string> OnDataLoaded;
-        
+
         /// <summary>
         /// Event fired when data operation fails
         /// </summary>
         event Action<string, string> OnDataOperationFailed;
     }
-    
+
     /// <summary>
     /// Interface for objects that can be saved and loaded
     /// </summary>
@@ -964,38 +964,38 @@ namespace {{project_namespace}}.Interfaces.GameLogic
         /// Unique identifier for this saveable object
         /// </summary>
         string SaveId { get; }
-        
+
         /// <summary>
         /// Version of the save data format
         /// </summary>
         int SaveVersion { get; }
-        
+
         /// <summary>
         /// Serialize this object to save data
         /// </summary>
         SaveData Serialize();
-        
+
         /// <summary>
         /// Deserialize save data to restore this object
         /// </summary>
         void Deserialize(SaveData saveData);
-        
+
         /// <summary>
         /// Validate save data before deserializing
         /// </summary>
         bool ValidateSaveData(SaveData saveData);
-        
+
         /// <summary>
         /// Called before saving
         /// </summary>
         void OnBeforeSave();
-        
+
         /// <summary>
         /// Called after loading
         /// </summary>
         void OnAfterLoad();
     }
-    
+
     /// <summary>
     /// Container for save data
     /// </summary>
@@ -1006,7 +1006,7 @@ namespace {{project_namespace}}.Interfaces.GameLogic
         public int Version;
         public DateTime SaveTime;
         public Dictionary<string, object> Data = new Dictionary<string, object>();
-        
+
         public T GetValue<T>(string key, T defaultValue = default)
         {
             if (Data.TryGetValue(key, out var value) && value is T)
@@ -1015,18 +1015,18 @@ namespace {{project_namespace}}.Interfaces.GameLogic
             }
             return defaultValue;
         }
-        
+
         public void SetValue<T>(string key, T value)
         {
             Data[key] = value;
         }
-        
+
         public bool HasKey(string key)
         {
             return Data.ContainsKey(key);
         }
     }
-    
+
     /// <summary>
     /// Interface for configuration management
     /// </summary>
@@ -1036,42 +1036,42 @@ namespace {{project_namespace}}.Interfaces.GameLogic
         /// Get a configuration value
         /// </summary>
         T GetValue<T>(string key, T defaultValue = default);
-        
+
         /// <summary>
         /// Set a configuration value
         /// </summary>
         void SetValue<T>(string key, T value);
-        
+
         /// <summary>
         /// Check if a configuration key exists
         /// </summary>
         bool HasKey(string key);
-        
+
         /// <summary>
         /// Remove a configuration key
         /// </summary>
         void RemoveKey(string key);
-        
+
         /// <summary>
         /// Load configuration from file
         /// </summary>
         void LoadConfiguration(string filePath);
-        
+
         /// <summary>
         /// Save configuration to file
         /// </summary>
         void SaveConfiguration(string filePath);
-        
+
         /// <summary>
         /// Reset to default configuration
         /// </summary>
         void ResetToDefaults();
-        
+
         /// <summary>
         /// Get all configuration keys
         /// </summary>
         IEnumerable<string> GetAllKeys();
-        
+
         /// <summary>
         /// Event fired when configuration value changes
         /// </summary>
@@ -1105,88 +1105,88 @@ namespace {{project_namespace}}.Interfaces.UI
         /// Currently active UI context
         /// </summary>
         UIContext CurrentContext { get; }
-        
+
         /// <summary>
         /// Stack of active windows
         /// </summary>
         IReadOnlyList<IUIWindow> WindowStack { get; }
-        
+
         /// <summary>
         /// Whether any modal window is currently open
         /// </summary>
         bool HasModalWindow { get; }
-        
+
         /// <summary>
         /// Open a UI window
         /// </summary>
         void OpenWindow<T>(UIWindowData windowData = null) where T : IUIWindow;
-        
+
         /// <summary>
         /// Close a specific window
         /// </summary>
         void CloseWindow<T>() where T : IUIWindow;
-        
+
         /// <summary>
         /// Close the top window
         /// </summary>
         void CloseTopWindow();
-        
+
         /// <summary>
         /// Close all windows
         /// </summary>
         void CloseAllWindows();
-        
+
         /// <summary>
         /// Check if a window is open
         /// </summary>
         bool IsWindowOpen<T>() where T : IUIWindow;
-        
+
         /// <summary>
         /// Get a specific window instance
         /// </summary>
         T GetWindow<T>() where T : IUIWindow;
-        
+
         /// <summary>
         /// Register a window type
         /// </summary>
         void RegisterWindow<T>(Func<T> factory) where T : IUIWindow;
-        
+
         /// <summary>
         /// Show a popup message
         /// </summary>
         void ShowPopup(string title, string message, UIPopupType type = UIPopupType.Info);
-        
+
         /// <summary>
         /// Show a confirmation dialog
         /// </summary>
         void ShowConfirmation(string title, string message, Action<bool> onResult);
-        
+
         /// <summary>
         /// Navigate back in the UI stack
         /// </summary>
         void NavigateBack();
-        
+
         /// <summary>
         /// Set the current UI context
         /// </summary>
         void SetContext(UIContext context);
-        
+
         /// <summary>
         /// Event fired when a window opens
         /// </summary>
         event Action<IUIWindow> OnWindowOpened;
-        
+
         /// <summary>
         /// Event fired when a window closes
         /// </summary>
         event Action<IUIWindow> OnWindowClosed;
-        
+
         /// <summary>
         /// Event fired when UI context changes
         /// </summary>
         event Action<UIContext, UIContext> OnContextChanged;
     }
-    
+
     /// <summary>
     /// UI context enumeration for different UI states
     /// </summary>
@@ -1201,7 +1201,7 @@ namespace {{project_namespace}}.Interfaces.UI
         Loading,
         Cutscene
     }
-    
+
     /// <summary>
     /// Popup type enumeration
     /// </summary>
@@ -1213,7 +1213,7 @@ namespace {{project_namespace}}.Interfaces.UI
         Success,
         Question
     }
-    
+
     /// <summary>
     /// Interface for UI windows
     /// </summary>
@@ -1223,79 +1223,79 @@ namespace {{project_namespace}}.Interfaces.UI
         /// Unique identifier for this window
         /// </summary>
         string WindowId { get; }
-        
+
         /// <summary>
         /// Display name for this window
         /// </summary>
         string WindowTitle { get; }
-        
+
         /// <summary>
         /// Whether this window is modal
         /// </summary>
         bool IsModal { get; }
-        
+
         /// <summary>
         /// Whether this window can be closed by back navigation
         /// </summary>
         bool CanCloseWithBack { get; }
-        
+
         /// <summary>
         /// Window priority for layering
         /// </summary>
         int Priority { get; }
-        
+
         /// <summary>
         /// Current window state
         /// </summary>
         UIWindowState State { get; }
-        
+
         /// <summary>
         /// Open the window
         /// </summary>
         void Open(UIWindowData data = null);
-        
+
         /// <summary>
         /// Close the window
         /// </summary>
         void Close();
-        
+
         /// <summary>
         /// Show the window (make visible)
         /// </summary>
         void Show();
-        
+
         /// <summary>
         /// Hide the window (make invisible)
         /// </summary>
         void Hide();
-        
+
         /// <summary>
         /// Update the window
         /// </summary>
         void UpdateWindow(float deltaTime);
-        
+
         /// <summary>
         /// Handle back navigation
         /// </summary>
         /// <returns>True if back navigation was handled</returns>
         bool HandleBackNavigation();
-        
+
         /// <summary>
         /// Validate window state
         /// </summary>
         ValidationResult ValidateWindow();
-        
+
         /// <summary>
         /// Event fired when window state changes
         /// </summary>
         event Action<UIWindowState> OnStateChanged;
-        
+
         /// <summary>
         /// Event fired when window is about to close
         /// </summary>
         event Action<IUIWindow> OnBeforeClose;
     }
-    
+
     /// <summary>
     /// UI window state enumeration
     /// </summary>
@@ -1307,14 +1307,14 @@ namespace {{project_namespace}}.Interfaces.UI
         Closing,
         Hidden
     }
-    
+
     /// <summary>
     /// Data container for window initialization
     /// </summary>
     public class UIWindowData
     {
         public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
-        
+
         public T GetParameter<T>(string key, T defaultValue = default)
         {
             if (Parameters.TryGetValue(key, out var value) && value is T)
@@ -1323,13 +1323,13 @@ namespace {{project_namespace}}.Interfaces.UI
             }
             return defaultValue;
         }
-        
+
         public void SetParameter<T>(string key, T value)
         {
             Parameters[key] = value;
         }
     }
-    
+
     /// <summary>
     /// Interface for input management
     /// </summary>
@@ -1339,78 +1339,78 @@ namespace {{project_namespace}}.Interfaces.UI
         /// Current input mode
         /// </summary>
         InputMode CurrentInputMode { get; }
-        
+
         /// <summary>
         /// Whether input is currently enabled
         /// </summary>
         bool InputEnabled { get; }
-        
+
         /// <summary>
         /// Register an input handler
         /// </summary>
         void RegisterInputHandler(IInputHandler handler);
-        
+
         /// <summary>
         /// Unregister an input handler
         /// </summary>
         void UnregisterInputHandler(IInputHandler handler);
-        
+
         /// <summary>
         /// Process input event
         /// </summary>
         void ProcessInput(IInputEvent inputEvent);
-        
+
         /// <summary>
         /// Enable/disable input processing
         /// </summary>
         void SetInputEnabled(bool enabled);
-        
+
         /// <summary>
         /// Set the current input mode
         /// </summary>
         void SetInputMode(InputMode mode);
-        
+
         /// <summary>
         /// Get current input state for a specific input
         /// </summary>
         InputState GetInputState(string inputName);
-        
+
         /// <summary>
         /// Check if input is currently pressed
         /// </summary>
         bool IsInputPressed(string inputName);
-        
+
         /// <summary>
         /// Check if input was just pressed this frame
         /// </summary>
         bool IsInputJustPressed(string inputName);
-        
+
         /// <summary>
         /// Check if input was just released this frame
         /// </summary>
         bool IsInputJustReleased(string inputName);
-        
+
         /// <summary>
         /// Get input value (for analog inputs)
         /// </summary>
         float GetInputValue(string inputName);
-        
+
         /// <summary>
         /// Get input vector (for directional inputs)
         /// </summary>
         Vector2 GetInputVector(string inputName);
-        
+
         /// <summary>
         /// Event fired when input mode changes
         /// </summary>
         event Action<InputMode> OnInputModeChanged;
-        
+
         /// <summary>
         /// Event fired when input is enabled/disabled
         /// </summary>
         event Action<bool> OnInputEnabledChanged;
     }
-    
+
     /// <summary>
     /// Input mode enumeration
     /// </summary>
@@ -1421,7 +1421,7 @@ namespace {{project_namespace}}.Interfaces.UI
         Touch,
         Mixed
     }
-    
+
     /// <summary>
     /// Input state enumeration
     /// </summary>
@@ -1432,7 +1432,7 @@ namespace {{project_namespace}}.Interfaces.UI
         JustPressed,
         JustReleased
     }
-    
+
     /// <summary>
     /// Interface for input events
     /// </summary>
@@ -1442,38 +1442,38 @@ namespace {{project_namespace}}.Interfaces.UI
         /// Type of input event
         /// </summary>
         InputEventType EventType { get; }
-        
+
         /// <summary>
         /// Input name or identifier
         /// </summary>
         string InputName { get; }
-        
+
         /// <summary>
         /// Input value (for analog inputs)
         /// </summary>
         float Value { get; }
-        
+
         /// <summary>
         /// Input vector (for directional inputs)
         /// </summary>
         Vector2 Vector { get; }
-        
+
         /// <summary>
         /// Timestamp when the event occurred
         /// </summary>
         DateTime Timestamp { get; }
-        
+
         /// <summary>
         /// Whether this event has been consumed
         /// </summary>
         bool IsConsumed { get; set; }
-        
+
         /// <summary>
         /// Context in which this input event occurred
         /// </summary>
         InputContext Context { get; }
     }
-    
+
     /// <summary>
     /// Input event type enumeration
     /// </summary>
@@ -1507,6 +1507,7 @@ This Unity Interface Design and Architecture Task provides:
 ## Integration Points
 
 This task integrates with:
+
 - `component-architecture.md` - Extends component patterns with interface-driven design
 - `monobehaviour-creation.md` - Provides interface contracts for MonoBehaviour components
 - `scriptableobject-setup.md` - Supports ScriptableObject-based data and configuration patterns

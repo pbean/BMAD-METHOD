@@ -35,12 +35,12 @@ namespace {{project_namespace}}.Architecture
         string ComponentId { get; }
         bool IsInitialized { get; }
         ComponentState CurrentState { get; }
-        
+
         void Initialize();
         void Activate();
         void Deactivate();
         void Cleanup();
-        
+
         event System.Action<ComponentState> OnStateChanged;
     }
 
@@ -70,10 +70,10 @@ namespace {{project_namespace}}.Architecture
         protected bool isInitialized = false;
         protected ComponentManager componentManager;
 
-        public string ComponentId 
-        { 
-            get 
-            { 
+        public string ComponentId
+        {
+            get
+            {
                 if (string.IsNullOrEmpty(componentId))
                     componentId = $"{GetType().Name}_{GetInstanceID()}";
                 return componentId;
@@ -91,7 +91,7 @@ namespace {{project_namespace}}.Architecture
         {
             ValidateComponent();
             SetState(ComponentState.Initializing);
-            
+
             // Find or create component manager
             componentManager = FindObjectOfType<ComponentManager>();
             if (componentManager == null)
@@ -152,16 +152,16 @@ namespace {{project_namespace}}.Architecture
             try
             {
                 SetState(ComponentState.Initializing);
-                
+
                 // Register with component manager
                 componentManager?.RegisterComponent(this);
-                
+
                 // Perform component-specific initialization
                 OnInitialize();
-                
+
                 isInitialized = true;
                 SetState(ComponentState.Ready);
-                
+
                 LogDebug($"Component {ComponentId} initialized successfully");
             }
             catch (System.Exception ex)
@@ -226,13 +226,13 @@ namespace {{project_namespace}}.Architecture
             try
             {
                 SetState(ComponentState.Disposing);
-                
+
                 // Unregister from component manager
                 componentManager?.UnregisterComponent(this);
-                
+
                 // Perform component-specific cleanup
                 OnCleanup();
-                
+
                 LogDebug($"Component {ComponentId} cleaned up");
             }
             catch (System.Exception ex)
@@ -343,7 +343,7 @@ namespace {{project_namespace}}.Architecture
             }
         }
 
-        private Dictionary<Type, List<IComponentEventHandler>> eventHandlers = 
+        private Dictionary<Type, List<IComponentEventHandler>> eventHandlers =
             new Dictionary<Type, List<IComponentEventHandler>>();
 
         private Queue<IComponentEvent> eventQueue = new Queue<IComponentEvent>();
@@ -358,7 +358,7 @@ namespace {{project_namespace}}.Architecture
             {
                 eventHandlers[eventType] = new List<IComponentEventHandler>();
             }
-            
+
             if (!eventHandlers[eventType].Contains(handler))
             {
                 eventHandlers[eventType].Add(handler);
@@ -394,7 +394,7 @@ namespace {{project_namespace}}.Architecture
 
             // Queue event for processing
             eventQueue.Enqueue(gameEvent);
-            
+
             // Process immediately if not already processing
             if (!isProcessingEvents)
             {
@@ -567,13 +567,13 @@ namespace {{project_namespace}}.Architecture
             Debug.Log($"Registered singleton: {type.Name}");
         }
 
-        public void RegisterSingleton<TInterface, TImplementation>() 
-            where TInterface : class 
+        public void RegisterSingleton<TInterface, TImplementation>()
+            where TInterface : class
             where TImplementation : class, TInterface, new()
         {
             var interfaceType = typeof(TInterface);
             var implementationType = typeof(TImplementation);
-            
+
             if (!singletonInstances.ContainsKey(interfaceType))
             {
                 var instance = new TImplementation();
@@ -589,8 +589,8 @@ namespace {{project_namespace}}.Architecture
             Debug.Log($"Registered factory for: {type.Name}");
         }
 
-        public void RegisterTransient<TInterface, TImplementation>() 
-            where TInterface : class 
+        public void RegisterTransient<TInterface, TImplementation>()
+            where TInterface : class
             where TImplementation : class, TInterface
         {
             var interfaceType = typeof(TInterface);
@@ -725,7 +725,7 @@ namespace {{project_namespace}}.Architecture
             {
                 var constructors = type.GetConstructors();
                 var defaultConstructor = Array.Find(constructors, c => c.GetParameters().Length == 0);
-                
+
                 if (defaultConstructor != null)
                 {
                     var instance = Activator.CreateInstance(type);
@@ -786,7 +786,7 @@ namespace {{project_namespace}}.Architecture
         {
             // Register common Unity services
             RegisterSingleton<ComponentEventSystem>(ComponentEventSystem.Instance);
-            
+
             // Register the container itself
             RegisterSingleton<ComponentDependencyContainer>(this);
         }
@@ -864,10 +864,10 @@ namespace {{project_namespace}}.Architecture
         private Dictionary<string, IGameComponent> registeredComponents = new Dictionary<string, IGameComponent>();
         private Dictionary<Type, List<IGameComponent>> componentsByType = new Dictionary<Type, List<IGameComponent>>();
         private Dictionary<ComponentState, List<IGameComponent>> componentsByState = new Dictionary<ComponentState, List<IGameComponent>>();
-        
+
         private Queue<ComponentOperation> operationQueue = new Queue<ComponentOperation>();
         private bool isProcessingOperations = false;
-        
+
         private ComponentPerformanceMonitor performanceMonitor;
         private Coroutine healthCheckCoroutine;
 
@@ -889,7 +889,7 @@ namespace {{project_namespace}}.Architecture
         private void Awake()
         {
             InitializeComponentsByState();
-            
+
             if (enablePerformanceMonitoring)
             {
                 performanceMonitor = new ComponentPerformanceMonitor();
@@ -916,7 +916,7 @@ namespace {{project_namespace}}.Architecture
             {
                 StopCoroutine(healthCheckCoroutine);
             }
-            
+
             CleanupAllComponents();
         }
 
@@ -941,7 +941,7 @@ namespace {{project_namespace}}.Architecture
             try
             {
                 registeredComponents[component.ComponentId] = component;
-                
+
                 // Add to type-based lookup
                 var componentType = component.GetType();
                 if (!componentsByType.ContainsKey(componentType))
@@ -949,22 +949,22 @@ namespace {{project_namespace}}.Architecture
                     componentsByType[componentType] = new List<IGameComponent>();
                 }
                 componentsByType[componentType].Add(component);
-                
+
                 // Add to state-based lookup
                 AddComponentToState(component, component.CurrentState);
-                
+
                 // Subscribe to state changes
                 component.OnStateChanged += (newState) => HandleComponentStateChange(component, newState);
-                
+
                 // Performance monitoring
                 if (enablePerformanceMonitoring)
                 {
                     performanceMonitor?.StartMonitoring(component);
                 }
-                
+
                 OnComponentRegistered?.Invoke(component);
                 LogDebug($"Registered component: {component.ComponentId} (Type: {componentType.Name})");
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -991,7 +991,7 @@ namespace {{project_namespace}}.Architecture
             try
             {
                 registeredComponents.Remove(component.ComponentId);
-                
+
                 // Remove from type-based lookup
                 var componentType = component.GetType();
                 if (componentsByType.ContainsKey(componentType))
@@ -1002,19 +1002,19 @@ namespace {{project_namespace}}.Architecture
                         componentsByType.Remove(componentType);
                     }
                 }
-                
+
                 // Remove from state-based lookup
                 RemoveComponentFromAllStates(component);
-                
+
                 // Performance monitoring cleanup
                 if (enablePerformanceMonitoring)
                 {
                     performanceMonitor?.StopMonitoring(component);
                 }
-                
+
                 OnComponentUnregistered?.Invoke(component);
                 LogDebug($"Unregistered component: {component.ComponentId}");
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -1046,15 +1046,15 @@ namespace {{project_namespace}}.Architecture
             {
                 return componentsByType[type].Cast<T>().ToList();
             }
-            
+
             // Fallback: search by interface/base class
             return registeredComponents.Values.OfType<T>().ToList();
         }
 
         public List<IGameComponent> GetComponentsByState(ComponentState state)
         {
-            return componentsByState.ContainsKey(state) ? 
-                new List<IGameComponent>(componentsByState[state]) : 
+            return componentsByState.ContainsKey(state) ?
+                new List<IGameComponent>(componentsByState[state]) :
                 new List<IGameComponent>();
         }
 
@@ -1184,16 +1184,16 @@ namespace {{project_namespace}}.Architecture
         private void HandleComponentStateChange(IGameComponent component, ComponentState newState)
         {
             var oldState = GetComponentCurrentState(component);
-            
+
             if (oldState != ComponentState.Uninitialized)
             {
                 RemoveComponentFromState(component, oldState);
             }
-            
+
             AddComponentToState(component, newState);
-            
+
             OnComponentStateChanged?.Invoke(component, oldState, newState);
-            
+
             LogDebug($"Component {component.ComponentId} state changed: {oldState} -> {newState}");
         }
 
@@ -1299,7 +1299,7 @@ namespace {{project_namespace}}.Architecture
         {
             var readyComponents = GetComponentsByState(ComponentState.Ready)
                 .Concat(GetComponentsByState(ComponentState.Inactive)).ToList();
-            
+
             foreach (var component in readyComponents)
             {
                 try
@@ -1343,7 +1343,7 @@ namespace {{project_namespace}}.Architecture
                     LogError($"Failed to cleanup component {component.ComponentId}: {ex.Message}");
                 }
             }
-            
+
             registeredComponents.Clear();
             componentsByType.Clear();
             foreach (var stateList in componentsByState.Values)
@@ -1409,7 +1409,7 @@ namespace {{project_namespace}}.Architecture
         public int WarningComponents { get; set; }
         public int ErrorComponents { get; set; }
         public List<ComponentHealthDetail> ComponentDetails { get; set; }
-        
+
         public bool IsHealthy => ErrorComponents == 0 && WarningComponents == 0;
         public float HealthPercentage => TotalComponents > 0 ? (float)HealthyComponents / TotalComponents * 100 : 0;
     }
@@ -1512,10 +1512,10 @@ namespace {{project_namespace}}.Architecture.Testing
             // Create test environment
             var managerGO = new GameObject("TestComponentManager");
             componentManager = managerGO.AddComponent<ComponentManager>();
-            
+
             var containerGO = new GameObject("TestDependencyContainer");
             dependencyContainer = containerGO.AddComponent<ComponentDependencyContainer>();
-            
+
             var componentGO = new GameObject("TestComponent");
             testComponent = componentGO.AddComponent<TestGameComponent>();
         }
@@ -1525,10 +1525,10 @@ namespace {{project_namespace}}.Architecture.Testing
         {
             if (componentManager != null)
                 UnityEngine.Object.DestroyImmediate(componentManager.gameObject);
-            
+
             if (dependencyContainer != null)
                 UnityEngine.Object.DestroyImmediate(dependencyContainer.gameObject);
-            
+
             if (testComponent != null)
                 UnityEngine.Object.DestroyImmediate(testComponent.gameObject);
         }
@@ -1564,7 +1564,7 @@ namespace {{project_namespace}}.Architecture.Testing
         {
             // Arrange
             testComponent.Initialize();
-            
+
             // Act & Assert
             Assert.DoesNotThrow(() => testComponent.Initialize());
             Assert.AreEqual(ComponentState.Ready, testComponent.CurrentState);
@@ -1623,7 +1623,7 @@ namespace {{project_namespace}}.Architecture.Testing
         {
             // Arrange
             componentManager.RegisterComponent(testComponent);
-            
+
             var secondComponentGO = new GameObject("SecondTestComponent");
             var secondComponent = secondComponentGO.AddComponent<TestGameComponent>();
             componentManager.RegisterComponent(secondComponent);
@@ -1682,7 +1682,7 @@ namespace {{project_namespace}}.Architecture.Testing
             // Arrange
             var testService = new TestService();
             dependencyContainer.RegisterSingleton<ITestService>(testService);
-            
+
             var injectableComponent = new TestInjectableComponent();
 
             // Act
@@ -1700,7 +1700,7 @@ namespace {{project_namespace}}.Architecture.Testing
             var injectableComponent = new TestInjectableComponent();
 
             // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => 
+            Assert.Throws<InvalidOperationException>(() =>
                 dependencyContainer.InjectDependencies(injectableComponent));
         }
 
@@ -1758,24 +1758,24 @@ namespace {{project_namespace}}.Architecture.Testing
 
             // Act
             var startTime = Time.realtimeSinceStartup;
-            
+
             for (int i = 0; i < componentCount; i++)
             {
                 var go = new GameObject($"PerfTestComponent_{i}");
                 var component = go.AddComponent<TestGameComponent>();
                 components.Add(component);
                 componentManager.RegisterComponent(component);
-                
+
                 // Allow frame processing every 50 components
                 if (i % 50 == 0)
                     yield return null;
             }
-            
+
             var endTime = Time.realtimeSinceStartup;
             var totalTime = endTime - startTime;
 
             // Assert
-            Assert.LessOrEqual(totalTime, maxTimeSeconds, 
+            Assert.LessOrEqual(totalTime, maxTimeSeconds,
                 $"Registration of {componentCount} components took {totalTime:F3}s, expected <= {maxTimeSeconds}s");
             Assert.AreEqual(componentCount, componentManager.TotalComponents);
 
@@ -1807,7 +1807,7 @@ namespace {{project_namespace}}.Architecture.Testing
             var duration = endTime - startTime;
 
             // Assert
-            Assert.LessOrEqual(duration.TotalMilliseconds, 100, 
+            Assert.LessOrEqual(duration.TotalMilliseconds, 100,
                 $"Health check took {duration.TotalMilliseconds}ms, expected <= 100ms");
             Assert.AreEqual(componentCount, healthReport.TotalComponents);
             Assert.AreEqual(componentCount, healthReport.HealthyComponents);
@@ -1905,6 +1905,7 @@ This Unity Component Architecture Design Task provides:
 ## Integration Points
 
 This task integrates with:
+
 - `create-architecture-doc.md` - Extends architectural foundation
 - `unity-package-setup.md` - Requires Unity packages and project structure
 - `create-game-story.md` - Informs component requirements from game design

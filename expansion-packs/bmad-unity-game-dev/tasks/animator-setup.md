@@ -59,7 +59,7 @@ namespace {{project_namespace}}.Animation
         private Dictionary<string, int> parameterHashes = new Dictionary<string, int>();
         private Dictionary<string, AnimatorParameterInfo> parameterInfoCache = new Dictionary<string, AnimatorParameterInfo>();
         private Dictionary<int, StateInfo> currentStates = new Dictionary<int, StateInfo>();
-        
+
         private AnimatorParameterValidator parameterValidator;
         private AnimatorStateMonitor stateMonitor;
         private AnimatorEventHandler eventHandler;
@@ -86,12 +86,12 @@ namespace {{project_namespace}}.Animation
             {
                 InitializeAnimator();
                 InitializeComponents();
-                
+
                 if (autoDiscoverParameters)
                 {
                     DiscoverAnimatorParameters();
                 }
-                
+
                 SetupParameterHashes();
                 ValidateConfiguration();
             }
@@ -109,12 +109,12 @@ namespace {{project_namespace}}.Animation
                 {
                     ValidateAllParameters();
                 }
-                
+
                 InitializeStateMachines();
                 SetupEventListeners();
-                
+
                 IsInitialized = true;
-                
+
                 if (enableDebugMode)
                 {
                     LogAnimatorInfo();
@@ -129,11 +129,11 @@ namespace {{project_namespace}}.Animation
         private void Update()
         {
             if (!IsInitialized) return;
-            
+
             try
             {
                 MonitorStateChanges();
-                
+
                 if (enableDebugMode)
                 {
                     UpdateDebugInfo();
@@ -192,7 +192,7 @@ namespace {{project_namespace}}.Animation
             if (animatorController == null) return;
 
             managedParameters.Clear();
-            
+
             for (int i = 0; i < animatorController.parameters.Length; i++)
             {
                 var parameter = animatorController.parameters[i];
@@ -272,9 +272,9 @@ namespace {{project_namespace}}.Animation
                 {
                     var hash = parameterHashes[parameterName];
                     animator.SetBool(hash, value);
-                    
+
                     OnParameterChanged?.Invoke(parameterName, value);
-                    
+
                     if (enableStateChangeLogging)
                     {
                         Debug.Log($"[AnimatorControllerManager] Set bool parameter '{parameterName}' to {value}");
@@ -295,15 +295,15 @@ namespace {{project_namespace}}.Animation
                 {
                     var hash = parameterHashes[parameterName];
                     var paramInfo = parameterInfoCache[parameterName];
-                    
+
                     if (paramInfo.ValidateRange)
                     {
                         value = Mathf.Clamp(value, (int)paramInfo.MinValue, (int)paramInfo.MaxValue);
                     }
-                    
+
                     animator.SetInteger(hash, value);
                     OnParameterChanged?.Invoke(parameterName, value);
-                    
+
                     if (enableStateChangeLogging)
                     {
                         Debug.Log($"[AnimatorControllerManager] Set int parameter '{parameterName}' to {value}");
@@ -324,15 +324,15 @@ namespace {{project_namespace}}.Animation
                 {
                     var hash = parameterHashes[parameterName];
                     var paramInfo = parameterInfoCache[parameterName];
-                    
+
                     if (paramInfo.ValidateRange)
                     {
                         value = Mathf.Clamp(value, paramInfo.MinValue, paramInfo.MaxValue);
                     }
-                    
+
                     animator.SetFloat(hash, value);
                     OnParameterChanged?.Invoke(parameterName, value);
-                    
+
                     if (enableStateChangeLogging)
                     {
                         Debug.Log($"[AnimatorControllerManager] Set float parameter '{parameterName}' to {value:F2}");
@@ -353,9 +353,9 @@ namespace {{project_namespace}}.Animation
                 {
                     var hash = parameterHashes[parameterName];
                     animator.SetTrigger(hash);
-                    
+
                     OnParameterChanged?.Invoke(parameterName, true);
-                    
+
                     if (enableStateChangeLogging)
                     {
                         Debug.Log($"[AnimatorControllerManager] Triggered parameter '{parameterName}'");
@@ -376,7 +376,7 @@ namespace {{project_namespace}}.Animation
                 {
                     var hash = parameterHashes[parameterName];
                     animator.ResetTrigger(hash);
-                    
+
                     if (enableStateChangeLogging)
                     {
                         Debug.Log($"[AnimatorControllerManager] Reset trigger parameter '{parameterName}'");
@@ -422,7 +422,7 @@ namespace {{project_namespace}}.Animation
         private bool ValidateParameter(string parameterName, AnimatorControllerParameterType expectedType)
         {
             if (!enableParameterValidation) return true;
-            
+
             return parameterValidator.ValidateParameter(parameterName, expectedType);
         }
 
@@ -458,7 +458,7 @@ namespace {{project_namespace}}.Animation
         private void InitializeStateMachines()
         {
             currentStates.Clear();
-            
+
             for (int layerIndex = 0; layerIndex < animator.layerCount; layerIndex++)
             {
                 var stateInfo = animator.GetCurrentAnimatorStateInfo(layerIndex);
@@ -478,29 +478,29 @@ namespace {{project_namespace}}.Animation
             {
                 var currentStateInfo = animator.GetCurrentAnimatorStateInfo(layerIndex);
                 var previousState = currentStates.ContainsKey(layerIndex) ? currentStates[layerIndex] : null;
-                
+
                 if (previousState == null || previousState.StateHash != currentStateInfo.shortNameHash)
                 {
                     // State changed
                     var newStateName = GetStateName(currentStateInfo.shortNameHash, layerIndex);
-                    
+
                     if (previousState != null)
                     {
                         OnStateExited?.Invoke(previousState.StateName, currentStateInfo);
-                        
+
                         if (enableStateChangeLogging)
                         {
                             Debug.Log($"[AnimatorControllerManager] Exited state '{previousState.StateName}' on layer {layerIndex}");
                         }
                     }
-                    
+
                     OnStateEntered?.Invoke(newStateName, currentStateInfo);
-                    
+
                     if (enableStateChangeLogging)
                     {
                         Debug.Log($"[AnimatorControllerManager] Entered state '{newStateName}' on layer {layerIndex}");
                     }
-                    
+
                     currentStates[layerIndex] = new StateInfo
                     {
                         StateHash = currentStateInfo.shortNameHash,
@@ -524,7 +524,7 @@ namespace {{project_namespace}}.Animation
                 if (layerIndex >= 0 && layerIndex < animator.layerCount)
                 {
                     animator.Play(stateName, layerIndex, normalizedTime);
-                    
+
                     if (enableStateChangeLogging)
                     {
                         Debug.Log($"[AnimatorControllerManager] Playing state '{stateName}' on layer {layerIndex}");
@@ -549,9 +549,9 @@ namespace {{project_namespace}}.Animation
                 {
                     if (fadeDuration < 0f)
                         fadeDuration = crossFadeDuration;
-                    
+
                     animator.CrossFade(stateName, fadeDuration, layerIndex, normalizedTime);
-                    
+
                     if (enableStateChangeLogging)
                     {
                         Debug.Log($"[AnimatorControllerManager] Cross-fading to state '{stateName}' on layer {layerIndex} with duration {fadeDuration:F2}s");
@@ -620,7 +620,7 @@ namespace {{project_namespace}}.Animation
             {
                 eventHandler.HandleAnimationEvent(eventName);
                 OnAnimationEvent?.Invoke(eventName);
-                
+
                 if (enableStateChangeLogging)
                 {
                     Debug.Log($"[AnimatorControllerManager] Animation event received: {eventName}");
@@ -644,7 +644,7 @@ namespace {{project_namespace}}.Animation
                 {
                     weight = Mathf.Clamp01(weight);
                     animator.SetLayerWeight(layerIndex, weight);
-                    
+
                     if (enableStateChangeLogging)
                     {
                         Debug.Log($"[AnimatorControllerManager] Set layer {layerIndex} weight to {weight:F2}");
@@ -740,11 +740,11 @@ namespace {{project_namespace}}.Animation
             {
                 var paramName = kvp.Key;
                 var value = kvp.Value;
-                
+
                 if (!HasParameter(paramName)) continue;
-                
+
                 var paramType = GetParameterType(paramName);
-                
+
                 switch (paramType)
                 {
                     case AnimatorControllerParameterType.Bool:
@@ -770,11 +770,11 @@ namespace {{project_namespace}}.Animation
         public Dictionary<string, object> GetAllParameterValues()
         {
             var values = new Dictionary<string, object>();
-            
+
             foreach (var paramInfo in managedParameters)
             {
                 var paramName = paramInfo.ParameterName;
-                
+
                 switch (paramInfo.ParameterType)
                 {
                     case AnimatorControllerParameterType.Bool:
@@ -791,7 +791,7 @@ namespace {{project_namespace}}.Animation
                         break;
                 }
             }
-            
+
             return values;
         }
 
@@ -834,12 +834,12 @@ namespace {{project_namespace}}.Animation
     public class AnimatorParameterValidator
     {
         private AnimatorControllerManager manager;
-        
+
         public AnimatorParameterValidator(AnimatorControllerManager manager)
         {
             this.manager = manager;
         }
-        
+
         public bool ValidateParameter(string parameterName, AnimatorControllerParameterType expectedType)
         {
             if (!manager.HasParameter(parameterName))
@@ -847,17 +847,17 @@ namespace {{project_namespace}}.Animation
                 Debug.LogWarning($"[AnimatorParameterValidator] Parameter '{parameterName}' not found");
                 return false;
             }
-            
+
             var actualType = manager.GetParameterType(parameterName);
             if (actualType != expectedType)
             {
                 Debug.LogWarning($"[AnimatorParameterValidator] Parameter '{parameterName}' type mismatch. Expected: {expectedType}, Actual: {actualType}");
                 return false;
             }
-            
+
             return true;
         }
-        
+
         public void ValidateParameterInfo(AnimatorParameterInfo paramInfo)
         {
             // Additional validation logic for parameter info
@@ -871,12 +871,12 @@ namespace {{project_namespace}}.Animation
     public class AnimatorStateMonitor
     {
         private AnimatorControllerManager manager;
-        
+
         public AnimatorStateMonitor(AnimatorControllerManager manager)
         {
             this.manager = manager;
         }
-        
+
         // Additional state monitoring functionality
     }
 
@@ -884,12 +884,12 @@ namespace {{project_namespace}}.Animation
     {
         private AnimatorControllerManager manager;
         private Dictionary<string, Action> eventCallbacks = new Dictionary<string, Action>();
-        
+
         public AnimatorEventHandler(AnimatorControllerManager manager)
         {
             this.manager = manager;
         }
-        
+
         public void RegisterEventCallback(string eventName, Action callback)
         {
             if (!eventCallbacks.ContainsKey(eventName))
@@ -901,7 +901,7 @@ namespace {{project_namespace}}.Animation
                 eventCallbacks[eventName] += callback;
             }
         }
-        
+
         public void UnregisterEventCallback(string eventName, Action callback)
         {
             if (eventCallbacks.ContainsKey(eventName))
@@ -909,7 +909,7 @@ namespace {{project_namespace}}.Animation
                 eventCallbacks[eventName] -= callback;
             }
         }
-        
+
         public void HandleAnimationEvent(string eventName)
         {
             if (eventCallbacks.ContainsKey(eventName))
@@ -952,11 +952,11 @@ namespace {{project_namespace}}.Animation.Behaviors
         protected AnimatorControllerManager controllerManager;
         protected GameObject gameObject;
         protected Transform transform;
-        
+
         private bool isInitialized = false;
         private float stateEnterTime;
         private float stateExitTime;
-        
+
         public event Action<Animator, AnimatorStateInfo, int> OnStateEnteredEvent;
         public event Action<Animator, AnimatorStateInfo, int> OnStateExitedEvent;
         public event Action<Animator, AnimatorStateInfo, int> OnStateUpdateEvent;
@@ -971,16 +971,16 @@ namespace {{project_namespace}}.Animation.Behaviors
                 {
                     InitializeBehavior(animator);
                 }
-                
+
                 stateEnterTime = Time.time;
-                
+
                 if (enableDebugLogging)
                 {
                     Debug.Log($"[{GetType().Name}] Entered state on layer {layerIndex}");
                 }
-                
+
                 OnStateEnterCustom(animator, stateInfo, layerIndex);
-                
+
                 if (enableTransitionCallbacks)
                 {
                     OnStateEnteredEvent?.Invoke(animator, stateInfo, layerIndex);
@@ -997,7 +997,7 @@ namespace {{project_namespace}}.Animation.Behaviors
             try
             {
                 OnStateUpdateCustom(animator, stateInfo, layerIndex);
-                
+
                 if (enableUpdateCallbacks)
                 {
                     OnStateUpdateEvent?.Invoke(animator, stateInfo, layerIndex);
@@ -1014,15 +1014,15 @@ namespace {{project_namespace}}.Animation.Behaviors
             try
             {
                 stateExitTime = Time.time;
-                
+
                 if (enableDebugLogging)
                 {
                     var stateDuration = stateExitTime - stateEnterTime;
                     Debug.Log($"[{GetType().Name}] Exited state after {stateDuration:F2}s on layer {layerIndex}");
                 }
-                
+
                 OnStateExitCustom(animator, stateInfo, layerIndex);
-                
+
                 if (enableTransitionCallbacks)
                 {
                     OnStateExitedEvent?.Invoke(animator, stateInfo, layerIndex);
@@ -1069,11 +1069,11 @@ namespace {{project_namespace}}.Animation.Behaviors
                 gameObject = animator.gameObject;
                 transform = animator.transform;
                 controllerManager = animator.GetComponent<AnimatorControllerManager>();
-                
+
                 OnInitializeCustom(animator);
-                
+
                 isInitialized = true;
-                
+
                 if (enableDebugLogging)
                 {
                     Debug.Log($"[{GetType().Name}] Behavior initialized");
@@ -1097,11 +1097,11 @@ namespace {{project_namespace}}.Animation.Behaviors
         protected void SetParameter(string parameterName, object value)
         {
             if (!HasControllerManager()) return;
-            
+
             try
             {
                 var paramType = controllerManager.GetParameterType(parameterName);
-                
+
                 switch (paramType)
                 {
                     case AnimatorControllerParameterType.Bool:
@@ -1131,11 +1131,11 @@ namespace {{project_namespace}}.Animation.Behaviors
         protected T GetParameter<T>(string parameterName)
         {
             if (!HasControllerManager()) return default(T);
-            
+
             try
             {
                 var paramType = controllerManager.GetParameterType(parameterName);
-                
+
                 switch (paramType)
                 {
                     case AnimatorControllerParameterType.Bool:
@@ -1238,7 +1238,7 @@ namespace {{project_namespace}}.Animation.Behaviors
         private void UpdateMovementParameters(Animator animator)
         {
             Vector3 velocity = Vector3.zero;
-            
+
             if (characterController != null)
             {
                 velocity = characterController.velocity;
@@ -1247,29 +1247,29 @@ namespace {{project_namespace}}.Animation.Behaviors
             {
                 velocity = characterRigidbody.velocity;
             }
-            
+
             // Calculate movement values
             var speed = new Vector3(velocity.x, 0, velocity.z).magnitude;
             var direction = velocity.normalized;
-            
+
             // Smooth the values
             if (speedSmoothingFactor > 0)
             {
                 speed = Mathf.Lerp(GetParameter<float>(speedParameterName), speed, Time.deltaTime * speedSmoothingFactor);
             }
-            
+
             // Normalize if required
             if (normalizeMovementInput && speed > 1f)
             {
                 direction = direction / speed;
                 speed = 1f;
             }
-            
+
             // Set parameters
             SetParameter(speedParameterName, speed);
             SetParameter(directionXParameterName, direction.x);
             SetParameter(directionYParameterName, direction.z);
-            
+
             lastVelocity = velocity;
         }
     }
@@ -1301,7 +1301,7 @@ namespace {{project_namespace}}.Animation.Behaviors
         protected override void OnStateUpdateCustom(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
             var progress = GetStateProgress(stateInfo);
-            
+
             // Check combo window
             if (progress >= comboWindowStart && progress <= comboWindowEnd)
             {
@@ -1309,7 +1309,7 @@ namespace {{project_namespace}}.Animation.Behaviors
                 {
                     comboWindowActive = true;
                     SetParameter(canComboParameterName, true);
-                    
+
                     if (enableDebugLogging)
                     {
                         Debug.Log("[CombatStateBehavior] Combo window opened");
@@ -1320,7 +1320,7 @@ namespace {{project_namespace}}.Animation.Behaviors
             {
                 comboWindowActive = false;
                 SetParameter(canComboParameterName, false);
-                
+
                 if (enableDebugLogging)
                 {
                     Debug.Log("[CombatStateBehavior] Combo window closed");
@@ -1342,10 +1342,10 @@ namespace {{project_namespace}}.Animation.Behaviors
             {
                 var currentCombo = GetParameter<int>(comboCountParameterName);
                 var nextCombo = Mathf.Min(currentCombo + 1, maxComboCount);
-                
+
                 SetParameter(comboCountParameterName, nextCombo);
                 comboTriggered = true;
-                
+
                 if (enableDebugLogging)
                 {
                     Debug.Log($"[CombatStateBehavior] Combo triggered: {nextCombo}");
@@ -1377,17 +1377,17 @@ namespace {{project_namespace}}.Animation.Behaviors
         protected override void OnStateUpdateCustom(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
             var progress = GetStateProgress(stateInfo);
-            
+
             for (int i = 0; i < timedEvents.Count; i++)
             {
                 var timedEvent = timedEvents[i];
-                
+
                 if (progress >= timedEvent.TriggerTime)
                 {
                     if (!triggerEventsOnce || !triggeredEvents.Contains(i))
                     {
                         TriggerEvent(timedEvent);
-                        
+
                         if (triggerEventsOnce)
                         {
                             triggeredEvents.Add(i);
@@ -1414,7 +1414,7 @@ namespace {{project_namespace}}.Animation.Behaviors
                     OnCustomEvent(animEvent);
                     break;
             }
-            
+
             if (enableDebugLogging)
             {
                 Debug.Log($"[AnimationEventBehavior] Triggered event: {animEvent.EventType} - {animEvent.StringParameter}");
@@ -1480,6 +1480,7 @@ This Unity Animator Setup Task provides:
 ## Integration Points
 
 This task integrates with:
+
 - `unity-editor-workflow.yaml` - Visual development phase (line 37)
 - `component-architecture.md` - Provides animation component patterns
 - `custom-inspector-creation.md` - Enhanced inspector for animator components

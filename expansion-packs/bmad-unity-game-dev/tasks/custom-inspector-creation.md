@@ -49,17 +49,17 @@ namespace {{project_namespace}}.Editor
         protected Dictionary<string, ReorderableList> reorderableLists = new Dictionary<string, ReorderableList>();
         protected Dictionary<string, bool> foldoutStates = new Dictionary<string, bool>();
         protected Dictionary<string, ValidationResult> validationResults = new Dictionary<string, ValidationResult>();
-        
+
         protected GUIStyle headerStyle;
         protected GUIStyle subHeaderStyle;
         protected GUIStyle helpBoxStyle;
         protected GUIStyle warningBoxStyle;
         protected GUIStyle errorBoxStyle;
-        
+
         protected static readonly Color headerColor = new Color(0.8f, 0.8f, 1f, 0.3f);
         protected static readonly Color warningColor = new Color(1f, 0.8f, 0.4f, 0.3f);
         protected static readonly Color errorColor = new Color(1f, 0.4f, 0.4f, 0.3f);
-        
+
         private bool stylesInitialized = false;
         private SerializedProperty[] allProperties;
         private readonly List<InspectorSection> sections = new List<InspectorSection>();
@@ -74,9 +74,9 @@ namespace {{project_namespace}}.Editor
                 CacheSerializedProperties();
                 SetupReorderableLists();
                 LoadFoldoutStates();
-                
+
                 OnEnableCustom();
-                
+
                 // Subscribe to undo/redo events
                 if (enableUndo)
                 {
@@ -94,12 +94,12 @@ namespace {{project_namespace}}.Editor
             try
             {
                 SaveFoldoutStates();
-                
+
                 if (enableUndo)
                 {
                     Undo.undoRedoPerformed -= OnUndoRedoPerformed;
                 }
-                
+
                 OnDisableCustom();
             }
             catch (Exception ex)
@@ -119,17 +119,17 @@ namespace {{project_namespace}}.Editor
                 }
 
                 serializedObject.Update();
-                
+
                 // Real-time validation
                 if (enableRealTimeValidation)
                 {
                     PerformValidation();
                 }
-                
+
                 DrawCustomInspector();
-                
+
                 serializedObject.ApplyModifiedProperties();
-                
+
                 // Handle GUI events
                 HandleCustomEvents();
             }
@@ -137,7 +137,7 @@ namespace {{project_namespace}}.Editor
             {
                 EditorGUILayout.HelpBox($"Inspector Error: {ex.Message}", MessageType.Error);
                 Debug.LogError($"[BaseCustomInspector] OnInspectorGUI error: {ex.Message}");
-                
+
                 // Fallback to default inspector
                 DrawDefaultInspector();
             }
@@ -150,7 +150,7 @@ namespace {{project_namespace}}.Editor
         protected virtual void DrawCustomInspector()
         {
             DrawInspectorHeader();
-            
+
             if (sections.Count > 0)
             {
                 DrawSectionedInspector();
@@ -159,35 +159,35 @@ namespace {{project_namespace}}.Editor
             {
                 DrawStandardInspector();
             }
-            
+
             DrawInspectorFooter();
         }
 
         protected virtual void DrawInspectorHeader()
         {
             if (!enableAdvancedInspector) return;
-            
+
             EditorGUILayout.Space();
-            
+
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.FlexibleSpace();
-                
+
                 var headerContent = new GUIContent(
                     GetInspectorTitle(),
                     GetInspectorIcon(),
                     GetInspectorTooltip()
                 );
-                
+
                 EditorGUILayout.LabelField(headerContent, headerStyle, GUILayout.Height(24));
                 GUILayout.FlexibleSpace();
             }
-            
+
             if (enableVisualSeparators)
             {
                 DrawSeparator();
             }
-            
+
             DrawValidationSummary();
         }
 
@@ -202,19 +202,19 @@ namespace {{project_namespace}}.Editor
         protected virtual void DrawInspectorSection(InspectorSection section)
         {
             if (!section.IsVisible()) return;
-            
+
             using (new EditorGUILayout.VerticalScope())
             {
                 // Section header
                 var foldoutKey = section.Name;
                 var isFoldedOut = GetFoldoutState(foldoutKey, section.DefaultExpanded);
-                
+
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     var foldoutContent = new GUIContent(section.DisplayName, section.Tooltip);
                     isFoldedOut = EditorGUILayout.Foldout(isFoldedOut, foldoutContent, true, subHeaderStyle);
                     SetFoldoutState(foldoutKey, isFoldedOut);
-                    
+
                     if (!string.IsNullOrEmpty(section.HelpUrl))
                     {
                         if (GUILayout.Button("?", GUILayout.Width(20), GUILayout.Height(16)))
@@ -223,7 +223,7 @@ namespace {{project_namespace}}.Editor
                         }
                     }
                 }
-                
+
                 if (isFoldedOut)
                 {
                     using (new EditorGUI.IndentLevelScope())
@@ -232,22 +232,22 @@ namespace {{project_namespace}}.Editor
                         {
                             DrawSeparator();
                         }
-                        
+
                         // Section help text
                         if (!string.IsNullOrEmpty(section.HelpText) && enableHelpBoxes)
                         {
                             EditorGUILayout.HelpBox(section.HelpText, MessageType.Info);
                         }
-                        
+
                         // Draw section properties
                         foreach (var propertyName in section.PropertyNames)
                         {
                             DrawProperty(propertyName);
                         }
-                        
+
                         // Custom section drawing
                         section.OnDrawSection?.Invoke();
-                        
+
                         if (enableVisualSeparators && section.ShowSeparator)
                         {
                             EditorGUILayout.Space();
@@ -273,7 +273,7 @@ namespace {{project_namespace}}.Editor
         {
             var property = serializedObject.FindProperty(propertyName);
             if (property == null) return;
-            
+
             try
             {
                 // Check if property has reorderable list
@@ -282,7 +282,7 @@ namespace {{project_namespace}}.Editor
                     DrawReorderableList(propertyName);
                     return;
                 }
-                
+
                 // Check for validation on this property
                 var validationResult = GetValidationResult(propertyName);
                 if (validationResult != null && validationResult.HasIssues)
@@ -294,7 +294,7 @@ namespace {{project_namespace}}.Editor
                     // Standard property drawing
                     EditorGUILayout.PropertyField(property, true);
                 }
-                
+
                 // Custom property drawing override
                 OnDrawPropertyCustom(property);
             }
@@ -307,7 +307,7 @@ namespace {{project_namespace}}.Editor
         protected virtual void DrawPropertyWithValidation(SerializedProperty property, ValidationResult validation)
         {
             var originalColor = GUI.backgroundColor;
-            
+
             if (validation.Severity == ValidationSeverity.Error)
             {
                 GUI.backgroundColor = errorColor;
@@ -316,13 +316,13 @@ namespace {{project_namespace}}.Editor
             {
                 GUI.backgroundColor = warningColor;
             }
-            
+
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 GUI.backgroundColor = originalColor;
-                
+
                 EditorGUILayout.PropertyField(property, true);
-                
+
                 foreach (var message in validation.Messages)
                 {
                     var messageType = message.Severity == ValidationSeverity.Error ? MessageType.Error : MessageType.Warning;
@@ -334,7 +334,7 @@ namespace {{project_namespace}}.Editor
         protected virtual void DrawReorderableList(string propertyName)
         {
             if (!reorderableLists.ContainsKey(propertyName)) return;
-            
+
             var list = reorderableLists[propertyName];
             list.DoLayoutList();
         }
@@ -342,15 +342,15 @@ namespace {{project_namespace}}.Editor
         protected virtual void DrawInspectorFooter()
         {
             if (!enableAdvancedInspector) return;
-            
+
             EditorGUILayout.Space();
-            
+
             using (new EditorGUILayout.HorizontalScope())
             {
                 DrawCustomButtons();
-                
+
                 GUILayout.FlexibleSpace();
-                
+
                 if (GUILayout.Button("Reset to Defaults", GUILayout.Width(120)))
                 {
                     if (EditorUtility.DisplayDialog(
@@ -362,7 +362,7 @@ namespace {{project_namespace}}.Editor
                     }
                 }
             }
-            
+
             DrawDebugInfo();
         }
 
@@ -373,15 +373,15 @@ namespace {{project_namespace}}.Editor
         protected virtual void PerformValidation()
         {
             validationResults.Clear();
-            
+
             try
             {
                 var targetObject = target;
                 var targetType = targetObject.GetType();
-                
+
                 // Validate using reflection and attributes
                 var fields = targetType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                
+
                 foreach (var field in fields)
                 {
                     var validationAttributes = field.GetCustomAttributes<ValidationAttribute>(true);
@@ -394,7 +394,7 @@ namespace {{project_namespace}}.Editor
                         }
                     }
                 }
-                
+
                 // Custom validation
                 OnPerformCustomValidation();
             }
@@ -417,10 +417,10 @@ namespace {{project_namespace}}.Editor
         protected void DrawValidationSummary()
         {
             if (!enableRealTimeValidation || validationResults.Count == 0) return;
-            
+
             var errorCount = 0;
             var warningCount = 0;
-            
+
             foreach (var result in validationResults.Values)
             {
                 foreach (var message in result.Messages)
@@ -431,7 +431,7 @@ namespace {{project_namespace}}.Editor
                         warningCount++;
                 }
             }
-            
+
             if (errorCount > 0 || warningCount > 0)
             {
                 var summaryText = $"Validation: {errorCount} errors, {warningCount} warnings";
@@ -458,14 +458,14 @@ namespace {{project_namespace}}.Editor
                 Debug.LogError($"[BaseCustomInspector] Property '{propertyName}' not found for reorderable list");
                 return null;
             }
-            
+
             var list = new ReorderableList(serializedObject, property, true, true, true, true)
             {
                 drawHeaderCallback = rect =>
                 {
                     EditorGUI.LabelField(rect, displayName ?? property.displayName);
                 },
-                
+
                 drawElementCallback = (rect, index, isActive, isFocused) =>
                 {
                     var element = property.GetArrayElementAtIndex(index);
@@ -473,14 +473,14 @@ namespace {{project_namespace}}.Editor
                     rect.height = EditorGUIUtility.singleLineHeight;
                     EditorGUI.PropertyField(rect, element, GUIContent.none);
                 },
-                
+
                 onAddCallback = list =>
                 {
                     property.arraySize++;
                     var newElement = property.GetArrayElementAtIndex(property.arraySize - 1);
                     OnReorderableListElementAdded(propertyName, newElement);
                 },
-                
+
                 onRemoveCallback = list =>
                 {
                     if (EditorUtility.DisplayDialog("Remove Element",
@@ -490,7 +490,7 @@ namespace {{project_namespace}}.Editor
                     }
                 }
             };
-            
+
             reorderableLists[propertyName] = list;
             return list;
         }
@@ -512,19 +512,19 @@ namespace {{project_namespace}}.Editor
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = EditorGUIUtility.isProSkin ? Color.white : Color.black }
             };
-            
+
             subHeaderStyle = new GUIStyle(EditorStyles.foldout)
             {
                 fontStyle = FontStyle.Bold,
                 fontSize = 11
             };
-            
+
             helpBoxStyle = new GUIStyle(EditorStyles.helpBox)
             {
                 fontSize = 10,
                 wordWrap = true
             };
-            
+
             warningBoxStyle = new GUIStyle(EditorStyles.helpBox);
             errorBoxStyle = new GUIStyle(EditorStyles.helpBox);
         }
@@ -584,7 +584,7 @@ namespace {{project_namespace}}.Editor
         protected virtual void HandleCustomEvents()
         {
             var currentEvent = Event.current;
-            
+
             if (currentEvent.type == EventType.KeyDown)
             {
                 OnKeyDown(currentEvent);
@@ -604,7 +604,7 @@ namespace {{project_namespace}}.Editor
         {
             var menu = new GenericMenu();
             AddContextMenuItems(menu);
-            
+
             if (menu.GetItemCount() > 0)
             {
                 menu.ShowAsContext();
@@ -627,7 +627,7 @@ namespace {{project_namespace}}.Editor
         {
             var propertyList = new List<SerializedProperty>();
             var property = serializedObject.GetIterator();
-            
+
             if (property.NextVisible(true))
             {
                 do
@@ -636,7 +636,7 @@ namespace {{project_namespace}}.Editor
                 }
                 while (property.NextVisible(false));
             }
-            
+
             allProperties = propertyList.ToArray();
         }
 
@@ -669,7 +669,7 @@ namespace {{project_namespace}}.Editor
         protected virtual void DrawDebugInfo()
         {
             if (!Application.isPlaying) return;
-            
+
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 EditorGUILayout.LabelField("Runtime Debug Info", EditorStyles.miniBoldLabel);
@@ -680,10 +680,10 @@ namespace {{project_namespace}}.Editor
         protected virtual void ResetToDefaults()
         {
             Undo.RecordObject(target, "Reset Component");
-            
+
             var targetType = target.GetType();
             var defaultComponent = Activator.CreateInstance(targetType);
-            
+
             var fields = targetType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             foreach (var field in fields)
             {
@@ -692,7 +692,7 @@ namespace {{project_namespace}}.Editor
                     field.SetValue(target, field.GetValue(defaultComponent));
                 }
             }
-            
+
             EditorUtility.SetDirty(target);
         }
 
@@ -846,14 +846,14 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
         protected const float spacing = 2f;
         protected static readonly GUIStyle errorStyle = new GUIStyle(EditorStyles.helpBox);
         protected static readonly GUIStyle warningStyle = new GUIStyle(EditorStyles.helpBox);
-        
+
         private static Dictionary<string, float> cachedHeights = new Dictionary<string, float>();
         private static Dictionary<string, ValidationResult> validationCache = new Dictionary<string, ValidationResult>();
-        
+
         protected bool enableValidation = true;
         protected bool enableAnimation = true;
         protected bool enableTooltips = true;
-        
+
         #region PropertyDrawer Overrides
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -861,17 +861,17 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
             try
             {
                 var propertyKey = GetPropertyKey(property);
-                
+
                 // Begin property
                 EditorGUI.BeginProperty(position, label, property);
-                
+
                 // Validation
                 ValidationResult validation = null;
                 if (enableValidation)
                 {
                     validation = GetOrUpdateValidation(property, propertyKey);
                 }
-                
+
                 // Draw property with validation styling
                 if (validation != null && validation.HasIssues)
                 {
@@ -881,7 +881,7 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
                 {
                     DrawPropertyContent(position, property, label);
                 }
-                
+
                 EditorGUI.EndProperty();
             }
             catch (Exception ex)
@@ -896,14 +896,14 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
             try
             {
                 var propertyKey = GetPropertyKey(property);
-                
+
                 if (cachedHeights.ContainsKey(propertyKey))
                 {
                     return cachedHeights[propertyKey];
                 }
-                
+
                 var height = CalculatePropertyHeight(property, label);
-                
+
                 // Add height for validation messages
                 if (enableValidation)
                 {
@@ -913,7 +913,7 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
                         height += CalculateValidationHeight(validation);
                     }
                 }
-                
+
                 cachedHeights[propertyKey] = height;
                 return height;
             }
@@ -929,7 +929,7 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
         #region Abstract Methods
 
         protected abstract void DrawPropertyContent(Rect position, SerializedProperty property, GUIContent label);
-        
+
         protected virtual float CalculatePropertyHeight(SerializedProperty property, GUIContent label)
         {
             return EditorGUIUtility.singleLineHeight;
@@ -942,7 +942,7 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
         protected virtual ValidationResult ValidateProperty(SerializedProperty property)
         {
             var validation = new ValidationResult();
-            
+
             // Get validation attributes from field
             if (fieldInfo != null)
             {
@@ -956,10 +956,10 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
                     }
                 }
             }
-            
+
             // Custom validation
             OnValidatePropertyCustom(property, validation);
-            
+
             return validation;
         }
 
@@ -977,7 +977,7 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
                 validationCache[propertyKey] = validation;
                 return validation;
             }
-            
+
             return validationCache.ContainsKey(propertyKey) ? validationCache[propertyKey] : null;
         }
 
@@ -998,7 +998,7 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
             var originalColor = GUI.backgroundColor;
             var propertyHeight = CalculatePropertyHeight(property, label);
             var propertyRect = new Rect(position.x, position.y, position.width, propertyHeight);
-            
+
             // Determine validation color
             var hasErrors = validation.Messages.Exists(m => m.Severity == ValidationSeverity.Error);
             if (hasErrors)
@@ -1009,14 +1009,14 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
             {
                 GUI.backgroundColor = new Color(1f, 0.8f, 0.4f, 0.3f);
             }
-            
+
             // Draw property background
             EditorGUI.DrawRect(propertyRect, GUI.backgroundColor);
             GUI.backgroundColor = originalColor;
-            
+
             // Draw property content
             DrawPropertyContent(propertyRect, property, label);
-            
+
             // Draw validation messages
             var messageY = propertyRect.yMax + spacing;
             foreach (var message in validation.Messages)
@@ -1025,7 +1025,7 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
                 var content = new GUIContent(message.Text);
                 var messageHeight = errorStyle.CalcHeight(content, position.width);
                 var messageRect = new Rect(position.x, messageY, position.width, messageHeight);
-                
+
                 EditorGUI.HelpBox(messageRect, message.Text, messageType);
                 messageY += messageHeight + spacing;
             }
@@ -1102,14 +1102,14 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
             var rects = new Rect[widths.Length];
             var currentX = rect.x;
             var totalWidth = rect.width / widths.Sum();
-            
+
             for (int i = 0; i < widths.Length; i++)
             {
                 var width = widths[i] * totalWidth;
                 rects[i] = new Rect(currentX, rect.y, width - 2, rect.height);
                 currentX += width;
             }
-            
+
             return rects;
         }
 
@@ -1128,26 +1128,26 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
         {
             var minProperty = property.FindPropertyRelative("min");
             var maxProperty = property.FindPropertyRelative("max");
-            
+
             if (minProperty == null || maxProperty == null)
             {
                 EditorGUI.HelpBox(position, "RangeFloat requires 'min' and 'max' fields", MessageType.Error);
                 return;
             }
-            
+
             var rects = SplitRect(position, 0.3f, 0.3f, 0.1f, 0.3f);
-            
+
             EditorGUI.LabelField(rects[0], label);
-            
+
             EditorGUI.BeginChangeCheck();
             var newMin = EditorGUI.FloatField(rects[1], minProperty.floatValue);
             if (EditorGUI.EndChangeCheck())
             {
                 minProperty.floatValue = Mathf.Min(newMin, maxProperty.floatValue);
             }
-            
+
             EditorGUI.LabelField(rects[2], "to", EditorStyles.centeredGreyMiniLabel);
-            
+
             EditorGUI.BeginChangeCheck();
             var newMax = EditorGUI.FloatField(rects[3], maxProperty.floatValue);
             if (EditorGUI.EndChangeCheck())
@@ -1160,7 +1160,7 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
         {
             var minProperty = property.FindPropertyRelative("min");
             var maxProperty = property.FindPropertyRelative("max");
-            
+
             if (minProperty != null && maxProperty != null)
             {
                 if (minProperty.floatValue > maxProperty.floatValue)
@@ -1183,21 +1183,21 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
         protected string conditionPropertyName;
         protected object conditionValue;
         protected bool hideWhenConditionMet;
-        
+
         public ConditionalPropertyDrawer(string conditionProperty, object conditionVal, bool hideWhen = false)
         {
             conditionPropertyName = conditionProperty;
             conditionValue = conditionVal;
             hideWhenConditionMet = hideWhen;
         }
-        
+
         protected override void DrawPropertyContent(Rect position, SerializedProperty property, GUIContent label)
         {
             if (!ShouldDrawProperty(property))
             {
                 return;
             }
-            
+
             EditorGUI.PropertyField(position, property, label, true);
         }
 
@@ -1207,18 +1207,18 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
             {
                 return 0f;
             }
-            
+
             return EditorGUI.GetPropertyHeight(property, label, true);
         }
-        
+
         private bool ShouldDrawProperty(SerializedProperty property)
         {
             var conditionProperty = property.serializedObject.FindProperty(conditionPropertyName);
             if (conditionProperty == null) return true;
-            
+
             var currentValue = GetPropertyValue(conditionProperty);
             var conditionMet = currentValue?.Equals(conditionValue) ?? false;
-            
+
             return hideWhenConditionMet ? !conditionMet : conditionMet;
         }
     }
@@ -1237,11 +1237,11 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
                 EditorGUI.HelpBox(position, "ValidatedAssetReference requires 'asset' field", MessageType.Error);
                 return;
             }
-            
+
             var rects = SplitRect(position, 0.7f, 0.3f);
-            
+
             EditorGUI.PropertyField(rects[0], assetProperty, label);
-            
+
             if (assetProperty.objectReferenceValue != null)
             {
                 if (GUI.Button(rects[1], "Preview"))
@@ -1256,7 +1256,7 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
         {
             var assetProperty = property.FindPropertyRelative("asset");
             var requiredTypeProperty = property.FindPropertyRelative("requiredType");
-            
+
             if (assetProperty?.objectReferenceValue == null)
             {
                 validation.Messages.Add(new ValidationMessage
@@ -1272,7 +1272,7 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
                 {
                     var assetType = assetProperty.objectReferenceValue.GetType();
                     var requiredType = Type.GetType(requiredTypeName);
-                    
+
                     if (requiredType != null && !requiredType.IsAssignableFrom(assetType))
                     {
                         validation.Messages.Add(new ValidationMessage
@@ -1295,23 +1295,23 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
     {
         public float min;
         public float max;
-        
+
         public RangeFloat(float minValue = 0f, float maxValue = 1f)
         {
             min = minValue;
             max = maxValue;
         }
-        
+
         public bool Contains(float value)
         {
             return value >= min && value <= max;
         }
-        
+
         public float Clamp(float value)
         {
             return Mathf.Clamp(value, min, max);
         }
-        
+
         public float Random()
         {
             return UnityEngine.Random.Range(min, max);
@@ -1323,7 +1323,7 @@ namespace {{project_namespace}}.Editor.PropertyDrawers
     {
         public UnityEngine.Object asset;
         public string requiredType;
-        
+
         public T GetAsset<T>() where T : UnityEngine.Object
         {
             return asset as T;
@@ -1364,17 +1364,17 @@ namespace {{project_namespace}}.Editor.Windows
         protected bool enableToolbar = true;
         protected bool enableStatusBar = true;
         protected float autoSaveInterval = 30f;
-        
+
         protected Vector2 scrollPosition;
         protected Dictionary<string, object> windowData = new Dictionary<string, object>();
         protected string windowDataPath;
-        
+
         private bool isInitialized = false;
         private float lastAutoSaveTime;
         private GUIStyle headerStyle;
         private GUIStyle toolbarStyle;
         private GUIStyle statusBarStyle;
-        
+
         #region Window Lifecycle
 
         protected virtual void OnEnable()
@@ -1384,12 +1384,12 @@ namespace {{project_namespace}}.Editor.Windows
                 InitializeWindow();
                 LoadWindowData();
                 OnEnableCustom();
-                
+
                 if (enableUndo)
                 {
                     Undo.undoRedoPerformed += OnUndoRedoPerformed;
                 }
-                
+
                 isInitialized = true;
             }
             catch (Exception ex)
@@ -1406,12 +1406,12 @@ namespace {{project_namespace}}.Editor.Windows
                 {
                     SaveWindowData();
                 }
-                
+
                 if (enableUndo)
                 {
                     Undo.undoRedoPerformed -= OnUndoRedoPerformed;
                 }
-                
+
                 OnDisableCustom();
             }
             catch (Exception ex)
@@ -1427,37 +1427,37 @@ namespace {{project_namespace}}.Editor.Windows
                 EditorGUILayout.HelpBox("Window is initializing...", MessageType.Info);
                 return;
             }
-            
+
             try
             {
                 InitializeStyles();
-                
+
                 using (new EditorGUILayout.VerticalScope())
                 {
                     if (enableMenuBar)
                     {
                         DrawMenuBar();
                     }
-                    
+
                     if (enableToolbar)
                     {
                         DrawToolbar();
                     }
-                    
+
                     using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPosition))
                     {
                         scrollPosition = scrollView.scrollPosition;
                         DrawWindowContent();
                     }
-                    
+
                     if (enableStatusBar)
                     {
                         DrawStatusBar();
                     }
                 }
-                
+
                 HandleWindowEvents();
-                
+
                 if (enableAutoSave && Time.realtimeSinceStartup - lastAutoSaveTime > autoSaveInterval)
                 {
                     SaveWindowData();
@@ -1485,14 +1485,14 @@ namespace {{project_namespace}}.Editor.Windows
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 DrawMenuBarContent();
-                
+
                 GUILayout.FlexibleSpace();
-                
+
                 if (GUILayout.Button("Help", EditorStyles.toolbarButton, GUILayout.Width(50)))
                 {
                     ShowHelp();
                 }
-                
+
                 if (GUILayout.Button("⚙", EditorStyles.toolbarButton, GUILayout.Width(25)))
                 {
                     ShowSettings();
@@ -1505,9 +1505,9 @@ namespace {{project_namespace}}.Editor.Windows
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 DrawToolbarContent();
-                
+
                 GUILayout.FlexibleSpace();
-                
+
                 if (enableAutoSave)
                 {
                     var autoSaveLabel = $"Auto-save: {(int)(autoSaveInterval - (Time.realtimeSinceStartup - lastAutoSaveTime))}s";
@@ -1521,9 +1521,9 @@ namespace {{project_namespace}}.Editor.Windows
             using (new EditorGUILayout.HorizontalScope(statusBarStyle))
             {
                 DrawStatusBarContent();
-                
+
                 GUILayout.FlexibleSpace();
-                
+
                 EditorGUILayout.LabelField($"Window: {GetWindowTitle()}", EditorStyles.miniLabel);
             }
         }
@@ -1554,13 +1554,13 @@ namespace {{project_namespace}}.Editor.Windows
                 {
                     var json = File.ReadAllText(windowDataPath);
                     var data = JsonUtility.FromJson<WindowDataContainer>(json);
-                    
+
                     if (data?.Data != null)
                     {
                         windowData = data.Data;
                     }
                 }
-                
+
                 OnLoadWindowData();
             }
             catch (Exception ex)
@@ -1574,16 +1574,16 @@ namespace {{project_namespace}}.Editor.Windows
             try
             {
                 OnSaveWindowData();
-                
+
                 var dataContainer = new WindowDataContainer { Data = windowData };
                 var json = JsonUtility.ToJson(dataContainer, true);
-                
+
                 var directory = Path.GetDirectoryName(windowDataPath);
                 if (!Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }
-                
+
                 File.WriteAllText(windowDataPath, json);
             }
             catch (Exception ex)
@@ -1620,7 +1620,7 @@ namespace {{project_namespace}}.Editor.Windows
         protected virtual void HandleWindowEvents()
         {
             var currentEvent = Event.current;
-            
+
             switch (currentEvent.type)
             {
                 case EventType.KeyDown:
@@ -1659,7 +1659,7 @@ namespace {{project_namespace}}.Editor.Windows
         {
             var menu = new GenericMenu();
             AddContextMenuItems(menu);
-            
+
             if (menu.GetItemCount() > 0)
             {
                 menu.ShowAsContext();
@@ -1691,12 +1691,12 @@ namespace {{project_namespace}}.Editor.Windows
                     alignment = TextAnchor.MiddleCenter
                 };
             }
-            
+
             if (toolbarStyle == null)
             {
                 toolbarStyle = new GUIStyle(EditorStyles.toolbar);
             }
-            
+
             if (statusBarStyle == null)
             {
                 statusBarStyle = new GUIStyle(EditorStyles.toolbar)
@@ -1721,8 +1721,8 @@ namespace {{project_namespace}}.Editor.Windows
 
         protected virtual void ResetWindow()
         {
-            if (EditorUtility.DisplayDialog("Reset Window", 
-                "Are you sure you want to reset this window to default settings?", 
+            if (EditorUtility.DisplayDialog("Reset Window",
+                "Are you sure you want to reset this window to default settings?",
                 "Reset", "Cancel"))
             {
                 windowData.Clear();
@@ -1758,12 +1758,12 @@ namespace {{project_namespace}}.Editor.Windows
         #region Abstract/Virtual Methods for Override
 
         protected abstract string GetWindowTitle();
-        
+
         protected virtual string GetHelpUrl()
         {
             return null;
         }
-        
+
         protected virtual string GetHelpText()
         {
             return $"Help for {GetWindowTitle()} window.";
@@ -1849,7 +1849,7 @@ namespace {{project_namespace}}.Editor.Windows
 This Unity Custom Inspector Creation Task provides:
 
 - **Comprehensive Inspector Framework**: Base classes with validation, styling, and enhanced editing
-- **Advanced Property Drawers**: Reusable drawers for ranges, conditionals, and asset references  
+- **Advanced Property Drawers**: Reusable drawers for ranges, conditionals, and asset references
 - **Custom Editor Windows**: Full-featured window framework with data persistence and event handling
 - **Validation System**: Real-time property validation with visual feedback and error reporting
 - **Production Ready**: Error handling, performance optimization, and Unity Editor best practices
@@ -1860,6 +1860,7 @@ This Unity Custom Inspector Creation Task provides:
 ## Integration Points
 
 This task integrates with:
+
 - `unity-editor-workflow.yaml` - Editor setup phase (line 24)
 - `component-architecture.md` - Provides inspector enhancement for custom components
 - `monobehaviour-creation.md` - Enhances MonoBehaviour editing experience

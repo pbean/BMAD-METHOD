@@ -88,10 +88,10 @@ namespace {{project_namespace}}.Editor.Automation
                 LoadConfiguration();
                 InitializeAutomationFramework();
                 RegisterBuiltInTasks();
-                
+
                 EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
                 EditorApplication.projectChanged += OnProjectChanged;
-                
+
                 titleContent = new GUIContent("Editor Automation", EditorGUIUtility.IconContent("Settings").image);
             }
             catch (Exception ex)
@@ -105,7 +105,7 @@ namespace {{project_namespace}}.Editor.Automation
             try
             {
                 SaveConfiguration();
-                
+
                 EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
                 EditorApplication.projectChanged -= OnProjectChanged;
             }
@@ -131,16 +131,16 @@ namespace {{project_namespace}}.Editor.Automation
         {
             var configPath = "Assets/Editor/Automation/EditorAutomationConfig.asset";
             config = AssetDatabase.LoadAssetAtPath<EditorAutomationConfig>(configPath);
-            
+
             if (config == null)
             {
                 config = CreateInstance<EditorAutomationConfig>();
-                
+
                 if (!Directory.Exists(Path.GetDirectoryName(configPath)))
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(configPath));
                 }
-                
+
                 AssetDatabase.CreateAsset(config, configPath);
                 AssetDatabase.SaveAssets();
             }
@@ -163,7 +163,7 @@ namespace {{project_namespace}}.Editor.Automation
                 AssetPostprocessorAutomation.Initialize(config);
                 BuildAutomationSystem.Initialize(config);
                 ProjectValidationSystem.Initialize(config);
-                
+
                 Debug.Log("[EditorAutomationFramework] Framework initialized successfully");
             }
             catch (Exception ex)
@@ -180,13 +180,13 @@ namespace {{project_namespace}}.Editor.Automation
             RegisterTask(new SpriteAtlasGenerationTask());
             RegisterTask(new AudioImportSetupTask());
             RegisterTask(new AssetNamingValidationTask());
-            
+
             // Build automation tasks
             RegisterTask(new BuildNumberIncrementTask());
             RegisterTask(new BuildReportGenerationTask());
             RegisterTask(new PostBuildCleanupTask());
             RegisterTask(new PreBuildValidationTask());
-            
+
             // Project validation tasks
             RegisterTask(new SceneValidationTask());
             RegisterTask(new AssetIntegrityValidationTask());
@@ -210,7 +210,7 @@ namespace {{project_namespace}}.Editor.Automation
 
                 task.Initialize();
                 automationTasks.Add(task);
-                
+
                 Debug.Log($"[EditorAutomationFramework] Registered task: {task.TaskId}");
             }
             catch (Exception ex)
@@ -256,7 +256,7 @@ namespace {{project_namespace}}.Editor.Automation
                 }
 
                 EditorUtility.DisplayProgressBar("Automation", $"Executing {task.TaskName}...", 0f);
-                
+
                 var result = task.Execute();
                 taskResults[taskId] = result;
 
@@ -285,21 +285,21 @@ namespace {{project_namespace}}.Editor.Automation
         private void DrawHeader()
         {
             EditorGUILayout.Space();
-            
+
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.FlexibleSpace();
-                
+
                 var headerStyle = new GUIStyle(EditorStyles.boldLabel)
                 {
                     fontSize = 18,
                     alignment = TextAnchor.MiddleCenter
                 };
-                
+
                 EditorGUILayout.LabelField("Unity Editor Automation Framework", headerStyle);
                 GUILayout.FlexibleSpace();
             }
-            
+
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
         }
@@ -311,14 +311,14 @@ namespace {{project_namespace}}.Editor.Automation
                 for (int i = 0; i < automationCategories.Length; i++)
                 {
                     var buttonStyle = selectedCategory == i ? EditorStyles.miniButtonMid : EditorStyles.miniButton;
-                    
+
                     if (GUILayout.Button(automationCategories[i], buttonStyle))
                     {
                         selectedCategory = i;
                     }
                 }
             }
-            
+
             EditorGUILayout.Space();
         }
 
@@ -327,7 +327,7 @@ namespace {{project_namespace}}.Editor.Automation
             using (var scrollScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
             {
                 scrollPosition = scrollScope.scrollPosition;
-                
+
                 switch (selectedCategory)
                 {
                     case 0: DrawAssetProcessingSettings(); break;
@@ -384,12 +384,12 @@ namespace {{project_namespace}}.Editor.Automation
                 {
                     ExecuteTask("scene_validation");
                 }
-                
+
                 if (GUILayout.Button("Validate Asset Integrity"))
                 {
                     ExecuteTask("asset_integrity_validation");
                 }
-                
+
                 if (GUILayout.Button("Validate Code Quality"))
                 {
                     ExecuteTask("code_quality_validation");
@@ -411,7 +411,7 @@ namespace {{project_namespace}}.Editor.Automation
                 {
                     ExecuteTask("performance_validation");
                 }
-                
+
                 DrawPerformanceMetrics();
             }
         }
@@ -422,7 +422,7 @@ namespace {{project_namespace}}.Editor.Automation
             EditorGUILayout.Space();
 
             var customTasks = automationTasks.Where(t => t.Category == "Custom").ToList();
-            
+
             if (customTasks.Count == 0)
             {
                 EditorGUILayout.HelpBox("No custom tasks registered. Create custom IEditorAutomationTask implementations to add them here.", MessageType.Info);
@@ -439,25 +439,25 @@ namespace {{project_namespace}}.Editor.Automation
         private void DrawTaskExecutionButtons(string category)
         {
             var categoryTasks = automationTasks.Where(t => t.Category == category).ToList();
-            
+
             foreach (var task in categoryTasks)
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     EditorGUILayout.LabelField(task.TaskName, GUILayout.Width(200));
-                    
+
                     GUI.enabled = task.CanExecute();
                     if (GUILayout.Button("Execute", GUILayout.Width(80)))
                     {
                         ExecuteTask(task.TaskId);
                     }
                     GUI.enabled = true;
-                    
+
                     if (taskResults.ContainsKey(task.TaskId))
                     {
                         var result = taskResults[task.TaskId];
                         var statusColor = result.Success ? Color.green : Color.red;
-                        
+
                         var originalColor = GUI.color;
                         GUI.color = statusColor;
                         EditorGUILayout.LabelField(result.Success ? "✓" : "✗", GUILayout.Width(20));
@@ -470,7 +470,7 @@ namespace {{project_namespace}}.Editor.Automation
         private void DrawValidationResults()
         {
             EditorGUILayout.LabelField("Validation Results", EditorStyles.boldLabel);
-            
+
             foreach (var result in taskResults.Values.Where(r => r.Category == "Validation"))
             {
                 var messageType = result.Success ? MessageType.Info : MessageType.Error;
@@ -489,7 +489,7 @@ namespace {{project_namespace}}.Editor.Automation
                     if (metrics != null)
                     {
                         EditorGUILayout.LabelField("Performance Metrics", EditorStyles.boldLabel);
-                        
+
                         foreach (var metric in metrics)
                         {
                             EditorGUILayout.LabelField($"{metric.Key}: {metric.Value}");
@@ -505,7 +505,7 @@ namespace {{project_namespace}}.Editor.Automation
             {
                 EditorGUILayout.LabelField(task.TaskName, EditorStyles.boldLabel);
                 EditorGUILayout.LabelField(task.Description, EditorStyles.wordWrappedLabel);
-                
+
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     GUI.enabled = task.CanExecute();
@@ -514,7 +514,7 @@ namespace {{project_namespace}}.Editor.Automation
                         ExecuteTask(task.TaskId);
                     }
                     GUI.enabled = true;
-                    
+
                     if (GUILayout.Button("Configure"))
                     {
                         task.ShowConfiguration();
@@ -527,24 +527,24 @@ namespace {{project_namespace}}.Editor.Automation
         {
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
-            
+
             using (new EditorGUILayout.HorizontalScope())
             {
                 showAdvancedSettings = EditorGUILayout.Toggle("Show Advanced Settings", showAdvancedSettings);
-                
+
                 GUILayout.FlexibleSpace();
-                
+
                 if (GUILayout.Button("Export Configuration"))
                 {
                     ExportConfiguration();
                 }
-                
+
                 if (GUILayout.Button("Import Configuration"))
                 {
                     ImportConfiguration();
                 }
             }
-            
+
             if (showAdvancedSettings)
             {
                 DrawAdvancedSettings();
@@ -556,7 +556,7 @@ namespace {{project_namespace}}.Editor.Automation
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 EditorGUILayout.LabelField("Advanced Settings", EditorStyles.boldLabel);
-                
+
                 enableAssetAutomation = EditorGUILayout.Toggle("Enable Asset Automation", enableAssetAutomation);
                 enableBuildAutomation = EditorGUILayout.Toggle("Enable Build Automation", enableBuildAutomation);
                 enableProjectValidation = EditorGUILayout.Toggle("Enable Project Validation", enableProjectValidation);
@@ -687,7 +687,7 @@ namespace {{project_namespace}}.Editor.Automation
         private void ValidateProjectBeforePlay()
         {
             var validationTasks = automationTasks.Where(t => t.Category == "Validation").ToList();
-            
+
             foreach (var task in validationTasks)
             {
                 try
@@ -719,7 +719,7 @@ namespace {{project_namespace}}.Editor.Automation
         string TaskName { get; }
         string Description { get; }
         string Category { get; }
-        
+
         void Initialize();
         bool CanExecute();
         AutomationTaskResult Execute();
@@ -843,7 +843,7 @@ namespace {{project_namespace}}.Editor.Automation
                     return;
 
                 ValidateTextureSettings(textureImporter, texture);
-                
+
                 if (config.autoGenerateSpritAtlases && IsSprite(textureImporter))
                 {
                     ScheduleSpriteAtlasGeneration(assetPath);
@@ -1330,7 +1330,7 @@ namespace {{project_namespace}}.Editor.Automation
         {
             var directory = Path.GetDirectoryName(assetPath);
             var directoryName = Path.GetFileName(directory);
-            
+
             // Use directory name as packing tag
             return directoryName.ToLower().Replace(" ", "_");
         }
@@ -1370,7 +1370,7 @@ namespace {{project_namespace}}.Editor.Automation
         private void CreateSpriteAtlas(string atlasPath, string spriteDirectory)
         {
             var atlas = new SpriteAtlas();
-            
+
             // Configure atlas settings
             var packingSettings = new SpriteAtlasPackingSettings
             {
@@ -1396,7 +1396,7 @@ namespace {{project_namespace}}.Editor.Automation
             // Save atlas
             AssetDatabase.CreateAsset(atlas, atlasPath);
             AssetDatabase.SaveAssets();
-            
+
             Debug.Log($"[AssetPostprocessorAutomation] Created sprite atlas: {atlasPath}");
         }
 
@@ -1404,10 +1404,10 @@ namespace {{project_namespace}}.Editor.Automation
         {
             // Clear existing objects
             atlas.Remove(atlas.GetPackables());
-            
+
             // Add current sprites
             AddSpritesToAtlas(atlas, spriteDirectory);
-            
+
             EditorUtility.SetDirty(atlas);
             AssetDatabase.SaveAssets();
         }
@@ -1415,12 +1415,12 @@ namespace {{project_namespace}}.Editor.Automation
         private void AddSpritesToAtlas(SpriteAtlas atlas, string spriteDirectory)
         {
             var spriteGUIDs = AssetDatabase.FindAssets("t:Sprite", new[] { spriteDirectory });
-            
+
             foreach (var guid in spriteGUIDs)
             {
                 var spritePath = AssetDatabase.GUIDToAssetPath(guid);
                 var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
-                
+
                 if (sprite != null)
                 {
                     atlas.Add(new UnityEngine.Object[] { sprite });
@@ -1435,7 +1435,7 @@ namespace {{project_namespace}}.Editor.Automation
         private static void LoadAssetImportRules()
         {
             assetImportRules = new Dictionary<string, AssetImportSettings>();
-            
+
             // Load custom import rules from configuration
             var rulesPath = "Assets/Editor/Automation/AssetImportRules.json";
             if (File.Exists(rulesPath))
@@ -1444,7 +1444,7 @@ namespace {{project_namespace}}.Editor.Automation
                 {
                     var json = File.ReadAllText(rulesPath);
                     var rules = JsonUtility.FromJson<AssetImportRulesContainer>(json);
-                    
+
                     foreach (var rule in rules.Rules)
                     {
                         assetImportRules[rule.Pattern] = rule.Settings;
@@ -1543,7 +1543,7 @@ namespace {{project_namespace}}.Editor.Automation
             config = automationConfig;
             LoadBuildConfiguration();
             LoadBuildConfigurations();
-            
+
             Debug.Log("[BuildAutomationSystem] Initialized with configuration");
         }
 
@@ -1553,16 +1553,16 @@ namespace {{project_namespace}}.Editor.Automation
         {
             var configPath = "Assets/Editor/Automation/BuildAutomationConfig.asset";
             buildConfig = AssetDatabase.LoadAssetAtPath<BuildAutomationConfig>(configPath);
-            
+
             if (buildConfig == null)
             {
                 buildConfig = ScriptableObject.CreateInstance<BuildAutomationConfig>();
-                
+
                 if (!Directory.Exists(Path.GetDirectoryName(configPath)))
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(configPath));
                 }
-                
+
                 AssetDatabase.CreateAsset(buildConfig, configPath);
                 AssetDatabase.SaveAssets();
             }
@@ -1816,7 +1816,7 @@ namespace {{project_namespace}}.Editor.Automation
 
         private void SetupIOSBuildSettings(BuildConfiguration buildConfig)
         {
-            EditorUserBuildSettings.iOSBuildConfigType = buildConfig.EnableDevelopmentBuild ? 
+            EditorUserBuildSettings.iOSBuildConfigType = buildConfig.EnableDevelopmentBuild ?
                 iOSBuildType.Debug : iOSBuildType.Release;
         }
 
@@ -1824,12 +1824,12 @@ namespace {{project_namespace}}.Editor.Automation
         {
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             var timestampPath = "Assets/Resources/BuildTimestamp.txt";
-            
+
             if (!Directory.Exists("Assets/Resources"))
             {
                 Directory.CreateDirectory("Assets/Resources");
             }
-            
+
             File.WriteAllText(timestampPath, timestamp);
             AssetDatabase.Refresh();
         }
@@ -1911,7 +1911,7 @@ namespace {{project_namespace}}.Editor.Automation
 
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                 var reportPath = Path.Combine(config.outputDirectory, $"BuildReport_{timestamp}.json");
-                
+
                 if (!Directory.Exists(config.outputDirectory))
                 {
                     Directory.CreateDirectory(config.outputDirectory);
@@ -1968,7 +1968,7 @@ namespace {{project_namespace}}.Editor.Automation
 
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                 var archivePath = Path.Combine("BuildArchive", $"{report.summary.platform}_{timestamp}");
-                
+
                 if (!Directory.Exists("BuildArchive"))
                 {
                     Directory.CreateDirectory("BuildArchive");
@@ -2003,7 +2003,7 @@ namespace {{project_namespace}}.Editor.Automation
             var duration = report.summary.totalTime;
 
             var message = $"Build {result} for {platform} in {duration:mm\\:ss}";
-            
+
             if (result == BuildResult.Succeeded)
             {
                 Debug.Log($"[BuildAutomationSystem] ✅ {message}");
@@ -2137,13 +2137,13 @@ namespace {{project_namespace}}.Editor.Automation
         private static BuildOptions GetBuildOptions(BuildConfiguration config)
         {
             BuildOptions options = BuildOptions.None;
-            
+
             if (config.EnableDevelopmentBuild)
                 options |= BuildOptions.Development;
-                
+
             if (config.EnableScriptDebugging)
                 options |= BuildOptions.AllowDebugging;
-                
+
             if (config.EnableProfiling)
                 options |= BuildOptions.ConnectWithProfiler;
 
