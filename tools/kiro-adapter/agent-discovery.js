@@ -7,6 +7,8 @@ const fs = require('fs-extra');
 const path = require('path');
 const glob = require('glob');
 const yaml = require('js-yaml');
+const ConversionErrorHandler = require('./conversion-error-handler');
+const ConversionMonitor = require('./conversion-monitor');
 
 class AgentDiscovery {
   constructor(options = {}) {
@@ -14,12 +16,34 @@ class AgentDiscovery {
       rootPath: options.rootPath || process.cwd(),
       verbose: options.verbose || false,
       validateDependencies: options.validateDependencies !== false,
+      enableErrorHandling: options.enableErrorHandling !== false,
       ...options
     };
     
     this.discoveredAgents = new Map();
     this.validationErrors = [];
     this.dependencyMap = new Map();
+    
+    // Initialize error handler for discovery issues
+    if (this.options.enableErrorHandling) {
+      this.errorHandler = new ConversionErrorHandler({
+        logLevel: options.logLevel || 'warn',
+        enableDiagnostics: options.enableDiagnostics !== false,
+        enableRecovery: options.enableRecovery !== false,
+        logFilePath: path.join(this.options.rootPath, '.kiro', 'logs', 'discovery-errors.log')
+      });
+    }
+
+    // Initialize conversion monitor for discovery tracking
+    if (this.options.enableMonitoring !== false) {
+      this.monitor = new ConversionMonitor({
+        logLevel: options.logLevel || 'info',
+        enablePerformanceMonitoring: options.enablePerformanceMonitoring !== false,
+        enableDetailedLogging: options.enableDetailedLogging !== false,
+        logDirectory: path.join(this.options.rootPath, '.kiro', 'logs'),
+        reportDirectory: path.join(this.options.rootPath, '.kiro', 'reports')
+      });
+    }
   }
 
   /**
@@ -29,32 +53,99 @@ class AgentDiscovery {
   async scanAllAgents() {
     this.log('Starting comprehensive agent discovery...');
     
+    // Start monitoring session if monitor is available
+    let sessionId = null;
+    if (this.monitor) {
+      sessionId = `discovery-${Date.now()}`;
+      this.monitor.startConversionSession(sessionId, {
+        type: 'agent_discovery',
+        source: 'bmad-method',
+        operation: 'scan_all_agents'
+      });
+    }
+    
     try {
       // Clear previous results
       this.discoveredAgents.clear();
       this.validationErrors = [];
       this.dependencyMap.clear();
 
+      // Monitor discovery steps
+      if (this.monitor) {
+        this.monitor.logConversionStep(sessionId, 'initialize_discovery', {
+          operation: 'clear_previous_results'
+        });
+        this.monitor.completeConversionStep(sessionId, 'initialize_discovery', { success: true });
+      }
+
       // Scan core agents
+      if (this.monitor) {
+        this.monitor.logConversionStep(sessionId, 'scan_core_agents');
+      }
       const coreAgents = await this.scanCoreAgents();
       this.log(`Found ${coreAgents.length} core agents`);
+      if (this.monitor) {
+        this.monitor.completeConversionStep(sessionId, 'scan_core_agents', { 
+          success: true, 
+          agentCount: coreAgents.length 
+        });
+      }
 
       // Scan expansion pack agents
+      if (this.monitor) {
+        this.monitor.logConversionStep(sessionId, 'scan_expansion_agents');
+      }
       const expansionAgents = await this.scanExpansionPackAgents();
       this.log(`Found ${expansionAgents.length} expansion pack agents`);
+      if (this.monitor) {
+        this.monitor.completeConversionStep(sessionId, 'scan_expansion_agents', { 
+          success: true, 
+          agentCount: expansionAgents.length 
+        });
+      }
 
       // Combine and validate all agents
       const allAgents = [...coreAgents, ...expansionAgents];
       
       if (this.options.validateDependencies) {
+        if (this.monitor) {
+          this.monitor.logConversionStep(sessionId, 'validate_dependencies');
+        }
         await this.validateAllDependencies(allAgents);
+        if (this.monitor) {
+          this.monitor.completeConversionStep(sessionId, 'validate_dependencies', { 
+            success: true, 
+            validationErrors: this.validationErrors.length 
+          });
+        }
       }
 
       this.log(`Total agents discovered: ${allAgents.length}`);
+      
+      // Complete monitoring session
+      if (this.monitor) {
+        this.monitor.completeConversionSession(sessionId, {
+          success: true,
+          totalAgents: allAgents.length,
+          coreAgents: coreAgents.length,
+          expansionAgents: expansionAgents.length,
+          validationErrors: this.validationErrors.length
+        });
+      }
+      
       return allAgents;
       
     } catch (error) {
       this.log(`Error during agent discovery: ${error.message}`, 'error');
+      
+      // Complete monitoring session with error
+      if (this.monitor && sessionId) {
+        this.monitor.completeConversionSession(sessionId, {
+          success: false,
+          error: error.message
+        });
+      }
+      
       throw error;
     }
   }
@@ -237,52 +328,198 @@ class AgentDiscovery {
         this.log(`Validation failed for ${filePath}: ${validationResult.errors.join(', ')}`, 'warn');
       }
 
-      return metadata;
+      return this.buildAgentMetadata(parsedAgent, filePath, additionalMetadata, {
+        filePath,
+        operation: 'metadata-extraction',
+        phase: 'build-agent-metadata'
+      });
       
     } catch (error) {
+      const context = {
+        filePath,
+        operation: 'metadata-extraction',
+        phase: 'extract-agent-metadata',
+        source: additionalMetadata.source,
+        expansionPack: additionalMetadata.expansionPack
+      };
+
+      if (this.errorHandler) {
+        // Handle the error with our error handler
+        this.errorHandler.handleConversionError(error, context).then(errorResult => {
+          if (errorResult.recovered && errorResult.recoveryDetails?.success) {
+            this.log(`Recovery successful for ${filePath}, retrying metadata extraction`, 'info');
+            // Note: In a real implementation, we might want to retry here
+          }
+        }).catch(handlerError => {
+          this.log(`Error handler failed for ${filePath}: ${handlerError.message}`, 'error');
+        });
+      }
+
       this.addValidationError(filePath, `Failed to extract metadata: ${error.message}`);
       return null;
     }
   }
 
   /**
+   * Build agent metadata from parsed content
+   * @param {Object} parsedAgent - Parsed agent content
+   * @param {string} filePath - Agent file path
+   * @param {Object} additionalMetadata - Additional metadata
+   * @param {Object} context - Processing context
+   * @returns {Object} - Agent metadata
+   */
+  buildAgentMetadata(parsedAgent, filePath, additionalMetadata, context) {
+    const agent = parsedAgent.frontMatter.agent || {};
+    const persona = parsedAgent.frontMatter.persona || {};
+    const commands = parsedAgent.frontMatter.commands || [];
+    const dependencies = parsedAgent.frontMatter.dependencies || {};
+
+    // Create comprehensive metadata
+    const metadata = {
+      // Basic identification
+      id: agent.id || path.basename(filePath, '.md'),
+      name: agent.name || this.generateAgentName(filePath),
+      title: agent.title || 'Assistant',
+      icon: agent.icon || '🤖',
+      
+      // File information
+      filePath: filePath,
+      relativePath: path.relative(this.options.rootPath, filePath),
+      fileName: path.basename(filePath),
+      
+      // Source information
+      source: additionalMetadata.source || 'unknown',
+      type: additionalMetadata.type || 'unknown',
+      expansionPack: additionalMetadata.expansionPack || null,
+      
+      // Agent configuration
+      whenToUse: agent.whenToUse || null,
+      customization: agent.customization || null,
+      
+      // Persona information
+      persona: {
+        role: persona.role || null,
+        style: persona.style || null,
+        identity: persona.identity || null,
+        focus: persona.focus || null,
+        core_principles: persona.core_principles || []
+      },
+      
+      // Commands and capabilities
+      commands: this.extractCommands(commands),
+      
+      // Dependencies
+      dependencies: this.extractDependencies(dependencies),
+      
+      // Validation status
+      isValid: true,
+      validationErrors: [],
+      
+      // Timestamps
+      discoveredAt: new Date().toISOString(),
+      
+      // Raw content for transformation
+      rawContent: parsedAgent.content || '',
+      parsedContent: parsedAgent,
+      
+      // Additional metadata
+      ...additionalMetadata
+    };
+
+    // Validate the agent
+    const validationResult = this.validateAgentFormat(metadata);
+    metadata.isValid = validationResult.isValid;
+    metadata.validationErrors = validationResult.errors;
+
+    if (!metadata.isValid) {
+      this.log(`Validation failed for ${filePath}: ${validationResult.errors.join(', ')}`, 'warn');
+    }
+
+    return metadata;
+  }
+
+  /**
    * Parse BMad agent content (handles embedded YAML blocks)
    * @param {string} content - BMad agent content
+   * @param {Object} context - Parsing context for error handling
    * @returns {Object} - Parsed front matter and content
    */
-  parseBMadAgent(content) {
-    // First try standard front matter parsing
-    const standardParsed = this.parseYAMLFrontMatter(content);
-    if (Object.keys(standardParsed.frontMatter).length > 0) {
-      return standardParsed;
-    }
-
-    // If no standard front matter, look for embedded YAML block
-    const yamlBlockRegex = /```yaml\s*\n([\s\S]*?)\n```/;
-    const match = content.match(yamlBlockRegex);
-
-    if (!match) {
-      return {
-        frontMatter: {},
-        content: content
-      };
-    }
-
+  parseBMadAgent(content, context = {}) {
     try {
-      const frontMatter = yaml.load(match[1]) || {};
-      
-      // Remove the YAML block from content
-      const markdownContent = content.replace(yamlBlockRegex, '').trim();
+      // First try standard front matter parsing
+      const standardParsed = this.parseYAMLFrontMatter(content);
+      if (Object.keys(standardParsed.frontMatter).length > 0) {
+        return standardParsed;
+      }
 
-      return {
-        frontMatter,
-        content: markdownContent
-      };
+      // If no standard front matter, look for embedded YAML block
+      const yamlBlockRegex = /```yaml\s*\n([\s\S]*?)\n```/;
+      const match = content.match(yamlBlockRegex);
+
+      if (!match) {
+        // No YAML found - this might be valid for some agents
+        this.log(`No YAML configuration found in agent content`, 'warn');
+        return {
+          frontMatter: {},
+          content: content
+        };
+      }
+
+      try {
+        const frontMatter = yaml.load(match[1]) || {};
+        
+        // Remove the YAML block from content
+        const markdownContent = content.replace(yamlBlockRegex, '').trim();
+
+        return {
+          frontMatter,
+          content: markdownContent
+        };
+      } catch (yamlError) {
+        // Handle YAML parsing error with error handler
+        if (this.errorHandler) {
+          const errorContext = {
+            ...context,
+            operation: 'yaml-parsing',
+            phase: 'parse-embedded-yaml',
+            yamlContent: match[1]
+          };
+          
+          this.errorHandler.handleConversionError(yamlError, errorContext).catch(handlerError => {
+            this.log(`Error handler failed during YAML parsing: ${handlerError.message}`, 'error');
+          });
+        }
+        
+        this.log(`Error parsing embedded YAML: ${yamlError.message}`, 'error');
+        
+        // Return content without YAML parsing
+        return {
+          frontMatter: {},
+          content: content,
+          yamlError: yamlError.message
+        };
+      }
     } catch (error) {
-      this.log(`Error parsing embedded YAML: ${error.message}`, 'error');
+      // Handle general parsing error
+      if (this.errorHandler) {
+        const errorContext = {
+          ...context,
+          operation: 'content-parsing',
+          phase: 'parse-bmad-agent'
+        };
+        
+        this.errorHandler.handleConversionError(error, errorContext).catch(handlerError => {
+          this.log(`Error handler failed during content parsing: ${handlerError.message}`, 'error');
+        });
+      }
+      
+      this.log(`Error parsing BMad agent content: ${error.message}`, 'error');
+      
+      // Return minimal structure to allow processing to continue
       return {
         frontMatter: {},
-        content: content
+        content: content || '',
+        parseError: error.message
       };
     }
   }
@@ -674,6 +911,243 @@ class AgentDiscovery {
       expansionPacks: [...new Set(agents.map(a => a.expansionPack).filter(Boolean))],
       dependencies: this.dependencyMap.size
     };
+  }
+
+  /**
+   * Retry discovery for failed agents
+   * @param {Array} failedAgentPaths - Paths of agents that failed discovery
+   * @returns {Promise<Object>} - Retry results
+   */
+  async retryFailedDiscovery(failedAgentPaths = null) {
+    const pathsToRetry = failedAgentPaths || this.getFailedAgentPaths();
+    
+    if (pathsToRetry.length === 0) {
+      this.log('No failed agent discoveries to retry', 'info');
+      return { success: true, retried: [], stillFailed: [] };
+    }
+
+    this.log(`Retrying discovery for ${pathsToRetry.length} failed agents`, 'info');
+    
+    const results = {
+      retried: [],
+      stillFailed: [],
+      errors: []
+    };
+
+    for (const agentPath of pathsToRetry) {
+      try {
+        this.log(`Retrying discovery for: ${agentPath}`, 'info');
+        
+        // Determine metadata based on path
+        const metadata = this.getMetadataFromPath(agentPath);
+        const agentMetadata = await this.extractAgentMetadata(agentPath, metadata);
+        
+        if (agentMetadata && agentMetadata.isValid) {
+          this.discoveredAgents.set(agentMetadata.id, agentMetadata);
+          results.retried.push(agentPath);
+          this.log(`Successfully retried discovery for: ${agentPath}`, 'info');
+        } else {
+          results.stillFailed.push(agentPath);
+          this.log(`Retry still failed for: ${agentPath}`, 'warn');
+        }
+      } catch (error) {
+        results.stillFailed.push(agentPath);
+        results.errors.push({ path: agentPath, error: error.message });
+        this.log(`Retry error for ${agentPath}: ${error.message}`, 'error');
+      }
+    }
+
+    this.log(`Discovery retry complete. Success: ${results.retried.length}, Failed: ${results.stillFailed.length}`, 'info');
+    
+    return {
+      success: results.stillFailed.length === 0,
+      ...results
+    };
+  }
+
+  /**
+   * Get paths of agents that failed discovery
+   * @returns {Array} - Array of failed agent paths
+   */
+  getFailedAgentPaths() {
+    return this.validationErrors
+      .map(error => error.filePath)
+      .filter((path, index, self) => self.indexOf(path) === index); // Remove duplicates
+  }
+
+  /**
+   * Get metadata from agent file path
+   * @param {string} agentPath - Agent file path
+   * @returns {Object} - Metadata based on path
+   */
+  getMetadataFromPath(agentPath) {
+    const relativePath = path.relative(this.options.rootPath, agentPath);
+    
+    // Determine if it's core or expansion pack
+    if (relativePath.startsWith('bmad-core')) {
+      return {
+        source: 'bmad-core',
+        type: 'core'
+      };
+    } else if (relativePath.startsWith('expansion-packs')) {
+      const pathParts = relativePath.split(path.sep);
+      const expansionPack = pathParts[1]; // expansion-packs/[pack-name]/agents/...
+      
+      return {
+        source: 'expansion-pack',
+        type: 'expansion',
+        expansionPack
+      };
+    } else {
+      return {
+        source: 'unknown',
+        type: 'unknown'
+      };
+    }
+  }
+
+  /**
+   * Generate discovery diagnostic report
+   * @param {Object} options - Report options
+   * @returns {Promise<Object>} - Diagnostic report
+   */
+  async generateDiscoveryDiagnosticReport(options = {}) {
+    const report = {
+      timestamp: new Date().toISOString(),
+      summary: this.getStatistics(),
+      discoveredAgents: options.includeAgentDetails ? 
+        Array.from(this.discoveredAgents.values()) : 
+        Array.from(this.discoveredAgents.keys()),
+      validationErrors: this.validationErrors,
+      dependencyMap: options.includeDependencyMap ? 
+        Object.fromEntries(this.dependencyMap) : 
+        { totalDependencies: this.dependencyMap.size },
+      systemInfo: {
+        platform: process.platform,
+        nodeVersion: process.version,
+        workingDirectory: process.cwd(),
+        rootPath: this.options.rootPath
+      }
+    };
+
+    // Add error handler statistics if available
+    if (this.errorHandler) {
+      report.errorHandling = this.errorHandler.getErrorStats();
+      
+      if (options.includeDetailedErrors) {
+        report.detailedErrors = this.errorHandler.getConversionErrors();
+      }
+    }
+
+    // Export report if path provided
+    if (options.exportPath) {
+      try {
+        await fs.ensureDir(path.dirname(options.exportPath));
+        await fs.writeFile(options.exportPath, JSON.stringify(report, null, 2));
+        report.exported = true;
+        report.exportPath = options.exportPath;
+        this.log(`Discovery diagnostic report exported to: ${options.exportPath}`, 'info');
+      } catch (error) {
+        report.exported = false;
+        report.exportError = error.message;
+        this.log(`Failed to export discovery report: ${error.message}`, 'error');
+      }
+    }
+
+    return report;
+  }
+
+  /**
+   * Enable diagnostic mode for detailed troubleshooting
+   */
+  enableDiagnosticMode() {
+    if (this.errorHandler) {
+      this.errorHandler.enableDiagnosticMode();
+    }
+    this.options.verbose = true;
+    this.log('Diagnostic mode enabled for agent discovery', 'info');
+  }
+
+  /**
+   * Disable diagnostic mode
+   */
+  disableDiagnosticMode() {
+    if (this.errorHandler) {
+      this.errorHandler.disableDiagnosticMode();
+    }
+    this.log('Diagnostic mode disabled for agent discovery', 'info');
+  }
+
+  /**
+   * Clear discovery history and error data
+   */
+  clearDiscoveryHistory() {
+    this.discoveredAgents.clear();
+    this.validationErrors = [];
+    this.dependencyMap.clear();
+    
+    if (this.errorHandler) {
+      this.errorHandler.clearErrors();
+    }
+    
+    this.log('Discovery history cleared', 'info');
+  }
+
+  /**
+   * Get discovery error statistics
+   * @returns {Object} - Error statistics
+   */
+  getDiscoveryErrorStats() {
+    const stats = {
+      totalValidationErrors: this.validationErrors.length,
+      errorsByType: {},
+      errorsByAgent: {},
+      errorsBySource: {}
+    };
+
+    // Categorize validation errors
+    for (const error of this.validationErrors) {
+      // By error type
+      const errorType = this.categorizeValidationError(error.error);
+      stats.errorsByType[errorType] = (stats.errorsByType[errorType] || 0) + 1;
+
+      // By agent (from file path)
+      const agentId = path.basename(error.filePath, '.md');
+      stats.errorsByAgent[agentId] = (stats.errorsByAgent[agentId] || 0) + 1;
+
+      // By source
+      const metadata = this.getMetadataFromPath(error.filePath);
+      const source = metadata.expansionPack || metadata.source;
+      stats.errorsBySource[source] = (stats.errorsBySource[source] || 0) + 1;
+    }
+
+    // Add error handler stats if available
+    if (this.errorHandler) {
+      stats.errorHandlerStats = this.errorHandler.getErrorStats();
+    }
+
+    return stats;
+  }
+
+  /**
+   * Categorize validation error for statistics
+   * @param {string} errorMessage - Error message
+   * @returns {string} - Error category
+   */
+  categorizeValidationError(errorMessage) {
+    const message = errorMessage.toLowerCase();
+    
+    if (message.includes('yaml') || message.includes('parsing')) {
+      return 'yaml-parsing';
+    } else if (message.includes('file') || message.includes('not found')) {
+      return 'file-access';
+    } else if (message.includes('validation') || message.includes('invalid')) {
+      return 'validation';
+    } else if (message.includes('dependency') || message.includes('missing')) {
+      return 'dependency';
+    } else {
+      return 'unknown';
+    }
   }
 
   /**

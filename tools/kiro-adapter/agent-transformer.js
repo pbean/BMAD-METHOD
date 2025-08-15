@@ -5,14 +5,35 @@
 
 const BaseTransformer = require('./base-transformer');
 const ContextInjector = require('./context-injector');
+const FileContextIntegrator = require('./file-context-integrator');
 const MCPIntegrator = require('./mcp-integrator');
+const ConversionErrorHandler = require('./conversion-error-handler');
+const ConversionMonitor = require('./conversion-monitor');
 const path = require('path');
 
 class AgentTransformer extends BaseTransformer {
   constructor(options = {}) {
     super(options);
     this.contextInjector = new ContextInjector(options);
+    this.fileContextIntegrator = new FileContextIntegrator(options);
     this.mcpIntegrator = new MCPIntegrator(options);
+    this.errorHandler = new ConversionErrorHandler({
+      logLevel: options.logLevel || 'info',
+      enableDiagnostics: options.enableDiagnostics !== false,
+      enableRecovery: options.enableRecovery !== false,
+      diagnosticMode: options.diagnosticMode || false,
+      ...options
+    });
+
+    // Initialize conversion monitor
+    this.monitor = new ConversionMonitor({
+      logLevel: options.logLevel || 'info',
+      enablePerformanceMonitoring: options.enablePerformanceMonitoring !== false,
+      enableDetailedLogging: options.enableDetailedLogging !== false,
+      logDirectory: options.logDirectory || path.join(process.cwd(), '.kiro', 'logs'),
+      reportDirectory: options.reportDirectory || path.join(process.cwd(), '.kiro', 'reports'),
+      ...options
+    });
     this.kiroContextProviders = [
       '#File',
       '#Folder', 
@@ -21,6 +42,319 @@ class AgentTransformer extends BaseTransformer {
       '#Git Diff',
       '#Codebase'
     ];
+
+    // Track conversion attempts and failures
+    this.conversionAttempts = new Map();
+    this.failedConversions = new Set();
+    
+    // Set up error handler event listeners
+    this.setupErrorHandlerListeners();
+  }
+
+  /**
+   * Set up error handler event listeners
+   */
+  setupErrorHandlerListeners() {
+    this.errorHandler.on('conversionError', (errorDetails) => {
+      this.log(`Conversion error for ${errorDetails.context.agentId}: ${errorDetails.error.message}`, 'error');
+    });
+
+    this.errorHandler.on('recoverySuccess', (errorDetails, result) => {
+      this.log(`Recovery successful for ${errorDetails.context.agentId}: ${result.reason}`, 'info');
+    });
+
+    this.errorHandler.on('recoveryFailed', (errorDetails, result) => {
+      this.log(`Recovery failed for ${errorDetails.context.agentId}: ${result.reason}`, 'warn');
+    });
+  }
+
+  /**
+   * Perform incremental re-conversion for failed agents
+   * @param {Array} failedAgentIds - List of agent IDs that failed conversion
+   * @param {Object} options - Re-conversion options
+   * @returns {Promise<Object>} - Re-conversion results
+   */
+  async performIncrementalReconversion(failedAgentIds = null, options = {}) {
+    const agentsToReconvert = failedAgentIds || Array.from(this.failedConversions);
+    
+    if (agentsToReconvert.length === 0) {
+      this.log('No failed conversions to retry', 'info');
+      return { success: true, reconverted: [], stillFailed: [] };
+    }
+
+    this.log(`Starting incremental re-conversion for ${agentsToReconvert.length} agents`, 'info');
+    
+    const results = {
+      reconverted: [],
+      stillFailed: [],
+      errors: []
+    };
+
+    for (const agentId of agentsToReconvert) {
+      try {
+        this.log(`Re-converting agent: ${agentId}`, 'info');
+        
+        // Find the original agent file path
+        const agentPath = await this.findAgentPath(agentId, options);
+        if (!agentPath) {
+          results.errors.push({ agentId, error: 'Agent file not found' });
+          continue;
+        }
+
+        // Determine output path
+        const outputPath = options.outputPath || 
+          path.join(process.cwd(), '.kiro', 'agents', `${agentId}.md`);
+
+        // Attempt re-conversion with enhanced error handling
+        const reconversionOptions = {
+          ...options,
+          agentId,
+          isReconversion: true,
+          previousAttempts: this.conversionAttempts.get(agentId) || 0
+        };
+
+        const success = await this.transformAgent(agentPath, outputPath, reconversionOptions);
+        
+        if (success) {
+          results.reconverted.push(agentId);
+          this.failedConversions.delete(agentId);
+          this.log(`Successfully re-converted agent: ${agentId}`, 'info');
+        } else {
+          results.stillFailed.push(agentId);
+          this.log(`Re-conversion still failed for agent: ${agentId}`, 'warn');
+        }
+      } catch (error) {
+        results.stillFailed.push(agentId);
+        results.errors.push({ agentId, error: error.message });
+        this.log(`Re-conversion error for ${agentId}: ${error.message}`, 'error');
+      }
+    }
+
+    this.log(`Re-conversion complete. Success: ${results.reconverted.length}, Failed: ${results.stillFailed.length}`, 'info');
+    
+    return {
+      success: results.stillFailed.length === 0,
+      ...results
+    };
+  }
+
+  /**
+   * Find agent file path by agent ID
+   * @param {string} agentId - Agent identifier
+   * @param {Object} options - Search options
+   * @returns {Promise<string|null>} - Agent file path or null
+   */
+  async findAgentPath(agentId, options = {}) {
+    const fs = require('fs-extra');
+    const possiblePaths = [
+      // Core agents
+      path.join(process.cwd(), 'bmad-core', 'agents', `${agentId}.md`),
+      // Expansion pack agents
+      ...this.getExpansionPackAgentPaths(agentId),
+      // Custom paths from options
+      ...(options.searchPaths || [])
+    ];
+
+    for (const agentPath of possiblePaths) {
+      if (await fs.pathExists(agentPath)) {
+        return agentPath;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get possible expansion pack agent paths
+   * @param {string} agentId - Agent identifier
+   * @returns {Array} - Array of possible paths
+   */
+  getExpansionPackAgentPaths(agentId) {
+    const glob = require('glob');
+    const expansionPacksPath = path.join(process.cwd(), 'expansion-packs');
+    
+    try {
+      const expansionDirs = glob.sync('*/agents', { cwd: expansionPacksPath });
+      return expansionDirs.map(dir => 
+        path.join(expansionPacksPath, dir, `${agentId}.md`)
+      );
+    } catch (error) {
+      this.log(`Error scanning expansion packs: ${error.message}`, 'warn');
+      return [];
+    }
+  }
+
+  /**
+   * Generate diagnostic report for conversion issues
+   * @param {Object} options - Report options
+   * @returns {Promise<Object>} - Diagnostic report
+   */
+  async generateDiagnosticReport(options = {}) {
+    const report = {
+      timestamp: new Date().toISOString(),
+      summary: {
+        totalAttempts: this.conversionAttempts.size,
+        failedConversions: this.failedConversions.size,
+        successRate: this.calculateSuccessRate()
+      },
+      conversionAttempts: Object.fromEntries(this.conversionAttempts),
+      failedConversions: Array.from(this.failedConversions),
+      errorStatistics: this.errorHandler.getErrorStats(),
+      systemInfo: {
+        platform: process.platform,
+        nodeVersion: process.version,
+        workingDirectory: process.cwd(),
+        memoryUsage: process.memoryUsage()
+      }
+    };
+
+    // Add detailed error information if requested
+    if (options.includeDetailedErrors) {
+      report.detailedErrors = this.errorHandler.getConversionErrors();
+    }
+
+    // Add agent-specific diagnostics
+    if (options.includeAgentDiagnostics) {
+      report.agentDiagnostics = await this.generateAgentDiagnostics();
+    }
+
+    // Export report if path provided
+    if (options.exportPath) {
+      const success = await this.errorHandler.exportErrorReport(options.exportPath);
+      report.exported = success;
+      report.exportPath = success ? options.exportPath : null;
+    }
+
+    return report;
+  }
+
+  /**
+   * Generate agent-specific diagnostic information
+   * @returns {Promise<Object>} - Agent diagnostics
+   */
+  async generateAgentDiagnostics() {
+    const fs = require('fs-extra');
+    const diagnostics = {
+      coreAgents: { found: 0, missing: 0, accessible: 0 },
+      expansionPackAgents: { found: 0, missing: 0, accessible: 0 },
+      outputDirectories: { exists: false, writable: false },
+      dependencies: { available: 0, missing: 0 }
+    };
+
+    try {
+      // Check core agents directory
+      const coreAgentsPath = path.join(process.cwd(), 'bmad-core', 'agents');
+      if (await fs.pathExists(coreAgentsPath)) {
+        const coreFiles = await fs.readdir(coreAgentsPath);
+        diagnostics.coreAgents.found = coreFiles.filter(f => f.endsWith('.md')).length;
+        
+        // Check accessibility
+        for (const file of coreFiles) {
+          try {
+            await fs.access(path.join(coreAgentsPath, file), fs.constants.R_OK);
+            diagnostics.coreAgents.accessible++;
+          } catch (error) {
+            // File not accessible
+          }
+        }
+      }
+
+      // Check expansion pack agents
+      const expansionPacksPath = path.join(process.cwd(), 'expansion-packs');
+      if (await fs.pathExists(expansionPacksPath)) {
+        const expansionDirs = await fs.readdir(expansionPacksPath);
+        for (const dir of expansionDirs) {
+          const agentsPath = path.join(expansionPacksPath, dir, 'agents');
+          if (await fs.pathExists(agentsPath)) {
+            const agentFiles = await fs.readdir(agentsPath);
+            const mdFiles = agentFiles.filter(f => f.endsWith('.md'));
+            diagnostics.expansionPackAgents.found += mdFiles.length;
+            
+            // Check accessibility
+            for (const file of mdFiles) {
+              try {
+                await fs.access(path.join(agentsPath, file), fs.constants.R_OK);
+                diagnostics.expansionPackAgents.accessible++;
+              } catch (error) {
+                // File not accessible
+              }
+            }
+          }
+        }
+      }
+
+      // Check output directories
+      const kiroAgentsPath = path.join(process.cwd(), '.kiro', 'agents');
+      diagnostics.outputDirectories.exists = await fs.pathExists(kiroAgentsPath);
+      
+      if (diagnostics.outputDirectories.exists) {
+        try {
+          await fs.access(kiroAgentsPath, fs.constants.W_OK);
+          diagnostics.outputDirectories.writable = true;
+        } catch (error) {
+          diagnostics.outputDirectories.writable = false;
+        }
+      }
+
+    } catch (error) {
+      this.log(`Error generating agent diagnostics: ${error.message}`, 'error');
+    }
+
+    return diagnostics;
+  }
+
+  /**
+   * Calculate conversion success rate
+   * @returns {number} - Success rate as percentage
+   */
+  calculateSuccessRate() {
+    const totalAttempts = this.conversionAttempts.size;
+    const failures = this.failedConversions.size;
+    
+    if (totalAttempts === 0) return 0;
+    
+    return ((totalAttempts - failures) / totalAttempts) * 100;
+  }
+
+  /**
+   * Enable diagnostic mode for detailed troubleshooting
+   */
+  enableDiagnosticMode() {
+    this.errorHandler.enableDiagnosticMode();
+    this.log('Diagnostic mode enabled for agent transformer', 'info');
+  }
+
+  /**
+   * Disable diagnostic mode
+   */
+  disableDiagnosticMode() {
+    this.errorHandler.disableDiagnosticMode();
+    this.log('Diagnostic mode disabled for agent transformer', 'info');
+  }
+
+  /**
+   * Get conversion statistics
+   * @returns {Object} - Conversion statistics
+   */
+  getConversionStatistics() {
+    return {
+      totalAttempts: this.conversionAttempts.size,
+      failedConversions: this.failedConversions.size,
+      successRate: this.calculateSuccessRate(),
+      errorStats: this.errorHandler.getErrorStats(),
+      conversionAttempts: Object.fromEntries(this.conversionAttempts),
+      failedAgents: Array.from(this.failedConversions)
+    };
+  }
+
+  /**
+   * Clear conversion history and error data
+   */
+  clearConversionHistory() {
+    this.conversionAttempts.clear();
+    this.failedConversions.clear();
+    this.errorHandler.clearErrors();
+    this.log('Conversion history cleared', 'info');
   }
 
   /**
@@ -31,13 +365,168 @@ class AgentTransformer extends BaseTransformer {
    * @returns {Promise<boolean>} - Success status
    */
   async transformAgent(bmadAgentPath, kiroOutputPath, options = {}) {
-    this.log(`Transforming agent: ${this.getRelativePath(bmadAgentPath)} -> ${this.getRelativePath(kiroOutputPath)}`);
+    const agentId = options.agentId || path.basename(bmadAgentPath, '.md');
+    const context = {
+      agentId,
+      filePath: bmadAgentPath,
+      outputPath: kiroOutputPath,
+      operation: 'transformation',
+      phase: 'agent-transform',
+      source: options.source,
+      expansionPack: options.expansionPack
+    };
 
-    return await this.transformFile(
-      bmadAgentPath,
-      kiroOutputPath,
-      (content, inputPath) => this.performAgentTransformation(content, inputPath, options)
-    );
+    // Start monitoring conversion
+    const conversionId = `transform-${agentId}-${Date.now()}`;
+    let sessionId = options.sessionId;
+    
+    if (!sessionId && this.monitor) {
+      sessionId = `transform-session-${Date.now()}`;
+      this.monitor.startConversionSession(sessionId, {
+        type: 'agent_transformation',
+        source: options.source || 'unknown',
+        agentCount: 1
+      });
+    }
+
+    if (this.monitor) {
+      this.monitor.startConversion(sessionId, conversionId, {
+        agentId,
+        source: options.source,
+        expansionPack: options.expansionPack,
+        inputPath: bmadAgentPath,
+        outputPath: kiroOutputPath,
+        type: 'agent'
+      });
+    }
+
+    try {
+      this.log(`Transforming agent: ${this.getRelativePath(bmadAgentPath)} -> ${this.getRelativePath(kiroOutputPath)}`);
+      
+      // Track conversion attempt
+      const attemptCount = (this.conversionAttempts.get(agentId) || 0) + 1;
+      this.conversionAttempts.set(agentId, attemptCount);
+
+      if (this.monitor) {
+        this.monitor.logConversionStep(conversionId, 'start_transformation', {
+          attempt: attemptCount,
+          inputPath: bmadAgentPath,
+          outputPath: kiroOutputPath
+        });
+      }
+
+      const result = await this.transformFile(
+        bmadAgentPath,
+        kiroOutputPath,
+        (content, inputPath) => this.performAgentTransformation(content, inputPath, { 
+          ...options, 
+          context,
+          conversionId,
+          sessionId
+        })
+      );
+
+      if (result) {
+        // Remove from failed conversions if it was previously failed
+        this.failedConversions.delete(agentId);
+        this.log(`Successfully transformed agent: ${agentId}`, 'info');
+        
+        if (this.monitor) {
+          this.monitor.completeConversion(conversionId, {
+            success: true,
+            agentId,
+            outputPath: kiroOutputPath
+          });
+        }
+      } else {
+        this.failedConversions.add(agentId);
+        const error = new Error('Transformation returned false');
+        
+        if (this.monitor) {
+          this.monitor.completeConversion(conversionId, {
+            success: false,
+            error: error.message
+          });
+        }
+        
+        throw error;
+      }
+
+      return result;
+    } catch (error) {
+      this.failedConversions.add(agentId);
+      
+      if (this.monitor) {
+        this.monitor.completeConversion(conversionId, {
+          success: false,
+          error: error.message
+        });
+      }
+      
+      // Handle the error with our error handler
+      const errorResult = await this.errorHandler.handleConversionError(error, context);
+      
+      // If recovery was successful, retry the transformation
+      if (errorResult.recovered && errorResult.recoveryDetails?.success) {
+        this.log(`Retrying transformation after recovery for agent: ${agentId}`, 'info');
+        
+        // Start new conversion for retry
+        const retryConversionId = `retry-${conversionId}`;
+        if (this.monitor) {
+          this.monitor.startConversion(sessionId, retryConversionId, {
+            agentId,
+            source: options.source,
+            expansionPack: options.expansionPack,
+            inputPath: bmadAgentPath,
+            outputPath: kiroOutputPath,
+            type: 'agent',
+            isRetry: true
+          });
+        }
+        
+        // Update context with recovery details
+        const updatedContext = { ...context, ...errorResult.recoveryDetails };
+        const updatedOptions = { 
+          ...options, 
+          context: updatedContext,
+          conversionId: retryConversionId,
+          sessionId
+        };
+        
+        try {
+          const retryResult = await this.transformFile(
+            updatedContext.filePath || bmadAgentPath,
+            updatedContext.outputPath || kiroOutputPath,
+            (content, inputPath) => this.performAgentTransformation(content, inputPath, updatedOptions)
+          );
+          
+          if (this.monitor) {
+            this.monitor.completeConversion(retryConversionId, {
+              success: retryResult,
+              agentId,
+              isRetry: true
+            });
+          }
+          
+          return retryResult;
+        } catch (retryError) {
+          this.log(`Retry failed for agent ${agentId}: ${retryError.message}`, 'error');
+          
+          if (this.monitor) {
+            this.monitor.completeConversion(retryConversionId, {
+              success: false,
+              error: retryError.message,
+              isRetry: true
+            });
+          }
+          
+          return false;
+        }
+      }
+
+      this.log(`Transformation failed for agent ${agentId}: ${error.message}`, 'error');
+      return false;
+    }
   }
 
   /**
@@ -48,63 +537,159 @@ class AgentTransformer extends BaseTransformer {
    * @returns {Promise<boolean>} - Success status
    */
   async transformAgentForKiro(bmadAgentPath, kiroOutputPath, options = {}) {
-    this.log(`Transforming agent for Kiro: ${this.getRelativePath(bmadAgentPath)} -> ${this.getRelativePath(kiroOutputPath)}`);
-
-    // Enhanced options for Kiro-specific transformation
-    const kiroOptions = {
-      ...options,
-      enableKiroFeatures: true,
-      addExpansionPackSupport: options.expansionPack ? true : false,
-      expansionPackId: options.expansionPack,
-      enableExpansionPackFeatures: options.enableExpansionPackFeatures || false
+    const agentId = options.agentId || path.basename(bmadAgentPath, '.md');
+    const context = {
+      agentId,
+      filePath: bmadAgentPath,
+      outputPath: kiroOutputPath,
+      operation: 'kiro-transformation',
+      phase: 'kiro-agent-transform',
+      source: options.source,
+      expansionPack: options.expansionPack,
+      transformationType: 'full'
     };
 
-    return await this.transformFile(
-      bmadAgentPath,
-      kiroOutputPath,
-      (content, inputPath) => this.performKiroAgentTransformation(content, inputPath, kiroOptions)
-    );
+    try {
+      this.log(`Transforming agent for Kiro: ${this.getRelativePath(bmadAgentPath)} -> ${this.getRelativePath(kiroOutputPath)}`);
+
+      // Enhanced options for Kiro-specific transformation
+      const kiroOptions = {
+        ...options,
+        enableKiroFeatures: true,
+        addExpansionPackSupport: options.expansionPack ? true : false,
+        expansionPackId: options.expansionPack,
+        enableExpansionPackFeatures: options.enableExpansionPackFeatures || false,
+        context
+      };
+
+      // Track conversion attempt
+      const attemptCount = (this.conversionAttempts.get(agentId) || 0) + 1;
+      this.conversionAttempts.set(agentId, attemptCount);
+
+      const result = await this.transformFile(
+        bmadAgentPath,
+        kiroOutputPath,
+        (content, inputPath) => this.performKiroAgentTransformation(content, inputPath, kiroOptions)
+      );
+
+      if (result) {
+        this.failedConversions.delete(agentId);
+        this.log(`Successfully transformed Kiro agent: ${agentId}`, 'info');
+      } else {
+        this.failedConversions.add(agentId);
+        throw new Error('Kiro transformation returned false');
+      }
+
+      return result;
+    } catch (error) {
+      this.failedConversions.add(agentId);
+      
+      // Handle the error with our error handler
+      const errorResult = await this.errorHandler.handleConversionError(error, context);
+      
+      // If recovery was successful, retry the transformation
+      if (errorResult.recovered && errorResult.recoveryDetails?.success) {
+        this.log(`Retrying Kiro transformation after recovery for agent: ${agentId}`, 'info');
+        
+        // Update context and options with recovery details
+        const updatedContext = { ...context, ...errorResult.recoveryDetails };
+        const updatedOptions = {
+          ...options,
+          enableKiroFeatures: !updatedContext.skipOptionalFeatures,
+          addExpansionPackSupport: options.expansionPack && !updatedContext.skipOptionalFeatures,
+          expansionPackId: options.expansionPack,
+          enableExpansionPackFeatures: options.enableExpansionPackFeatures && !updatedContext.skipOptionalFeatures,
+          context: updatedContext
+        };
+        
+        try {
+          return await this.transformFile(
+            updatedContext.filePath || bmadAgentPath,
+            updatedContext.outputPath || kiroOutputPath,
+            (content, inputPath) => this.performKiroAgentTransformation(content, inputPath, updatedOptions)
+          );
+        } catch (retryError) {
+          this.log(`Kiro transformation retry failed for agent ${agentId}: ${retryError.message}`, 'error');
+          return false;
+        }
+      }
+
+      this.log(`Kiro transformation failed for agent ${agentId}: ${error.message}`, 'error');
+      return false;
+    }
   }
 
   /**
    * Parse BMad agent content (handles embedded YAML blocks)
    * @param {string} content - BMad agent content
+   * @param {Object} context - Parsing context for error handling
    * @returns {Object} - Parsed front matter and content
    */
-  parseBMadAgent(content) {
-    // First try standard front matter parsing
-    const standardParsed = this.parseYAMLFrontMatter(content);
-    if (Object.keys(standardParsed.frontMatter).length > 0) {
-      return standardParsed;
-    }
-
-    // If no standard front matter, look for embedded YAML block
-    const yamlBlockRegex = /```yaml\s*\n([\s\S]*?)\n```/;
-    const match = content.match(yamlBlockRegex);
-
-    if (!match) {
-      return {
-        frontMatter: {},
-        content: content
-      };
-    }
-
+  parseBMadAgent(content, context = {}) {
     try {
-      const yaml = require('js-yaml');
-      const frontMatter = yaml.load(match[1]) || {};
-      
-      // Remove the YAML block from content
-      const markdownContent = content.replace(yamlBlockRegex, '').trim();
+      // First try standard front matter parsing
+      const standardParsed = this.parseYAMLFrontMatter(content);
+      if (Object.keys(standardParsed.frontMatter).length > 0) {
+        return standardParsed;
+      }
 
-      return {
-        frontMatter,
-        content: markdownContent
-      };
+      // If no standard front matter, look for embedded YAML block
+      const yamlBlockRegex = /```yaml\s*\n([\s\S]*?)\n```/;
+      const match = content.match(yamlBlockRegex);
+
+      if (!match) {
+        // No YAML found - this might be valid for some agents
+        this.log(`No YAML configuration found in agent content`, 'warn');
+        return {
+          frontMatter: {},
+          content: content
+        };
+      }
+
+      try {
+        const yaml = require('js-yaml');
+        const frontMatter = yaml.load(match[1]) || {};
+        
+        // Remove the YAML block from content
+        const markdownContent = content.replace(yamlBlockRegex, '').trim();
+
+        return {
+          frontMatter,
+          content: markdownContent
+        };
+      } catch (yamlError) {
+        // Handle YAML parsing error with error handler
+        const errorContext = {
+          ...context,
+          operation: 'yaml-parsing',
+          phase: 'parse-embedded-yaml',
+          yamlContent: match[1]
+        };
+        
+        this.errorHandler.handleConversionError(yamlError, errorContext);
+        
+        // Return content without YAML parsing
+        return {
+          frontMatter: {},
+          content: content,
+          yamlError: yamlError.message
+        };
+      }
     } catch (error) {
-      console.error('Error parsing embedded YAML:', error.message);
+      // Handle general parsing error
+      const errorContext = {
+        ...context,
+        operation: 'content-parsing',
+        phase: 'parse-bmad-agent'
+      };
+      
+      this.errorHandler.handleConversionError(error, errorContext);
+      
+      // Return minimal structure to allow processing to continue
       return {
         frontMatter: {},
-        content: content
+        content: content || '',
+        parseError: error.message
       };
     }
   }
@@ -117,40 +702,149 @@ class AgentTransformer extends BaseTransformer {
    * @returns {string} - Transformed content
    */
   async performKiroAgentTransformation(content, inputPath, options) {
+    const context = options.context || {};
+    const agentId = context.agentId || path.basename(inputPath, '.md');
+    
     try {
       // Parse BMad agent content (handles both front matter and embedded YAML)
-      const { frontMatter, content: markdownContent } = this.parseBMadAgent(content);
+      const parseContext = { ...context, operation: 'parsing', phase: 'parse-content' };
+      const { frontMatter, content: markdownContent, yamlError, parseError } = this.parseBMadAgent(content, parseContext);
+
+      // Handle parsing errors but continue with available data
+      if (yamlError || parseError) {
+        this.log(`Continuing transformation despite parsing issues for ${agentId}`, 'warn');
+      }
 
       // Create enhanced front matter for Kiro with expansion pack support
-      const kiroFrontMatter = this.createKiroFrontMatterWithExpansionPack(frontMatter, inputPath, options);
+      let kiroFrontMatter;
+      try {
+        kiroFrontMatter = this.createKiroFrontMatterWithExpansionPack(frontMatter, inputPath, options);
+      } catch (frontMatterError) {
+        const fmContext = { ...context, operation: 'front-matter-creation', phase: 'create-kiro-front-matter' };
+        await this.errorHandler.handleConversionError(frontMatterError, fmContext);
+        
+        // Use minimal front matter as fallback
+        kiroFrontMatter = {
+          name: `BMad ${agentId}`,
+          role: 'Development Assistant',
+          context_providers: ['#File', '#Folder'],
+          kiro_integration: {
+            version: '1.0.0',
+            generated_at: new Date().toISOString(),
+            bmad_source: path.basename(inputPath),
+            error: 'Fallback front matter due to creation error'
+          }
+        };
+      }
 
-      // Inject context awareness into content using the context injector
-      const agentId = frontMatter.agent?.id || path.basename(inputPath, '.md');
-      const contextAwareContent = this.contextInjector.injectAutomaticContextReferences(
-        markdownContent, 
-        agentId,
-        {
-          expansionPack: options.expansionPack,
-          enableExpansionPackFeatures: options.enableExpansionPackFeatures
+      // Inject context awareness - skip if disabled by recovery
+      let contextAwareContent = markdownContent;
+      if (!options.context?.skipOptionalFeatures) {
+        try {
+          contextAwareContent = this.contextInjector.injectAutomaticContextReferences(
+            markdownContent, 
+            agentId,
+            {
+              expansionPack: options.expansionPack,
+              enableExpansionPackFeatures: options.enableExpansionPackFeatures
+            }
+          );
+        } catch (contextError) {
+          const ctxContext = { ...context, operation: 'context-injection', phase: 'inject-context' };
+          await this.errorHandler.handleConversionError(contextError, ctxContext);
+          // Continue with original content
+          contextAwareContent = markdownContent;
         }
-      );
+      }
 
-      // Add steering integration with expansion pack rules
-      const steeringIntegratedContent = this.addSteeringIntegrationWithExpansionPack(contextAwareContent, options);
+      // Add file context integration - skip if disabled by recovery
+      let fileContextIntegratedContent = contextAwareContent;
+      if (!options.context?.skipFileContextIntegration) {
+        try {
+          const agentMetadata = {
+            id: agentId,
+            expansionPack: options.expansionPack,
+            frontMatter: frontMatter
+          };
+          fileContextIntegratedContent = this.fileContextIntegrator.integrateFileContextSystem(
+            contextAwareContent,
+            agentMetadata,
+            {
+              enableExpansionPackFeatures: options.enableExpansionPackFeatures
+            }
+          );
+        } catch (fileContextError) {
+          const fcContext = { ...context, operation: 'file-context-integration', phase: 'integrate-file-context' };
+          await this.errorHandler.handleConversionError(fileContextError, fcContext);
+          // Continue without file context integration
+          fileContextIntegratedContent = contextAwareContent;
+        }
+      }
 
-      // Add MCP tool integration
-      const mcpIntegratedContent = await this.addMCPToolIntegration(steeringIntegratedContent, agentId, options);
+      // Add steering integration - skip if disabled by recovery
+      let steeringIntegratedContent = fileContextIntegratedContent;
+      if (!options.context?.skipSteeringGeneration) {
+        try {
+          steeringIntegratedContent = this.addSteeringIntegrationWithExpansionPack(fileContextIntegratedContent, options);
+        } catch (steeringError) {
+          const steerContext = { ...context, operation: 'steering-integration', phase: 'add-steering' };
+          await this.errorHandler.handleConversionError(steeringError, steerContext);
+          // Continue without steering integration
+          steeringIntegratedContent = fileContextIntegratedContent;
+        }
+      }
 
-      // Add expansion pack specific capabilities
-      const expansionEnhancedContent = this.addExpansionPackCapabilities(mcpIntegratedContent, options);
+      // Add MCP tool integration - skip if disabled by recovery
+      let mcpIntegratedContent = steeringIntegratedContent;
+      if (!options.context?.skipMCPIntegration) {
+        try {
+          mcpIntegratedContent = await this.addMCPToolIntegration(steeringIntegratedContent, agentId, options);
+        } catch (mcpError) {
+          const mcpContext = { ...context, operation: 'mcp-integration', phase: 'add-mcp-tools' };
+          await this.errorHandler.handleConversionError(mcpError, mcpContext);
+          // Continue without MCP integration
+          mcpIntegratedContent = steeringIntegratedContent;
+        }
+      }
+
+      // Add expansion pack specific capabilities - skip if disabled
+      let expansionEnhancedContent = mcpIntegratedContent;
+      if (options.expansionPack && !options.context?.skipOptionalFeatures) {
+        try {
+          expansionEnhancedContent = this.addExpansionPackCapabilities(mcpIntegratedContent, options);
+        } catch (expansionError) {
+          const expContext = { ...context, operation: 'expansion-capabilities', phase: 'add-expansion-features' };
+          await this.errorHandler.handleConversionError(expansionError, expContext);
+          // Continue without expansion pack features
+          expansionEnhancedContent = mcpIntegratedContent;
+        }
+      }
 
       // Preserve BMad persona while adding Kiro and expansion pack capabilities
-      const finalContent = this.preserveBMadPersonaWithKiroEnhancements(expansionEnhancedContent, frontMatter, options);
+      let finalContent;
+      try {
+        finalContent = this.preserveBMadPersonaWithKiroEnhancements(expansionEnhancedContent, frontMatter, options);
+      } catch (personaError) {
+        const personaContext = { ...context, operation: 'persona-preservation', phase: 'preserve-bmad-persona' };
+        await this.errorHandler.handleConversionError(personaError, personaContext);
+        // Use basic content preservation
+        finalContent = expansionEnhancedContent;
+      }
 
       // Combine and return
-      return this.combineContent(kiroFrontMatter, finalContent);
+      try {
+        return this.combineContent(kiroFrontMatter, finalContent);
+      } catch (combineError) {
+        const combineContext = { ...context, operation: 'content-combination', phase: 'combine-final-content' };
+        await this.errorHandler.handleConversionError(combineError, combineContext);
+        
+        // Fallback to simple concatenation
+        return `---\nname: ${kiroFrontMatter.name || agentId}\n---\n\n${finalContent}`;
+      }
     } catch (error) {
-      console.error('Error in Kiro agent transformation:', error.message);
+      // Handle any unexpected errors
+      const errorContext = { ...context, operation: 'kiro-transformation', phase: 'complete-transformation' };
+      await this.errorHandler.handleConversionError(error, errorContext);
       throw error;
     }
   }
@@ -163,37 +857,136 @@ class AgentTransformer extends BaseTransformer {
    * @returns {string} - Transformed content
    */
   async performAgentTransformation(content, inputPath, options) {
+    const context = options.context || {};
+    const agentId = context.agentId || path.basename(inputPath, '.md');
+    
     try {
       // Parse BMad agent content (handles both front matter and embedded YAML)
-      const { frontMatter, content: markdownContent } = this.parseBMadAgent(content);
+      const parseContext = { ...context, operation: 'parsing', phase: 'parse-content' };
+      const { frontMatter, content: markdownContent, yamlError, parseError } = this.parseBMadAgent(content, parseContext);
+
+      // Handle parsing errors but continue with available data
+      if (yamlError || parseError) {
+        this.log(`Continuing transformation despite parsing issues for ${agentId}`, 'warn');
+      }
 
       // Create enhanced front matter for Kiro
-      const kiroFrontMatter = this.createKiroFrontMatter(frontMatter, inputPath, options);
+      let kiroFrontMatter;
+      try {
+        kiroFrontMatter = this.createKiroFrontMatter(frontMatter, inputPath, options);
+      } catch (frontMatterError) {
+        const fmContext = { ...context, operation: 'front-matter-creation', phase: 'create-kiro-front-matter' };
+        await this.errorHandler.handleConversionError(frontMatterError, fmContext);
+        
+        // Use minimal front matter as fallback
+        kiroFrontMatter = {
+          name: `BMad ${agentId}`,
+          role: 'Development Assistant',
+          context_providers: ['#File', '#Folder'],
+          kiro_integration: {
+            version: '1.0.0',
+            generated_at: new Date().toISOString(),
+            bmad_source: path.basename(inputPath),
+            error: 'Fallback front matter due to creation error'
+          }
+        };
+      }
 
-      // Inject context awareness into content using the context injector
-      const agentId = frontMatter.agent?.id || path.basename(inputPath, '.md');
-      const contextAwareContent = this.contextInjector.injectAutomaticContextReferences(
-        markdownContent, 
-        agentId,
-        {
-          expansionPack: options.expansionPack || null,
-          enableExpansionPackFeatures: options.enableExpansionPackFeatures || false
+      // Inject context awareness - skip if disabled by recovery
+      let contextAwareContent = markdownContent;
+      if (!options.context?.skipOptionalFeatures) {
+        try {
+          contextAwareContent = this.contextInjector.injectAutomaticContextReferences(
+            markdownContent, 
+            agentId,
+            {
+              expansionPack: options.expansionPack || null,
+              enableExpansionPackFeatures: options.enableExpansionPackFeatures || false
+            }
+          );
+        } catch (contextError) {
+          const ctxContext = { ...context, operation: 'context-injection', phase: 'inject-context' };
+          await this.errorHandler.handleConversionError(contextError, ctxContext);
+          // Continue with original content
+          contextAwareContent = markdownContent;
         }
-      );
+      }
 
-      // Add steering integration
-      const steeringIntegratedContent = this.addSteeringIntegration(contextAwareContent);
+      // Add file context integration - skip if disabled by recovery
+      let fileContextIntegratedContent = contextAwareContent;
+      if (!options.context?.skipFileContextIntegration) {
+        try {
+          const agentMetadata = {
+            id: agentId,
+            expansionPack: options.expansionPack || null,
+            frontMatter: frontMatter
+          };
+          fileContextIntegratedContent = this.fileContextIntegrator.integrateFileContextSystem(
+            contextAwareContent,
+            agentMetadata,
+            {
+              enableExpansionPackFeatures: options.enableExpansionPackFeatures || false
+            }
+          );
+        } catch (fileContextError) {
+          const fcContext = { ...context, operation: 'file-context-integration', phase: 'integrate-file-context' };
+          await this.errorHandler.handleConversionError(fileContextError, fcContext);
+          // Continue without file context integration
+          fileContextIntegratedContent = contextAwareContent;
+        }
+      }
 
-      // Add MCP tool integration
-      const mcpIntegratedContent = await this.addMCPToolIntegration(steeringIntegratedContent, agentId, options);
+      // Add steering integration - skip if disabled by recovery
+      let steeringIntegratedContent = fileContextIntegratedContent;
+      if (!options.context?.skipSteeringGeneration) {
+        try {
+          steeringIntegratedContent = this.addSteeringIntegration(fileContextIntegratedContent);
+        } catch (steeringError) {
+          const steerContext = { ...context, operation: 'steering-integration', phase: 'add-steering' };
+          await this.errorHandler.handleConversionError(steeringError, steerContext);
+          // Continue without steering integration
+          steeringIntegratedContent = fileContextIntegratedContent;
+        }
+      }
+
+      // Add MCP tool integration - skip if disabled by recovery
+      let mcpIntegratedContent = steeringIntegratedContent;
+      if (!options.context?.skipMCPIntegration) {
+        try {
+          mcpIntegratedContent = await this.addMCPToolIntegration(steeringIntegratedContent, agentId, options);
+        } catch (mcpError) {
+          const mcpContext = { ...context, operation: 'mcp-integration', phase: 'add-mcp-tools' };
+          await this.errorHandler.handleConversionError(mcpError, mcpContext);
+          // Continue without MCP integration
+          mcpIntegratedContent = steeringIntegratedContent;
+        }
+      }
 
       // Preserve BMad persona while adding Kiro capabilities
-      const finalContent = this.preserveBMadPersona(mcpIntegratedContent, frontMatter);
+      let finalContent;
+      try {
+        finalContent = this.preserveBMadPersona(mcpIntegratedContent, frontMatter);
+      } catch (personaError) {
+        const personaContext = { ...context, operation: 'persona-preservation', phase: 'preserve-bmad-persona' };
+        await this.errorHandler.handleConversionError(personaError, personaContext);
+        // Use basic content preservation
+        finalContent = mcpIntegratedContent;
+      }
 
       // Combine and return
-      return this.combineContent(kiroFrontMatter, finalContent);
+      try {
+        return this.combineContent(kiroFrontMatter, finalContent);
+      } catch (combineError) {
+        const combineContext = { ...context, operation: 'content-combination', phase: 'combine-final-content' };
+        await this.errorHandler.handleConversionError(combineError, combineContext);
+        
+        // Fallback to simple concatenation
+        return `---\nname: ${kiroFrontMatter.name || agentId}\n---\n\n${finalContent}`;
+      }
     } catch (error) {
-      console.error('Error in agent transformation:', error.message);
+      // Handle any unexpected errors
+      const errorContext = { ...context, operation: 'agent-transformation', phase: 'complete-transformation' };
+      await this.errorHandler.handleConversionError(error, errorContext);
       throw error;
     }
   }
@@ -697,10 +1490,14 @@ These rules ensure consistency across all my recommendations and align with your
    * @returns {string} - Content with enhanced steering integration
    */
   addSteeringIntegrationWithExpansionPack(content, options) {
+    // Generate steering files for this agent
+    this.generateAgentSteeringFiles(options.agentId || 'unknown', options.expansionPack, options);
+    
     let steeringNote = `
 ## Steering Rules Integration
 
 I automatically apply project-specific conventions and technical preferences from your Kiro steering rules:
+- **bmad-method.md**: BMad Method core principles and structured approach
 - **product.md**: Product and business context
 - **tech.md**: Technical stack and preferences  
 - **structure.md**: Project structure and conventions`;
@@ -710,7 +1507,35 @@ I automatically apply project-specific conventions and technical preferences fro
 - **${options.expansionPack}.md**: ${options.expansionPack} domain-specific conventions and best practices`;
     }
 
+    // Add agent-specific steering file reference
+    const agentId = options.agentId || 'unknown';
     steeringNote += `
+- **bmad-${agentId}.md**: Agent-specific guidance and capabilities`;
+
+    steeringNote += `
+
+### Steering Rule Application
+When providing guidance, I will:
+1. Reference relevant steering rules for consistency
+2. Apply project-specific conventions and standards
+3. Ensure recommendations align with established practices
+4. Adapt to your project's specific requirements and constraints`;
+
+    // Add expansion pack specific application notes
+    if (options.expansionPack) {
+      steeringNote += `
+5. Apply ${options.expansionPack} domain expertise and specialized knowledge
+6. Integrate with ${options.expansionPack} tooling and workflow patterns`;
+    }
+
+    steeringNote += `
+
+### Fallback Activation
+If native agent activation fails, I can be activated through steering rules:
+1. Modify \`.kiro/steering/bmad-${agentId}.md\` and set inclusion to "always"
+2. Include specific instructions for the task at hand
+3. Reference my capabilities and expertise in your prompts
+4. Use manual steering activation as needed
 
 These rules ensure consistency across all my recommendations and align with your project's established patterns.
 
@@ -998,6 +1823,809 @@ These tools can be added to your \`.kiro/settings/mcp.json\` configuration file.
     }
 
     return `Enhanced ${toolName} capabilities for ${agentType} workflows`;
+  }
+
+  /**
+   * Generate steering files for converted agents using comprehensive steering system
+   * @param {string} agentId - Agent identifier
+   * @param {string} expansionPack - Expansion pack name (optional)
+   * @param {Object} options - Generation options
+   * @returns {Promise<void>}
+   */
+  async generateAgentSteeringFiles(agentId, expansionPack, options = {}) {
+    try {
+      // Use the comprehensive steering system integration
+      const SteeringSystemIntegration = require('./steering-system-integration');
+      const kiroPath = options.kiroPath || options.context?.kiroPath || process.cwd();
+      const steeringSystem = new SteeringSystemIntegration({
+        verbose: this.verbose,
+        kiroPath: kiroPath,
+        enableFallbackActivation: true,
+        generateExpansionPackRules: true
+      });
+
+      // Create agent metadata for steering generation
+      const agentMetadata = {
+        id: agentId,
+        name: this.generateAgentDisplayName(agentId),
+        persona: {
+          role: this.getAgentRole(agentId),
+          focus: this.getAgentFocus(agentId),
+          style: 'Professional and helpful',
+          core_principles: this.getAgentCorePrinciples(agentId)
+        },
+        commands: this.getAgentCommands(agentId),
+        dependencies: this.getAgentDependencies(agentId),
+        expansionPack: expansionPack,
+        source: options.context?.source || 'bmad-core'
+      };
+
+      // Generate core BMad steering rules first (if not already generated)
+      await steeringSystem.generateCoreBMadSteeringRules();
+
+      // Generate steering files for this specific agent
+      await steeringSystem.generateAgentSpecificSteeringFile(agentMetadata, options);
+
+      // Generate expansion pack steering if applicable
+      if (expansionPack) {
+        await steeringSystem.generateExpansionPackSteeringFile(expansionPack, [agentMetadata]);
+      }
+
+      // Enable fallback activation
+      await steeringSystem.enableFallbackActivation(agentMetadata);
+
+      // Add BMad-specific context
+      await steeringSystem.addBMadSpecificContext(agentId, {
+        workflow: 'BMad Method structured development',
+        phase: 'Agent conversion and integration',
+        dependencies: ['bmad-method.md', 'tech-preferences.md'],
+        qualityGates: ['Code quality', 'Documentation', 'Testing'],
+        teamContext: 'Kiro IDE integration with BMad Method'
+      });
+
+      this.log(`Generated comprehensive steering files for agent: ${agentId}`, 'info');
+    } catch (error) {
+      this.log(`Error generating steering files for ${agentId}: ${error.message}`, 'error');
+    }
+  }
+
+  /**
+   * Get agent commands for steering generation
+   * @param {string} agentId - Agent identifier
+   * @returns {Array} - List of agent commands
+   */
+  getAgentCommands(agentId) {
+    const commandMap = {
+      'pm': [
+        { name: 'create-prd', description: 'Create Product Requirements Document' },
+        { name: 'analyze-requirements', description: 'Analyze and validate requirements' },
+        { name: 'prioritize-features', description: 'Prioritize product features' },
+        { name: 'stakeholder-review', description: 'Facilitate stakeholder reviews' }
+      ],
+      'architect': [
+        { name: 'design-system', description: 'Design system architecture' },
+        { name: 'review-architecture', description: 'Review architectural decisions' },
+        { name: 'evaluate-tech-stack', description: 'Evaluate technology choices' },
+        { name: 'create-adr', description: 'Create Architecture Decision Record' }
+      ],
+      'dev': [
+        { name: 'implement-feature', description: 'Implement feature code' },
+        { name: 'review-code', description: 'Review code changes' },
+        { name: 'debug-issue', description: 'Debug and fix issues' },
+        { name: 'optimize-performance', description: 'Optimize code performance' }
+      ],
+      'qa': [
+        { name: 'create-test-plan', description: 'Create comprehensive test plan' },
+        { name: 'execute-tests', description: 'Execute test cases' },
+        { name: 'report-bugs', description: 'Report and track bugs' },
+        { name: 'validate-quality', description: 'Validate quality metrics' }
+      ]
+    };
+    
+    return commandMap[agentId] || [
+      { name: 'assist', description: 'Provide general development assistance' },
+      { name: 'review', description: 'Review work and provide feedback' },
+      { name: 'guide', description: 'Provide guidance and best practices' }
+    ];
+  }
+
+  /**
+   * Get agent dependencies for steering generation
+   * @param {string} agentId - Agent identifier
+   * @returns {Object} - Agent dependencies
+   */
+  getAgentDependencies(agentId) {
+    const dependencyMap = {
+      'pm': {
+        tasks: ['create-prd', 'analyze-requirements', 'stakeholder-review'],
+        templates: ['prd-tmpl', 'project-brief-tmpl'],
+        checklists: ['pm-checklist', 'story-draft-checklist'],
+        data: ['bmad-kb', 'technical-preferences']
+      },
+      'architect': {
+        tasks: ['design-system', 'review-architecture'],
+        templates: ['architecture-tmpl', 'fullstack-architecture-tmpl'],
+        checklists: ['architect-checklist', 'change-checklist'],
+        data: ['bmad-kb', 'technical-preferences']
+      },
+      'dev': {
+        tasks: ['implement-feature', 'review-code'],
+        templates: ['story-tmpl'],
+        checklists: ['story-dod-checklist'],
+        data: ['bmad-kb', 'technical-preferences']
+      },
+      'qa': {
+        tasks: ['create-test-plan', 'execute-tests'],
+        templates: ['story-tmpl'],
+        checklists: ['story-dod-checklist'],
+        data: ['bmad-kb']
+      }
+    };
+    
+    return dependencyMap[agentId] || {
+      tasks: [],
+      templates: [],
+      checklists: [],
+      data: ['bmad-kb']
+    };
+  }
+
+  /**
+   * Generate agent-specific steering file
+   * @param {string} agentId - Agent identifier
+   * @param {string} expansionPack - Expansion pack name (optional)
+   * @param {Object} options - Generation options
+   * @returns {Promise<void>}
+   */
+  async generateAgentSpecificSteeringFile(agentId, expansionPack, options = {}) {
+    const fs = require('fs-extra');
+    const path = require('path');
+    
+    const steeringDir = path.join(process.cwd(), '.kiro', 'steering');
+    await fs.ensureDir(steeringDir);
+    
+    const steeringFilePath = path.join(steeringDir, `bmad-${agentId}.md`);
+    
+    // Don't overwrite existing files unless explicitly requested
+    if (await fs.pathExists(steeringFilePath) && !options.overwrite) {
+      return;
+    }
+
+    const agentMetadata = this.getAgentMetadataForSteering(agentId, options);
+    const steeringContent = this.generateAgentSteeringContent(agentMetadata, expansionPack);
+    
+    await fs.writeFile(steeringFilePath, steeringContent);
+    this.log(`Generated agent-specific steering file: ${steeringFilePath}`, 'info');
+  }
+
+  /**
+   * Generate expansion pack steering file
+   * @param {string} expansionPack - Expansion pack name
+   * @param {string} agentId - Agent identifier
+   * @param {Object} options - Generation options
+   * @returns {Promise<void>}
+   */
+  async generateExpansionPackSteeringFile(expansionPack, agentId, options = {}) {
+    const fs = require('fs-extra');
+    const path = require('path');
+    
+    const steeringDir = path.join(process.cwd(), '.kiro', 'steering');
+    await fs.ensureDir(steeringDir);
+    
+    const steeringFilePath = path.join(steeringDir, `${expansionPack}.md`);
+    
+    // Don't overwrite existing files unless explicitly requested
+    if (await fs.pathExists(steeringFilePath) && !options.overwrite) {
+      return;
+    }
+
+    const expansionSteeringContent = this.generateExpansionPackSteeringContent(expansionPack, agentId);
+    
+    await fs.writeFile(steeringFilePath, expansionSteeringContent);
+    this.log(`Generated expansion pack steering file: ${steeringFilePath}`, 'info');
+  }
+
+  /**
+   * Get agent metadata for steering generation
+   * @param {string} agentId - Agent identifier
+   * @param {Object} options - Options containing context and metadata
+   * @returns {Object} - Agent metadata
+   */
+  getAgentMetadataForSteering(agentId, options = {}) {
+    // Extract metadata from options context or use defaults
+    const context = options.context || {};
+    
+    return {
+      id: agentId,
+      name: this.generateAgentDisplayName(agentId),
+      role: this.getAgentRole(agentId),
+      focus: this.getAgentFocus(agentId),
+      capabilities: this.getAgentCapabilities(agentId),
+      contextRequirements: this.getAgentContextRequirements(agentId),
+      expansionPack: options.expansionPack,
+      source: context.source || 'bmad-core'
+    };
+  }
+
+  /**
+   * Generate agent steering content
+   * @param {Object} agentMetadata - Agent metadata
+   * @param {string} expansionPack - Expansion pack name (optional)
+   * @returns {string} - Steering file content
+   */
+  generateAgentSteeringContent(agentMetadata, expansionPack) {
+    const { id, name, role, focus, capabilities, contextRequirements } = agentMetadata;
+    
+    let content = `---
+inclusion: manual
+agentFilter: "${id}"
+---
+
+# ${name} Agent Steering Rules
+
+## Agent Identity
+- **Role**: ${role}
+- **Focus**: ${focus}
+- **Activation**: Use when ${this.getAgentActivationGuidance(id)}
+
+## Core Principles
+${this.getAgentCorePrinciples(id).map(p => `- ${p}`).join('\n')}
+
+## Capabilities
+${capabilities.map(c => `- ${c}`).join('\n')}
+
+## Context Requirements
+${contextRequirements.map(c => `- ${c}`).join('\n')}
+
+## BMad Method Integration
+- Follow BMad's structured development approach
+- Maintain agent specialization and expertise
+- Use spec-driven development for complex features
+- Apply quality assurance processes consistently
+
+## Kiro Integration
+- Leverage Kiro's context system (#File, #Folder, #Codebase, etc.)
+- Use steering rules for consistent guidance
+- Integrate with MCP tools when available
+- Respect project-specific conventions and standards`;
+
+    // Add expansion pack specific content
+    if (expansionPack) {
+      content += `
+
+## ${expansionPack} Domain Expertise
+${this.getExpansionPackDomainGuidance(expansionPack, id)}
+
+## Domain-Specific Patterns
+${this.getExpansionPackPatterns(expansionPack).map(p => `- ${p}`).join('\n')}`;
+    }
+
+    content += `
+
+## Fallback Activation Instructions
+If native agent activation fails, you can activate this agent by:
+1. Creating or modifying this steering file
+2. Setting inclusion to "always" or "fileMatch" with appropriate pattern
+3. Including specific instructions for the agent's behavior
+4. Referencing the agent's capabilities and expertise in your prompts
+
+## Quality Standards
+- Maintain high code quality and consistency
+- Follow established patterns and conventions
+- Provide comprehensive documentation
+- Include testing considerations in recommendations
+- Ensure accessibility compliance where applicable
+`;
+
+    return content;
+  }
+
+  /**
+   * Generate expansion pack steering content
+   * @param {string} expansionPack - Expansion pack name
+   * @param {string} agentId - Agent identifier
+   * @returns {string} - Expansion pack steering content
+   */
+  generateExpansionPackSteeringContent(expansionPack, agentId) {
+    const domainInfo = this.getExpansionPackInfo(expansionPack);
+    
+    return `---
+inclusion: always
+projectType: "${expansionPack}"
+---
+
+# ${domainInfo.displayName} Domain Steering Rules
+
+## Domain Overview
+${domainInfo.description}
+
+## Core Technologies
+${domainInfo.technologies.map(t => `- ${t}`).join('\n')}
+
+## Development Patterns
+${domainInfo.patterns.map(p => `- ${p}`).join('\n')}
+
+## Quality Standards
+${domainInfo.qualityStandards.map(q => `- ${q}`).join('\n')}
+
+## Best Practices
+${domainInfo.bestPractices.map(b => `- ${b}`).join('\n')}
+
+## Tool Integration
+${domainInfo.tools.map(t => `- ${t}`).join('\n')}
+
+## BMad Method Alignment
+- Apply BMad's structured approach to ${domainInfo.domain} development
+- Use domain-specific agents for specialized tasks
+- Maintain quality assurance processes adapted to ${domainInfo.domain}
+- Follow ${domainInfo.domain} industry standards and conventions
+
+## Kiro Integration
+- Use context providers relevant to ${domainInfo.domain} development
+- Apply domain-specific steering rules consistently
+- Integrate with ${domainInfo.domain} tooling through MCP when available
+- Respect ${domainInfo.domain} project structures and conventions
+`;
+  }
+
+  /**
+   * Generate agent display name from ID
+   * @param {string} agentId - Agent identifier
+   * @returns {string} - Display name
+   */
+  generateAgentDisplayName(agentId) {
+    const nameMap = {
+      'pm': 'Product Manager',
+      'architect': 'Architect',
+      'dev': 'Developer',
+      'qa': 'QA Engineer',
+      'sm': 'Scrum Master',
+      'po': 'Product Owner',
+      'analyst': 'Business Analyst',
+      'ux-expert': 'UX Expert',
+      'game-developer': 'Game Developer',
+      'game-designer': 'Game Designer',
+      'game-sm': 'Game Scrum Master',
+      'infra-devops-platform': 'Infrastructure DevOps Platform'
+    };
+    
+    return nameMap[agentId] || agentId
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  /**
+   * Get agent role description
+   * @param {string} agentId - Agent identifier
+   * @returns {string} - Role description
+   */
+  getAgentRole(agentId) {
+    const roleMap = {
+      'pm': 'Product Manager - Strategic planning and requirements gathering',
+      'architect': 'Software Architect - System design and technical leadership',
+      'dev': 'Developer - Code implementation and technical problem solving',
+      'qa': 'QA Engineer - Quality assurance and testing',
+      'sm': 'Scrum Master - Agile process facilitation and team coordination',
+      'po': 'Product Owner - Product vision and backlog management',
+      'analyst': 'Business Analyst - Requirements analysis and documentation',
+      'ux-expert': 'UX Expert - User experience design and research',
+      'game-developer': 'Game Developer - Game programming and implementation',
+      'game-designer': 'Game Designer - Game mechanics and design',
+      'game-sm': 'Game Scrum Master - Agile game development processes',
+      'infra-devops-platform': 'Infrastructure DevOps - Platform and deployment automation'
+    };
+    
+    return roleMap[agentId] || 'Development Assistant - General development support';
+  }
+
+  /**
+   * Get agent focus area
+   * @param {string} agentId - Agent identifier
+   * @returns {string} - Focus description
+   */
+  getAgentFocus(agentId) {
+    const focusMap = {
+      'pm': 'Product strategy, roadmaps, and stakeholder alignment',
+      'architect': 'System architecture, technical decisions, and design patterns',
+      'dev': 'Code quality, implementation best practices, and technical solutions',
+      'qa': 'Testing strategies, quality metrics, and defect prevention',
+      'sm': 'Team productivity, process improvement, and agile practices',
+      'po': 'Product backlog, user stories, and feature prioritization',
+      'analyst': 'Requirements gathering, process analysis, and documentation',
+      'ux-expert': 'User research, interface design, and usability testing',
+      'game-developer': 'Game programming, performance optimization, and technical implementation',
+      'game-designer': 'Game mechanics, player experience, and design systems',
+      'game-sm': 'Game development workflows and team coordination',
+      'infra-devops-platform': 'Infrastructure automation, deployment pipelines, and platform reliability'
+    };
+    
+    return focusMap[agentId] || 'General development support and guidance';
+  }
+
+  /**
+   * Get agent capabilities
+   * @param {string} agentId - Agent identifier
+   * @returns {Array} - List of capabilities
+   */
+  getAgentCapabilities(agentId) {
+    const capabilityMap = {
+      'pm': [
+        'Product roadmap development',
+        'Requirements gathering and analysis',
+        'Stakeholder communication',
+        'Market research and competitive analysis',
+        'Feature prioritization and backlog management'
+      ],
+      'architect': [
+        'System architecture design',
+        'Technology stack evaluation',
+        'Design pattern recommendations',
+        'Performance and scalability planning',
+        'Technical documentation creation'
+      ],
+      'dev': [
+        'Code implementation and review',
+        'Debugging and troubleshooting',
+        'API design and development',
+        'Database design and optimization',
+        'Testing and quality assurance'
+      ],
+      'qa': [
+        'Test strategy development',
+        'Test case design and execution',
+        'Automated testing implementation',
+        'Quality metrics and reporting',
+        'Defect tracking and resolution'
+      ],
+      'sm': [
+        'Sprint planning and facilitation',
+        'Team process improvement',
+        'Impediment removal',
+        'Agile coaching and mentoring',
+        'Metrics tracking and reporting'
+      ],
+      'po': [
+        'Product backlog management',
+        'User story creation and refinement',
+        'Acceptance criteria definition',
+        'Stakeholder collaboration',
+        'Product vision communication'
+      ],
+      'analyst': [
+        'Business requirements analysis',
+        'Process modeling and documentation',
+        'Stakeholder interviews and workshops',
+        'Gap analysis and recommendations',
+        'Solution design and validation'
+      ],
+      'ux-expert': [
+        'User research and persona development',
+        'Wireframing and prototyping',
+        'Usability testing and analysis',
+        'Design system creation',
+        'Accessibility compliance'
+      ]
+    };
+    
+    return capabilityMap[agentId] || [
+      'General development assistance',
+      'Code review and feedback',
+      'Best practices guidance',
+      'Problem-solving support'
+    ];
+  }
+
+  /**
+   * Get agent context requirements
+   * @param {string} agentId - Agent identifier
+   * @returns {Array} - List of context requirements
+   */
+  getAgentContextRequirements(agentId) {
+    const contextMap = {
+      'pm': [
+        'Product requirements and specifications',
+        'Market research and competitive analysis',
+        'Stakeholder feedback and priorities',
+        'Business objectives and constraints'
+      ],
+      'architect': [
+        'System requirements and constraints',
+        'Technology stack and infrastructure',
+        'Performance and scalability requirements',
+        'Integration points and dependencies'
+      ],
+      'dev': [
+        'Current codebase and file context',
+        'Build errors and terminal output',
+        'Git changes and recent modifications',
+        'Project structure and dependencies'
+      ],
+      'qa': [
+        'Test requirements and acceptance criteria',
+        'Application functionality and features',
+        'Bug reports and defect tracking',
+        'Testing environment and data'
+      ]
+    };
+    
+    return contextMap[agentId] || [
+      'Project context and requirements',
+      'Current file and codebase state',
+      'Recent changes and modifications',
+      'Build status and error messages'
+    ];
+  }
+
+  /**
+   * Get agent activation guidance
+   * @param {string} agentId - Agent identifier
+   * @returns {string} - Activation guidance
+   */
+  getAgentActivationGuidance(agentId) {
+    const guidanceMap = {
+      'pm': 'planning products, gathering requirements, or managing roadmaps',
+      'architect': 'designing systems, making technical decisions, or reviewing architecture',
+      'dev': 'implementing code, debugging issues, or reviewing technical solutions',
+      'qa': 'testing applications, ensuring quality, or designing test strategies',
+      'sm': 'facilitating agile processes, removing impediments, or improving team workflows',
+      'po': 'managing product backlogs, writing user stories, or prioritizing features',
+      'analyst': 'analyzing requirements, documenting processes, or gathering business needs',
+      'ux-expert': 'designing user experiences, conducting research, or improving usability'
+    };
+    
+    return guidanceMap[agentId] || 'general development tasks or technical guidance is needed';
+  }
+
+  /**
+   * Get agent core principles
+   * @param {string} agentId - Agent identifier
+   * @returns {Array} - List of core principles
+   */
+  getAgentCorePrinciples(agentId) {
+    const principleMap = {
+      'pm': [
+        'Customer-centric product development',
+        'Data-driven decision making',
+        'Clear communication and stakeholder alignment',
+        'Iterative improvement and feedback incorporation'
+      ],
+      'architect': [
+        'Scalable and maintainable system design',
+        'Technology choices based on requirements',
+        'Documentation and knowledge sharing',
+        'Performance and security considerations'
+      ],
+      'dev': [
+        'Clean, readable, and maintainable code',
+        'Test-driven development practices',
+        'Continuous learning and improvement',
+        'Collaborative development and code review'
+      ],
+      'qa': [
+        'Quality is everyone\'s responsibility',
+        'Prevention over detection',
+        'Comprehensive test coverage',
+        'Continuous improvement of testing processes'
+      ]
+    };
+    
+    return principleMap[agentId] || [
+      'Quality and excellence in all deliverables',
+      'Clear communication and collaboration',
+      'Continuous learning and improvement',
+      'User-focused solutions and outcomes'
+    ];
+  }
+
+  /**
+   * Get expansion pack domain guidance
+   * @param {string} expansionPack - Expansion pack name
+   * @param {string} agentId - Agent identifier
+   * @returns {string} - Domain guidance
+   */
+  getExpansionPackDomainGuidance(expansionPack, agentId) {
+    const guidanceMap = {
+      'bmad-2d-phaser-game-dev': `Apply specialized knowledge of Phaser.js game development:
+- Scene management and game state handling
+- Sprite and animation systems
+- Physics and collision detection
+- Asset loading and optimization
+- Game loop and performance considerations`,
+      'bmad-2d-unity-game-dev': `Apply specialized knowledge of Unity 2D game development:
+- Unity component system and GameObject hierarchy
+- 2D physics and collision systems
+- Animation controllers and state machines
+- Asset pipeline and resource management
+- Unity-specific optimization techniques`,
+      'bmad-infrastructure-devops': `Apply specialized knowledge of infrastructure and DevOps:
+- Infrastructure as Code (IaC) best practices
+- CI/CD pipeline design and implementation
+- Container orchestration and deployment
+- Monitoring, logging, and observability
+- Security and compliance considerations`
+    };
+    
+    return guidanceMap[expansionPack] || `Apply domain-specific expertise for ${expansionPack} development`;
+  }
+
+  /**
+   * Get expansion pack patterns
+   * @param {string} expansionPack - Expansion pack name
+   * @returns {Array} - List of patterns
+   */
+  getExpansionPackPatterns(expansionPack) {
+    const patternMap = {
+      'bmad-2d-phaser-game-dev': [
+        'Scene-based game architecture',
+        'Component-entity systems for game objects',
+        'State machines for game logic',
+        'Object pooling for performance',
+        'Event-driven communication between systems'
+      ],
+      'bmad-2d-unity-game-dev': [
+        'MonoBehaviour component patterns',
+        'ScriptableObject data architecture',
+        'Unity Event system usage',
+        'Coroutine-based async operations',
+        'Prefab-based object composition'
+      ],
+      'bmad-infrastructure-devops': [
+        'Infrastructure as Code patterns',
+        'GitOps deployment workflows',
+        'Microservices architecture patterns',
+        'Observability and monitoring patterns',
+        'Security-first design principles'
+      ]
+    };
+    
+    return patternMap[expansionPack] || [
+      'Domain-specific architectural patterns',
+      'Best practices for the technology stack',
+      'Performance optimization techniques',
+      'Security and reliability patterns'
+    ];
+  }
+
+  /**
+   * Get expansion pack information
+   * @param {string} expansionPack - Expansion pack name
+   * @returns {Object} - Expansion pack information
+   */
+  getExpansionPackInfo(expansionPack) {
+    const infoMap = {
+      'bmad-2d-phaser-game-dev': {
+        displayName: 'Phaser.js 2D Game Development',
+        domain: 'game development',
+        description: 'Specialized guidance for 2D game development using Phaser.js framework',
+        technologies: [
+          'Phaser.js game framework',
+          'JavaScript/TypeScript for game logic',
+          'HTML5 Canvas and WebGL rendering',
+          'Web Audio API for sound',
+          'Node.js for development tooling'
+        ],
+        patterns: [
+          'Scene-based game architecture',
+          'Component-entity systems',
+          'State machines for game logic',
+          'Object pooling for performance',
+          'Event-driven system communication'
+        ],
+        qualityStandards: [
+          'Consistent frame rate performance',
+          'Memory-efficient asset management',
+          'Cross-browser compatibility',
+          'Responsive design for multiple screen sizes',
+          'Accessible game controls and interfaces'
+        ],
+        bestPractices: [
+          'Modular game code organization',
+          'Asset optimization and loading strategies',
+          'Performance profiling and optimization',
+          'Game state persistence and save systems',
+          'User experience and game feel considerations'
+        ],
+        tools: [
+          'Phaser.js development tools',
+          'Texture atlas generators',
+          'Audio editing and compression tools',
+          'Browser developer tools for debugging',
+          'Performance monitoring and profiling'
+        ]
+      },
+      'bmad-2d-unity-game-dev': {
+        displayName: 'Unity 2D Game Development',
+        domain: 'game development',
+        description: 'Specialized guidance for 2D game development using Unity engine',
+        technologies: [
+          'Unity 2D engine and tools',
+          'C# programming language',
+          'Unity Physics2D system',
+          'Unity Animation system',
+          'Unity Asset Pipeline'
+        ],
+        patterns: [
+          'MonoBehaviour component architecture',
+          'ScriptableObject data systems',
+          'Unity Event system patterns',
+          'Coroutine-based async operations',
+          'Prefab composition patterns'
+        ],
+        qualityStandards: [
+          'Consistent performance across target platforms',
+          'Efficient memory usage and garbage collection',
+          'Proper asset organization and naming',
+          'Code maintainability and modularity',
+          'Platform-specific optimization'
+        ],
+        bestPractices: [
+          'Unity project structure organization',
+          'Component-based architecture design',
+          'Asset workflow and pipeline optimization',
+          'Performance profiling and optimization',
+          'Version control best practices for Unity'
+        ],
+        tools: [
+          'Unity Editor and built-in tools',
+          'Unity Profiler for performance analysis',
+          'Unity Package Manager',
+          'Version control systems (Git with LFS)',
+          'Third-party Unity extensions and tools'
+        ]
+      },
+      'bmad-infrastructure-devops': {
+        displayName: 'Infrastructure and DevOps',
+        domain: 'infrastructure',
+        description: 'Specialized guidance for infrastructure automation and DevOps practices',
+        technologies: [
+          'Infrastructure as Code (Terraform, CloudFormation)',
+          'Container technologies (Docker, Kubernetes)',
+          'CI/CD platforms (GitHub Actions, GitLab CI)',
+          'Cloud platforms (AWS, Azure, GCP)',
+          'Monitoring and observability tools'
+        ],
+        patterns: [
+          'Infrastructure as Code patterns',
+          'GitOps deployment workflows',
+          'Microservices architecture',
+          'Event-driven architectures',
+          'Immutable infrastructure patterns'
+        ],
+        qualityStandards: [
+          'Infrastructure reliability and availability',
+          'Security and compliance requirements',
+          'Cost optimization and resource efficiency',
+          'Scalability and performance standards',
+          'Disaster recovery and backup strategies'
+        ],
+        bestPractices: [
+          'Version-controlled infrastructure definitions',
+          'Automated testing of infrastructure changes',
+          'Progressive deployment strategies',
+          'Comprehensive monitoring and alerting',
+          'Security scanning and vulnerability management'
+        ],
+        tools: [
+          'Infrastructure provisioning tools',
+          'Container orchestration platforms',
+          'CI/CD pipeline tools',
+          'Monitoring and logging solutions',
+          'Security scanning and compliance tools'
+        ]
+      }
+    };
+    
+    return infoMap[expansionPack] || {
+      displayName: expansionPack,
+      domain: 'development',
+      description: `Specialized guidance for ${expansionPack} development`,
+      technologies: ['Domain-specific technologies'],
+      patterns: ['Domain-specific patterns'],
+      qualityStandards: ['Domain-specific quality standards'],
+      bestPractices: ['Domain-specific best practices'],
+      tools: ['Domain-specific tools']
+    };
   }
 }
 

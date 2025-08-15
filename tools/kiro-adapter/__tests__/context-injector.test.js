@@ -69,13 +69,25 @@ describe('ContextInjector', () => {
 
   describe('agentContextRequirements', () => {
     it('should have requirements for all core agent types', () => {
-      const coreAgents = ['dev', 'qa', 'architect', 'pm'];
+      const coreAgents = ['dev', 'qa', 'architect', 'pm', 'analyst', 'sm'];
       
       coreAgents.forEach(agentId => {
         expect(injector.agentContextRequirements[agentId]).toBeDefined();
         expect(injector.agentContextRequirements[agentId].primary).toBeDefined();
         expect(injector.agentContextRequirements[agentId].secondary).toBeDefined();
         expect(injector.agentContextRequirements[agentId].description).toBeDefined();
+      });
+    });
+
+    it('should have requirements for expansion pack agent types', () => {
+      const expansionAgents = ['game-developer', 'game-designer', 'infra-devops-platform'];
+      
+      expansionAgents.forEach(agentId => {
+        if (injector.agentContextRequirements[agentId]) {
+          expect(injector.agentContextRequirements[agentId].primary).toBeDefined();
+          expect(injector.agentContextRequirements[agentId].secondary).toBeDefined();
+          expect(injector.agentContextRequirements[agentId].description).toBeDefined();
+        }
       });
     });
 

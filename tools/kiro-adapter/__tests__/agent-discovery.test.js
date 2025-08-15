@@ -53,16 +53,19 @@ describe('AgentDiscovery', () => {
 
       fs.readdir.mockImplementation((path) => {
         if (path.includes('bmad-core/agents')) {
-          return Promise.resolve(['pm.md', 'architect.md', 'dev.md']);
+          return Promise.resolve(['pm.md', 'architect.md', 'dev.md', 'qa.md', 'sm.md', 'analyst.md']);
         }
         if (path.includes('expansion-packs')) {
-          return Promise.resolve(['bmad-2d-phaser-game-dev', 'bmad-infrastructure-devops']);
+          return Promise.resolve(['bmad-2d-phaser-game-dev', 'bmad-infrastructure-devops', 'bmad-2d-unity-game-dev']);
         }
         if (path.includes('bmad-2d-phaser-game-dev/agents')) {
-          return Promise.resolve(['game-developer.md', 'game-designer.md']);
+          return Promise.resolve(['game-developer.md', 'game-designer.md', 'game-sm.md']);
         }
         if (path.includes('bmad-infrastructure-devops/agents')) {
           return Promise.resolve(['infra-devops-platform.md']);
+        }
+        if (path.includes('bmad-2d-unity-game-dev/agents')) {
+          return Promise.resolve(['game-architect.md', 'game-developer.md', 'game-designer.md']);
         }
         return Promise.resolve([]);
       });
@@ -102,9 +105,75 @@ dependencies:
 
       const agents = await agentDiscovery.scanAllAgents();
 
-      expect(agents.length).toBeGreaterThanOrEqual(3); // At least 3 core agents
+      expect(agents.length).toBeGreaterThanOrEqual(6); // At least 6 core agents
       expect(fs.pathExists).toHaveBeenCalledWith(path.join(mockRootPath, 'bmad-core', 'agents'));
       expect(fs.pathExists).toHaveBeenCalledWith(path.join(mockRootPath, 'expansion-packs'));
+    });
+
+    it('should discover all expansion pack agents', async () => {
+      const mockExpansionAgentContent = `# game-developer
+
+\`\`\`yaml
+agent:
+  name: Maya
+  id: game-developer
+  title: Game Developer
+  icon: 🎮
+persona:
+  role: Game Developer
+  style: Creative
+  focus: Game mechanics and implementation
+dependencies:
+  tasks:
+    - create-game-story.md
+  templates:
+    - game-story-tmpl.yaml
+\`\`\``;
+
+      fs.readFile.mockResolvedValue(mockExpansionAgentContent);
+      fs.existsSync = jest.fn().mockReturnValue(true);
+
+      const agents = await agentDiscovery.scanAllAgents();
+      const expansionAgents = agents.filter(a => a.source === 'expansion-pack');
+
+      expect(expansionAgents.length).toBeGreaterThanOrEqual(4); // At least 4 expansion agents
+      expect(expansionAgents.some(a => a.expansionPack === 'bmad-2d-phaser-game-dev')).toBe(true);
+      expect(expansionAgents.some(a => a.expansionPack === 'bmad-infrastructure-devops')).toBe(true);
+      expect(expansionAgents.some(a => a.expansionPack === 'bmad-2d-unity-game-dev')).toBe(true);
+    });
+
+    it('should validate agent dependencies during scanning', async () => {
+      const mockAgentWithDeps = `# dev
+
+\`\`\`yaml
+agent:
+  name: James
+  id: dev
+  title: Full Stack Developer
+dependencies:
+  tasks:
+    - create-doc.md
+    - missing-task.md
+  templates:
+    - prd-tmpl.yaml
+    - missing-template.yaml
+  checklists:
+    - story-dod-checklist.md
+\`\`\``;
+
+      fs.readFile.mockResolvedValue(mockAgentWithDeps);
+      fs.existsSync = jest.fn().mockImplementation((filePath) => {
+        return !filePath.includes('missing-');
+      });
+
+      const agents = await agentDiscovery.scanAllAgents();
+      const devAgent = agents.find(a => a.id === 'dev');
+
+      expect(devAgent).toBeDefined();
+      expect(devAgent.validationErrors).toBeDefined();
+      expect(devAgent.validationErrors.length).toBeGreaterThan(0);
+      expect(devAgent.validationErrors.some(e => e.includes('missing-task.md'))).toBe(true);
+      expect(devAgent.validationErrors.some(e => e.includes('missing-template.yaml'))).toBe(true);
     });
 
     it('should handle missing core agents directory', async () => {

@@ -5,6 +5,7 @@ const yaml = require("js-yaml");
 const KiroDetector = require("./kiro-detector");
 const AgentTransformer = require("./agent-transformer");
 const KiroValidator = require("./kiro-validator");
+const UpgradeMigrationManager = require("./upgrade-migration-manager");
 
 // Import error reporter
 let ErrorReporter;
@@ -33,6 +34,7 @@ class KiroInstaller {
     this.agentTransformer = new AgentTransformer();
     this.validator = new KiroValidator();
     this.errorReporter = new ErrorReporter();
+    this.upgradeMigrationManager = new UpgradeMigrationManager();
   }
 
   /**
@@ -60,13 +62,16 @@ class KiroInstaller {
       await this.detector.ensureKiroWorkspaceStructure(installDir);
     }
 
-    // Transform BMad core agents for Kiro
-    await this.transformBMadCoreAgentsForKiro(installDir, spinner);
+    // Initialize progress tracking for complete agent conversion
+    const conversionProgress = {
+      totalAgents: 0,
+      convertedAgents: 0,
+      failedAgents: [],
+      startTime: Date.now()
+    };
 
-    // Transform expansion pack agents for Kiro
-    if (config.expansionPacks && config.expansionPacks.length > 0) {
-      await this.transformExpansionPackAgentsForKiro(config.expansionPacks, installDir, spinner);
-    }
+    // Perform complete agent conversion with progress reporting
+    await this.performCompleteAgentConversion(config, installDir, spinner, conversionProgress);
 
     // Convert expansion pack templates/workflows to Kiro specs
     if (config.expansionPacks && config.expansionPacks.length > 0) {
@@ -87,21 +92,295 @@ class KiroInstaller {
       await this.createExpansionPackSteeringRules(config.expansionPacks, installDir, spinner);
     }
 
+    // Validate complete conversion
+    spinner.text = "Validating complete agent conversion...";
+    const conversionValidation = await this.validateConversionCompleteness(installDir, conversionProgress);
+
     // Validate Kiro enhancements
     spinner.text = "Validating Kiro enhancements...";
     const enhancementValidation = await this.validator.validateKiroInstallation(installDir);
 
-    if (enhancementValidation.isValid) {
+    // Combine validation results
+    const combinedValidation = this.combineValidationResults(enhancementValidation, conversionValidation);
+
+    if (combinedValidation.isValid) {
       console.log(chalk.green("✓ Kiro enhancements added successfully!"));
+      this.displayConversionSummary(conversionProgress);
     } else {
       console.log(chalk.yellow("⚠ Kiro enhancements added with warnings"));
       this.validator.displayValidationResults(
-        enhancementValidation,
+        combinedValidation,
         "Kiro Enhancements"
       );
+      this.displayConversionSummary(conversionProgress);
     }
 
-    return enhancementValidation;
+    return combinedValidation;
+  }
+
+  /**
+   * Detect and upgrade existing incomplete installations
+   * @param {Object} config - Installation configuration
+   * @param {string} installDir - Installation directory
+   * @param {Object} spinner - Ora spinner instance
+   * @returns {Promise<Object>} - Upgrade results
+   */
+  async detectAndUpgradeInstallation(config, installDir, spinner) {
+    spinner.text = "Detecting existing installation state...";
+
+    try {
+      // Initialize upgrade manager with current directory
+      this.upgradeMigrationManager = new UpgradeMigrationManager({
+        rootPath: installDir,
+        verbose: config.verbose || false,
+        preserveCustomizations: config.preserveCustomizations !== false,
+        backupCustomizations: config.backupCustomizations !== false,
+        dryRun: config.dryRun || false
+      });
+
+      // Detect current installation state
+      const detection = await this.upgradeMigrationManager.detectIncompleteInstallation();
+      
+      if (detection.isNewInstallation) {
+        console.log(chalk.blue("ℹ New installation detected - proceeding with full installation"));
+        return { 
+          isUpgrade: false, 
+          detection,
+          message: "New installation - no upgrade needed" 
+        };
+      }
+
+      if (!detection.isIncomplete && !config.forceUpgrade) {
+        console.log(chalk.green("✓ Installation is already complete"));
+        return { 
+          isUpgrade: false, 
+          detection,
+          message: "Installation is complete - no upgrade needed" 
+        };
+      }
+
+      // Display upgrade analysis
+      this.displayUpgradeAnalysis(detection);
+
+      // Perform upgrade if needed
+      if (detection.isIncomplete || config.forceUpgrade) {
+        spinner.text = "Performing installation upgrade...";
+        
+        const upgradeResult = await this.upgradeMigrationManager.performCompleteUpgrade({
+          forceUpgrade: config.forceUpgrade,
+          skipExisting: config.skipExisting,
+          preserveExisting: config.preserveExisting,
+          removeWorkarounds: config.removeWorkarounds
+        });
+
+        // Display upgrade results
+        this.displayUpgradeResults(upgradeResult);
+
+        return {
+          isUpgrade: true,
+          detection,
+          upgradeResult,
+          success: upgradeResult.success
+        };
+      }
+
+      return { 
+        isUpgrade: false, 
+        detection,
+        message: "No upgrade performed" 
+      };
+
+    } catch (error) {
+      spinner.fail("Installation upgrade detection failed");
+      this.errorReporter.reportError(error, this.errorReporter.errorTypes.KIRO_SETUP, {
+        phase: 'Upgrade Detection',
+        component: 'upgrade-migration-manager',
+        operation: 'detect-upgrade',
+        directory: installDir
+      });
+      throw new Error(`Upgrade detection failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Perform incremental agent conversion for missing agents
+   * @param {Array} missingAgentIds - Optional list of specific agents to convert
+   * @param {string} installDir - Installation directory
+   * @param {Object} spinner - Ora spinner instance
+   * @param {Object} options - Conversion options
+   * @returns {Promise<Object>} - Conversion results
+   */
+  async performIncrementalAgentConversion(missingAgentIds, installDir, spinner, options = {}) {
+    spinner.text = "Performing incremental agent conversion...";
+
+    try {
+      // Initialize upgrade manager if not already done
+      if (!this.upgradeMigrationManager) {
+        this.upgradeMigrationManager = new UpgradeMigrationManager({
+          rootPath: installDir,
+          verbose: options.verbose || false
+        });
+      }
+
+      const conversionResult = await this.upgradeMigrationManager.performIncrementalConversion(
+        missingAgentIds,
+        options
+      );
+
+      if (conversionResult.success) {
+        console.log(chalk.green(`✓ Successfully converted ${conversionResult.converted.length} agents`));
+        
+        if (conversionResult.skipped.length > 0) {
+          console.log(chalk.yellow(`⚠ Skipped ${conversionResult.skipped.length} existing agents`));
+        }
+      } else {
+        console.log(chalk.red(`✗ Conversion failed for ${conversionResult.failed.length} agents`));
+        
+        // Display failed agents
+        if (conversionResult.failed.length > 0) {
+          console.log(chalk.red("Failed agents:"));
+          conversionResult.failed.forEach(agentId => {
+            console.log(chalk.red(`  - ${agentId}`));
+          });
+        }
+      }
+
+      return conversionResult;
+
+    } catch (error) {
+      spinner.fail("Incremental agent conversion failed");
+      this.errorReporter.reportError(error, this.errorReporter.errorTypes.KIRO_SETUP, {
+        phase: 'Incremental Conversion',
+        component: 'upgrade-migration-manager',
+        operation: 'incremental-conversion',
+        directory: installDir,
+        missingAgents: missingAgentIds
+      });
+      throw new Error(`Incremental conversion failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Migrate existing steering-based workarounds to native agents
+   * @param {string} installDir - Installation directory
+   * @param {Object} spinner - Ora spinner instance
+   * @param {Object} options - Migration options
+   * @returns {Promise<Object>} - Migration results
+   */
+  async migrateSteeringWorkarounds(installDir, spinner, options = {}) {
+    spinner.text = "Migrating steering-based workarounds...";
+
+    try {
+      // Initialize upgrade manager if not already done
+      if (!this.upgradeMigrationManager) {
+        this.upgradeMigrationManager = new UpgradeMigrationManager({
+          rootPath: installDir,
+          verbose: options.verbose || false
+        });
+      }
+
+      const migrationResult = await this.upgradeMigrationManager.migrateSteeringWorkarounds(options);
+
+      if (migrationResult.success) {
+        console.log(chalk.green(`✓ Successfully migrated ${migrationResult.migrated.length} steering workarounds`));
+        
+        if (migrationResult.preserved.length > 0) {
+          console.log(chalk.yellow(`⚠ Preserved ${migrationResult.preserved.length} complex workarounds`));
+        }
+      } else {
+        console.log(chalk.red(`✗ Migration failed for ${migrationResult.failed.length} workarounds`));
+      }
+
+      return migrationResult;
+
+    } catch (error) {
+      spinner.fail("Steering workaround migration failed");
+      this.errorReporter.reportError(error, this.errorReporter.errorTypes.KIRO_SETUP, {
+        phase: 'Steering Migration',
+        component: 'upgrade-migration-manager',
+        operation: 'migrate-steering',
+        directory: installDir
+      });
+      throw new Error(`Steering migration failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Display upgrade analysis results
+   * @param {Object} detection - Detection results
+   */
+  displayUpgradeAnalysis(detection) {
+    console.log(chalk.cyan("\n📋 Installation Analysis:"));
+    
+    if (detection.analysis) {
+      const analysis = detection.analysis;
+      console.log(chalk.cyan(`   Total Available Agents: ${analysis.totalAvailable}`));
+      console.log(chalk.cyan(`   Currently Installed: ${analysis.currentlyInstalled}`));
+      
+      if (analysis.missingAgents > 0) {
+        console.log(chalk.yellow(`   Missing Agents: ${analysis.missingAgents}`));
+      }
+      
+      if (analysis.steeringWorkarounds > 0) {
+        console.log(chalk.yellow(`   Steering Workarounds: ${analysis.steeringWorkarounds}`));
+      }
+      
+      if (analysis.userCustomizations > 0) {
+        console.log(chalk.blue(`   User Customizations: ${analysis.userCustomizations}`));
+      }
+    }
+
+    if (detection.recommendations && detection.recommendations.length > 0) {
+      console.log(chalk.cyan("\n📝 Upgrade Recommendations:"));
+      detection.recommendations.forEach(rec => {
+        console.log(chalk.cyan(`   • ${rec}`));
+      });
+    }
+  }
+
+  /**
+   * Display upgrade results
+   * @param {Object} upgradeResult - Upgrade results
+   */
+  displayUpgradeResults(upgradeResult) {
+    console.log(chalk.cyan("\n📊 Upgrade Results:"));
+    
+    if (upgradeResult.report && upgradeResult.report.summary) {
+      const summary = upgradeResult.report.summary;
+      
+      if (summary.overallSuccess) {
+        console.log(chalk.green("✓ Upgrade completed successfully"));
+      } else {
+        console.log(chalk.yellow("⚠ Upgrade completed with warnings"));
+      }
+      
+      console.log(chalk.cyan(`   Agents Processed: ${summary.agentsProcessed}`));
+      console.log(chalk.cyan(`   Agents Upgraded: ${summary.agentsUpgraded}`));
+      
+      if (summary.agentsFailed > 0) {
+        console.log(chalk.red(`   Agents Failed: ${summary.agentsFailed}`));
+      }
+      
+      if (summary.customizationsPreserved > 0) {
+        console.log(chalk.blue(`   Customizations Preserved: ${summary.customizationsPreserved}`));
+      }
+      
+      if (summary.customizationsMigrated > 0) {
+        console.log(chalk.green(`   Customizations Migrated: ${summary.customizationsMigrated}`));
+      }
+      
+      if (summary.backupsCreated > 0) {
+        console.log(chalk.blue(`   Backups Created: ${summary.backupsCreated}`));
+      }
+    }
+
+    // Display post-upgrade recommendations
+    if (upgradeResult.report && upgradeResult.report.recommendations && upgradeResult.report.recommendations.length > 0) {
+      console.log(chalk.cyan("\n📝 Post-Upgrade Recommendations:"));
+      upgradeResult.report.recommendations.forEach(rec => {
+        console.log(chalk.cyan(`   • ${rec}`));
+      });
+    }
   }
 
   /**
@@ -114,6 +393,25 @@ class KiroInstaller {
    */
   async installForKiro(config, installDir, spinner) {
     try {
+      // Phase 0: Check for existing installation and upgrade if needed
+      spinner.text = "Checking for existing installation...";
+      
+      const upgradeCheck = await this.detectAndUpgradeInstallation(config, installDir, spinner);
+      
+      if (upgradeCheck.isUpgrade) {
+        if (upgradeCheck.success) {
+          console.log(chalk.green("✓ Installation upgrade completed successfully"));
+          return upgradeCheck.upgradeResult;
+        } else {
+          console.log(chalk.yellow("⚠ Installation upgrade completed with warnings"));
+          // Continue with enhancement validation
+        }
+      } else if (!upgradeCheck.detection.isNewInstallation) {
+        // Installation is complete, no need to continue
+        console.log(chalk.green("✓ Installation is already complete"));
+        return upgradeCheck;
+      }
+
       // Phase 1: Run main installer for BMad core + expansion packs + all IDE setup
       spinner.text = "Installing BMad Method components...";
       
@@ -1966,6 +2264,341 @@ Expansion pack agents inherit full Kiro context awareness:
     console.log(
       chalk.yellow("• Check for any new features or breaking changes"),
     );
+  }
+
+  /**
+   * Perform complete agent conversion with progress reporting
+   * @param {Object} config - Installation configuration
+   * @param {string} installDir - Installation directory
+   * @param {Object} spinner - Ora spinner instance
+   * @param {Object} conversionProgress - Progress tracking object
+   * @returns {Promise<void>}
+   */
+  async performCompleteAgentConversion(config, installDir, spinner, conversionProgress) {
+    // Import required components
+    const AgentDiscovery = require('./agent-discovery');
+    const KiroAgentRegistry = require('./kiro-agent-registry');
+    const ActivationManager = require('./activation-manager');
+
+    // Initialize agent discovery
+    const agentDiscovery = new AgentDiscovery({
+      rootPath: installDir,
+      verbose: true,
+      validateDependencies: true,
+      enableErrorHandling: true
+    });
+
+    // Initialize agent registry
+    const agentRegistry = new KiroAgentRegistry({
+      rootPath: installDir,
+      retryAttempts: 3,
+      retryDelay: 1000
+    });
+
+    // Initialize activation manager
+    const activationManager = new ActivationManager({
+      rootPath: installDir,
+      registry: agentRegistry
+    });
+
+    try {
+      // Phase 1: Discover all BMad agents
+      spinner.text = "Discovering BMad agents (core and expansion packs)...";
+      const discoveredAgents = await agentDiscovery.scanAllAgents();
+      conversionProgress.totalAgents = discoveredAgents.length;
+
+      // Report discovery progress
+      const discoveryMessage = `Discovered ${discoveredAgents.length} BMad agents`;
+      console.log(chalk.green(`✓ ${discoveryMessage}`));
+      if (spinner.succeed && typeof spinner.succeed === 'function') {
+        spinner.succeed(discoveryMessage);
+      }
+      
+      // Display discovery statistics
+      const stats = agentDiscovery.getStatistics();
+      console.log(chalk.cyan(`   Core agents: ${stats.core}`));
+      console.log(chalk.cyan(`   Expansion pack agents: ${stats.expansionPack}`));
+      if (stats.expansionPacks.length > 0) {
+        console.log(chalk.cyan(`   Expansion packs: ${stats.expansionPacks.join(', ')}`));
+      }
+
+      // Phase 2: Transform all discovered agents
+      spinner.text = "Converting agents to Kiro format...";
+      if (spinner.succeed && typeof spinner.succeed === 'function') {
+        spinner.succeed("Starting agent conversion to Kiro format");
+      }
+      await this.convertDiscoveredAgents(discoveredAgents, installDir, spinner, conversionProgress);
+
+      // Phase 3: Register agents with Kiro's native system
+      spinner.text = "Registering agents with Kiro...";
+      if (spinner.succeed && typeof spinner.succeed === 'function') {
+        spinner.succeed("Starting agent registration with Kiro");
+      }
+      await this.registerConvertedAgents(agentRegistry, installDir, spinner, conversionProgress);
+
+      // Phase 4: Set up activation management
+      spinner.text = "Setting up agent activation management...";
+      if (spinner.succeed && typeof spinner.succeed === 'function') {
+        spinner.succeed("Starting activation management setup");
+      }
+      await this.setupActivationManagement(activationManager, installDir, spinner);
+
+      console.log(chalk.green(`✓ Complete agent conversion finished`));
+      console.log(chalk.cyan(`   Successfully converted: ${conversionProgress.convertedAgents}/${conversionProgress.totalAgents}`));
+      
+      if (conversionProgress.failedAgents.length > 0) {
+        console.log(chalk.yellow(`   Failed conversions: ${conversionProgress.failedAgents.length}`));
+      }
+
+    } catch (error) {
+      this.errorReporter.reportError(error, this.errorReporter.errorTypes.KIRO_SETUP, {
+        phase: 'complete-agent-conversion',
+        component: 'agent-conversion',
+        operation: 'convert-all-agents',
+        directory: installDir,
+        progress: conversionProgress
+      });
+      throw new Error(`Complete agent conversion failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Convert all discovered agents to Kiro format
+   * @param {Array} discoveredAgents - Array of discovered agent metadata
+   * @param {string} installDir - Installation directory
+   * @param {Object} spinner - Ora spinner instance
+   * @param {Object} conversionProgress - Progress tracking object
+   * @returns {Promise<void>}
+   */
+  async convertDiscoveredAgents(discoveredAgents, installDir, spinner, conversionProgress) {
+    const kiroAgentsDir = path.join(installDir, ".kiro", "agents");
+    await fs.ensureDir(kiroAgentsDir);
+
+    for (const agent of discoveredAgents) {
+      try {
+        const progressText = `Converting agent ${conversionProgress.convertedAgents + 1}/${conversionProgress.totalAgents}: ${agent.name}`;
+        spinner.text = progressText;
+        
+        // Report progress through spinner for requirement 1.6
+        if (spinner.succeed && typeof spinner.succeed === 'function') {
+          spinner.succeed(`Converting agent ${conversionProgress.convertedAgents + 1}/${conversionProgress.totalAgents}: ${agent.name}`);
+        }
+
+        const destPath = path.join(kiroAgentsDir, agent.fileName);
+
+        // Transform agent with comprehensive options
+        await this.agentTransformer.transformAgentForKiro(
+          agent.filePath,
+          destPath,
+          {
+            enableContextInjection: true,
+            enableSteeringIntegration: true,
+            preserveBMadPersona: true,
+            expansionPack: agent.expansionPack,
+            enableExpansionPackFeatures: !!agent.expansionPack,
+            agentMetadata: agent,
+            enableFileContextIntegration: true,
+            enableMCPIntegration: true
+          }
+        );
+
+        conversionProgress.convertedAgents++;
+        const conversionMessage = `Converted: ${agent.name} (${agent.source}${agent.expansionPack ? `/${agent.expansionPack}` : ''})`;
+        console.log(chalk.green(`✓ ${conversionMessage}`));
+        
+        // Report individual conversion progress
+        if (spinner.succeed && typeof spinner.succeed === 'function') {
+          spinner.succeed(conversionMessage);
+        }
+
+      } catch (error) {
+        conversionProgress.failedAgents.push({
+          agent: agent.name,
+          id: agent.id,
+          source: agent.source,
+          expansionPack: agent.expansionPack,
+          error: error.message
+        });
+        
+        console.log(chalk.red(`✗ Failed to convert: ${agent.name} - ${error.message}`));
+        
+        this.errorReporter.reportError(error, this.errorReporter.errorTypes.KIRO_SETUP, {
+          phase: 'agent-conversion',
+          component: 'agent-transformer',
+          operation: 'transform-agent',
+          agentId: agent.id,
+          agentName: agent.name,
+          source: agent.source,
+          expansionPack: agent.expansionPack
+        });
+      }
+    }
+  }
+
+  /**
+   * Register converted agents with Kiro's native system
+   * @param {KiroAgentRegistry} agentRegistry - Agent registry instance
+   * @param {string} installDir - Installation directory
+   * @param {Object} spinner - Ora spinner instance
+   * @param {Object} conversionProgress - Progress tracking object
+   * @returns {Promise<void>}
+   */
+  async registerConvertedAgents(agentRegistry, installDir, spinner, conversionProgress) {
+    try {
+      // Initialize the registry (discovers and registers agents)
+      const registrationSuccess = await agentRegistry.initialize();
+      
+      if (registrationSuccess) {
+        const registeredCount = agentRegistry.getRegisteredAgentCount();
+        console.log(chalk.green(`✓ Registered ${registeredCount} agents with Kiro`));
+        
+        // Display registration details
+        const registeredAgents = agentRegistry.getRegisteredAgents();
+        for (const [agentId, agentInfo] of registeredAgents) {
+          console.log(chalk.cyan(`   ${agentInfo.name} (${agentId})`));
+        }
+      } else {
+        console.log(chalk.yellow("⚠ Agent registration completed with some failures"));
+        
+        // Display registration errors
+        const errors = agentRegistry.getRegistrationErrors();
+        for (const [agentPath, error] of errors) {
+          console.log(chalk.red(`   Failed: ${path.basename(agentPath)} - ${error.message}`));
+        }
+      }
+    } catch (error) {
+      console.log(chalk.red(`✗ Agent registration failed: ${error.message}`));
+      throw error;
+    }
+  }
+
+  /**
+   * Set up activation management for registered agents
+   * @param {ActivationManager} activationManager - Activation manager instance
+   * @param {string} installDir - Installation directory
+   * @param {Object} spinner - Ora spinner instance
+   * @returns {Promise<void>}
+   */
+  async setupActivationManagement(activationManager, installDir, spinner) {
+    try {
+      // Initialize activation management
+      await activationManager.initialize();
+      
+      // Set up activation handlers for all registered agents
+      const setupSuccess = await activationManager.setupActivationHandlers();
+      
+      if (setupSuccess) {
+        console.log(chalk.green("✓ Agent activation management configured"));
+      } else {
+        console.log(chalk.yellow("⚠ Activation management setup completed with warnings"));
+      }
+    } catch (error) {
+      console.log(chalk.red(`✗ Activation management setup failed: ${error.message}`));
+      // Don't throw - this is not critical for basic functionality
+    }
+  }
+
+  /**
+   * Validate conversion completeness
+   * @param {string} installDir - Installation directory
+   * @param {Object} conversionProgress - Progress tracking object
+   * @returns {Promise<Object>} - Validation result
+   */
+  async validateConversionCompleteness(installDir, conversionProgress) {
+    const validation = {
+      isValid: true,
+      errors: [],
+      warnings: [],
+      summary: {
+        totalAgents: conversionProgress.totalAgents,
+        convertedAgents: conversionProgress.convertedAgents,
+        failedAgents: conversionProgress.failedAgents.length,
+        conversionRate: conversionProgress.totalAgents > 0 ? 
+          (conversionProgress.convertedAgents / conversionProgress.totalAgents * 100).toFixed(1) : 0,
+        duration: Date.now() - conversionProgress.startTime
+      }
+    };
+
+    // Check if all agents were converted successfully
+    if (conversionProgress.failedAgents.length > 0) {
+      validation.isValid = false;
+      validation.errors.push(`${conversionProgress.failedAgents.length} agents failed conversion`);
+      
+      // Add details about failed agents
+      for (const failedAgent of conversionProgress.failedAgents) {
+        validation.warnings.push(`Failed: ${failedAgent.agent} (${failedAgent.source}) - ${failedAgent.error}`);
+      }
+    }
+
+    // Check if .kiro/agents directory has expected files
+    const kiroAgentsDir = path.join(installDir, ".kiro", "agents");
+    if (await fs.pathExists(kiroAgentsDir)) {
+      const agentFiles = await fs.readdir(kiroAgentsDir);
+      const mdFiles = agentFiles.filter(file => file.endsWith('.md'));
+      
+      if (mdFiles.length !== conversionProgress.convertedAgents) {
+        validation.warnings.push(`Expected ${conversionProgress.convertedAgents} agent files, found ${mdFiles.length}`);
+      }
+    } else {
+      validation.isValid = false;
+      validation.errors.push("Kiro agents directory not found");
+    }
+
+    // Check conversion rate threshold
+    const conversionRate = parseFloat(validation.summary.conversionRate);
+    if (conversionRate < 90) {
+      validation.warnings.push(`Low conversion rate: ${conversionRate}%`);
+    }
+
+    return validation;
+  }
+
+  /**
+   * Combine validation results from multiple sources
+   * @param {Object} enhancementValidation - Enhancement validation result
+   * @param {Object} conversionValidation - Conversion validation result
+   * @returns {Object} - Combined validation result
+   */
+  combineValidationResults(enhancementValidation, conversionValidation) {
+    return {
+      isValid: enhancementValidation.isValid && conversionValidation.isValid,
+      errors: [
+        ...(enhancementValidation.errors || []),
+        ...(conversionValidation.errors || [])
+      ],
+      warnings: [
+        ...(enhancementValidation.warnings || []),
+        ...(conversionValidation.warnings || [])
+      ],
+      summary: {
+        ...enhancementValidation.summary,
+        conversion: conversionValidation.summary
+      }
+    };
+  }
+
+  /**
+   * Display conversion summary
+   * @param {Object} conversionProgress - Progress tracking object
+   */
+  displayConversionSummary(conversionProgress) {
+    const duration = Date.now() - conversionProgress.startTime;
+    const conversionRate = conversionProgress.totalAgents > 0 ? 
+      (conversionProgress.convertedAgents / conversionProgress.totalAgents * 100).toFixed(1) : 0;
+
+    console.log(chalk.cyan("\n📊 Agent Conversion Summary:"));
+    console.log(chalk.cyan(`   Total agents discovered: ${conversionProgress.totalAgents}`));
+    console.log(chalk.cyan(`   Successfully converted: ${conversionProgress.convertedAgents}`));
+    console.log(chalk.cyan(`   Failed conversions: ${conversionProgress.failedAgents.length}`));
+    console.log(chalk.cyan(`   Conversion rate: ${conversionRate}%`));
+    console.log(chalk.cyan(`   Duration: ${(duration / 1000).toFixed(1)}s`));
+
+    if (conversionProgress.failedAgents.length > 0) {
+      console.log(chalk.yellow("\n⚠ Failed Agent Conversions:"));
+      for (const failedAgent of conversionProgress.failedAgents) {
+        console.log(chalk.yellow(`   ${failedAgent.agent} (${failedAgent.source}${failedAgent.expansionPack ? `/${failedAgent.expansionPack}` : ''}) - ${failedAgent.error}`));
+      }
+    }
   }
 }
 

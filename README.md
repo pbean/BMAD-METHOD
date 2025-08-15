@@ -198,6 +198,13 @@ The generated XML file contains your project's text-based source files in a stru
 - 🏗️ **[Core Architecture](docs/core-architecture.md)** - Technical deep dive and system design
 - 🚀 **[Expansion Packs Guide](docs/expansion-packs.md)** - Extend BMad to any domain beyond software development
 
+### Developer Documentation
+
+- 🔧 **[Kiro Integration Developer Guide](docs/kiro-agent-integration-developer-guide.md)** - Complete guide for developers working with Kiro agent integration
+- 📚 **[Kiro Integration API Reference](docs/kiro-agent-integration-api-reference.md)** - Comprehensive API documentation for all integration interfaces
+- 🛠️ **[Kiro Integration Extension Guide](docs/kiro-agent-integration-extension-guide.md)** - How to extend the system with new agent types and custom functionality
+- 🤝 **[Kiro Integration Contribution Guide](docs/kiro-agent-integration-contribution-guide.md)** - Guidelines for contributing to the Kiro integration system
+
 ## Support
 
 - 💬 [Discord Community](https://discord.gg/gk8jAdXWmj)
